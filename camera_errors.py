@@ -5,12 +5,14 @@ Error types for qCamera exceptions.
 
 from __future__ import print_function
 
+class CameraError(Exception):
+    """Generic camera errors."""
+    pass
+
+class AndorError(CameraError):
+    """Andor-specific errors."""
+    pass
+
 class UnitsError(Exception):
     """Errors caused by using inappropriate units."""
-
-    def __init__(self, value):
-        self.parameter = value
-
-    def __str__(self):
-        return repr(self.parameter)
-    
+    pass

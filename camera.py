@@ -18,11 +18,12 @@ class Camera(object):
     # Members
     # -------
     
-    roi = [1, 0, 1, 0] # Region of interest
-    t_ms = 100. # exposure time in ms
+    roi = [1, 0, 1, 0]	# Region of interest
+    t_ms = 100.		# exposure time in ms
+    shape = [0, 0]	# number of pixels [x, y]
 
-    # dunder functions
-    # ----------------
+    # Setup and shutdown
+    # ------------------
 
     def __init__(self):
         return
