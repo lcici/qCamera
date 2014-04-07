@@ -6,12 +6,16 @@ all subsequent cameras should be based on.
 
 """
 
+from __future__ import division
+from __future__ import print_function
 from abc import ABCMeta, abstractmethod
+import numpy as np
+import numpy.random as npr
 from camera_errors import UnitsError
 
 _t_units = {'ms': 1, 's': 1e3} # Allowed units for exposure time
 
-class Camera(object):
+class Camera:
     """Abstract base class for all cameras."""
     __metaclass__ = ABCMeta
 
@@ -20,13 +24,15 @@ class Camera(object):
     
     roi = [1, 0, 1, 0]	# Region of interest
     t_ms = 100.		# exposure time in ms
-    shape = [0, 0]	# number of pixels [x, y]
+    shape = [512, 512]	# number of pixels [x, y]
+    bins = 1		# binning of the sensor
+    real_camera = True  # True if the camera hardware actually exists
 
     # Setup and shutdown
     # ------------------
 
-    def __init__(self):
-        return
+    def __init__(self, real=True):
+        self.real_camera = real
 
     def __enter__(self):
         return self
@@ -65,6 +71,24 @@ class Camera(object):
         acquisition mode.
 
         """
+
+    def get_simulated_image(self, x0, y0):
+        """
+        Generate and return a simulated image centered at the point
+        (x0, y0). This is primarily useful when testing out a full
+        control program so that there is a simulated camera with an
+        image to actually use.
+
+        """
+        g = lambda x, y, x0, y0, sigma: \
+            np.exp(-((x - x0)**2 + (y - y0)**2)/(2*sigma**2))
+        x = np.arange(0, self.shape[0])
+        y = np.arange(0, self.shape[1])
+        X, Y = np.meshgrid(x, y)
+        img = g(x, y, x0, y0, 20)
+        img /= np.max(img)
+        img += 0.25*npr.random(self.shape)
+        return img
 
     # Gain and exposure time
     # ----------------------
@@ -137,3 +161,12 @@ class Camera(object):
     def set_bins(self, bins):
         """Set binning to bins x bins."""
 
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    class Test(Camera):
+        pass
+    cam = Test(real=False)
+    x0, y0 = npr.randint(0, self.shape[0]), npr.randint(0, self.shape[1])
+    plt.imshow(cam.get_simulated_image(x0, y0))
+    plt.colorbar()
+    plt.show()
