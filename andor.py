@@ -11,8 +11,29 @@ import camera
 from camera_errors import AndorError
 from andor_error_codes import ANDOR_ERRORS
 
+def _int_ptr(val=0):
+    """Utility function to create integer pointers."""
+    return ctypes.pointer(c_int(val))
+
 def _chk(status):
-    """Run the callable func and check the error status."""
+    """
+    Checks the error status of an Andor DLL function call. If
+    something catastrophic happened, an AndorError exception is
+    raised. In non-critical cases, warnings are given.
+
+    Parameters
+    ----------
+    status : int
+        The return code from an Andor DLL function.
+
+    Raises
+    ------
+    AndorError
+        Whenever something very bad happens. Generally, this should
+        hopefully only be whenever the user is trying to do something
+        stupid.
+
+    """
     if status == 20072: # Acquiring
         warnings.warn(
             "Action not completed when data acquisition is in progress!")
@@ -52,46 +73,61 @@ class AndorCamera(camera.Camera):
     # Setup and shutdown
     # ------------------
 
-    def __init__(self, temperature=-50):
+    def __init__(self, temperature=-50, bins=None, crop=None, real=True):
         """
         Initialize the Andor camera.
 
-        Parameters
-        ----------
+        Keyword arguments
+        -----------------
         temperature : int
             Temperature in Celsius to set the TEC to.
+        bins : int or None
+            Specifies the number of binned pixels to use.
+        crop : tuple or None
+            A tuple of the form [x, y, width, height] specifying the
+            cropped portion of the sensor to use. If None, use the
+            full sensor.
+        real : bool
+            If False, the camera will be simulated.        
 
         """
+        # Check if we are simulating a camera or using a real one
+        super(AndorCamera, self).__init__(real=real)
+        if not self.real_camera:
+            return
+        
         # Try to load the Andor DLL
         self.clib = ctypes.windll.LoadLibrary("atmcd32d.dll")
 
         # Initialize the camera and get the detector size
+        # TODO: directory to Initialize?
         _chk(self.clib.Initialize("."))
-        xpx = ctypes.pointer(c_int(0))
-        ypx = ctypes.pointer(c_int(0))
+        xpx, ypx = _int_ptr(), int_ptr()
         _chk(self.clib.GetDetector(xpx, ypx))
         self.shape = [xpx.contents, ypx.contents]
 
-        # Get hardware and software information
-        # TODO
-        _chk(self.clib.GetHardwareVersion())
-        _chk(self.clib.GetSoftwareVersion())
-        _chk(self.clib.GetNumberVSSpeeds())
-        _chk(self.clib.GetVSSpeed())
-        _chk(self.clib.GetNumberHSSpeeds())
-        _chk(self.clib.GetHSSpeed())
+        # TODO: Configure binning and cropping
+        if bins is not None:
+            pass
+        if crop is not None:
+            pass
+
+        # TODO: Get hardware and software information
+        #_chk(self.clib.GetHardwareVersion())
+        #_chk(self.clib.GetSoftwareVersion())
+        vpseeds, hspeeds = _int_ptr(), _int_ptr()
+        _chk(self.clib.GetNumberVSSpeeds(vspeeds))
+        _chk(self.clib.GetNumberHSSpeeds(hspeeds))
+        #_chk(self.clib.GetVSSpeed())
+        #_chk(self.clib.GetHSSpeed())
 
         # Enable temperature control
-        # TODO
-        _chk(GetTemperatureRange())
-        self.set_cooler_temperature(temperature) # TODO: check setting
+        T_min, T_max = _int_ptr(), _int_ptr()
+        _chk(GetTemperatureRange(T_min, T_max))
+        self.T_min = T_min.contents
+        self.T_max = T_max.contents
+        self.set_cooler_temperature(temperature)
         self.cooler_on()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, type_, value, traceback):
-        self.close()
 
     def close(self):
         """
@@ -178,13 +214,17 @@ class AndorCamera(camera.Camera):
 
     def get_cooler_temperature(self):
         """Check the TEC temperature."""
-        temp = ctypes.pointer(ctypes.c_int(0))
+        temp = _int_ptr()
         _chk(self.clib.GetTemperature(temp))
         return temp
 
     def set_cooler_temperature(self, temp):
         """Set the cooler temperature to temp."""
-        _chk(self.clib.SetTemperature(ctypes.c_int(temp)))
+        if temp > self.T_max or temp < self.T_min:
+            raise ValueError(
+                "Set point temperature must be between " + \
+                self.T_min + " and " self.T_max + ".")
+        _chk(self.clib.SetTemperature(_int_ptr(temp)))
 
     # ROI, cropping, and binning
     # --------------------------
