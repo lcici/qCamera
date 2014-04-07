@@ -13,7 +13,7 @@ from andor_error_codes import ANDOR_ERRORS
 
 def _int_ptr(val=0):
     """Utility function to create integer pointers."""
-    return ctypes.pointer(c_int(val))
+    return ctypes.pointer(ctypes.c_int(val))
 
 def _chk(status):
     """
@@ -102,7 +102,7 @@ class AndorCamera(camera.Camera):
         # Initialize the camera and get the detector size
         # TODO: directory to Initialize?
         _chk(self.clib.Initialize("."))
-        xpx, ypx = _int_ptr(), int_ptr()
+        xpx, ypx = _int_ptr(), _int_ptr()
         _chk(self.clib.GetDetector(xpx, ypx))
         self.shape = [xpx.contents, ypx.contents]
 
@@ -115,17 +115,17 @@ class AndorCamera(camera.Camera):
         # TODO: Get hardware and software information
         #_chk(self.clib.GetHardwareVersion())
         #_chk(self.clib.GetSoftwareVersion())
-        vpseeds, hspeeds = _int_ptr(), _int_ptr()
-        _chk(self.clib.GetNumberVSSpeeds(vspeeds))
-        _chk(self.clib.GetNumberHSSpeeds(hspeeds))
+        #vspeeds, hspeeds = _int_ptr(), _int_ptr()
+        #_chk(self.clib.GetNumberVSSpeeds(vspeeds))
+        #_chk(self.clib.GetNumberHSSpeeds(hspeeds))
         #_chk(self.clib.GetVSSpeed())
         #_chk(self.clib.GetHSSpeed())
 
         # Enable temperature control
         T_min, T_max = _int_ptr(), _int_ptr()
-        _chk(GetTemperatureRange(T_min, T_max))
-        self.T_min = T_min.contents
-        self.T_max = T_max.contents
+        _chk(self.clib.GetTemperatureRange(T_min, T_max))
+        self.T_min = (T_min.contents).value
+        self.T_max = (T_max.contents).value
         self.set_cooler_temperature(temperature)
         self.cooler_on()
 
@@ -169,7 +169,7 @@ class AndorCamera(camera.Camera):
         mode = mode.lower()
         if mode not in self._trigger_modes:
             raise AndorError("Invalid trigger mode: " + mode)
-        _chk(SetTriggerMode(self._trigger_modes[mode])
+        _chk(self.clib.SetTriggerMode(self._trigger_modes[mode]))
 
     def trigger(self):
         """Send a software trigger to take an image immediately."""
@@ -223,7 +223,7 @@ class AndorCamera(camera.Camera):
         if temp > self.T_max or temp < self.T_min:
             raise ValueError(
                 "Set point temperature must be between " + \
-                self.T_min + " and " self.T_max + ".")
+                repr(self.T_min) + " and " + repr(self.T_max) + ".")
         _chk(self.clib.SetTemperature(_int_ptr(temp)))
 
     # ROI, cropping, and binning
