@@ -8,12 +8,17 @@ import ctypes
 import time
 import warnings
 import camera
-from camera_errors import AndorError
+from camera_errors import AndorError, AndorWarning
 from andor_error_codes import ANDOR_ERRORS
 
 def _int_ptr(val=0):
     """Utility function to create integer pointers."""
     return ctypes.pointer(ctypes.c_int(val))
+    
+def _warn(msg):
+    """Warn with an AndorWarning."""
+    # TODO: fix warning messages (says None now)
+    warnings.warn(msg, AndorWarning)
 
 def _chk(status):
     """
@@ -35,17 +40,16 @@ def _chk(status):
 
     """
     if status == 20072: # Acquiring
-        warnings.warn(
+        _warn(
             "Action not completed when data acquisition is in progress!")
     elif status == 20034: # temperature off
-        warnings.warn("Temperature control is off.")
+        _warn("Temperature control is off.")
     elif status == 20037: # temperature not reached
-        warnings.warn("Temperature set point not yet reached.")
+        _warn("Temperature set point not yet reached.")
     elif status == 20040: # temperature drift
-        warnings.warn("Temperature is drifting.")
-    elif status == 20036: # temperature not stabilized
-        warnings.warn(
-            "Temperature set point reached but not yet stable.")
+        _warn("Temperature is drifting.")
+    elif status == 20035 or status == 20036: # temperature not stabilized
+        _warn("Temperature set point reached but not yet stable.")
     elif status == 20036: # temperature *is* stabilized
         pass
     elif status != 20002:
@@ -106,11 +110,11 @@ class AndorCamera(camera.Camera):
         _chk(self.clib.GetDetector(xpx, ypx))
         self.shape = [xpx.contents, ypx.contents]
 
-        # TODO: Configure binning and cropping
+        # Configure binning and cropping
         if bins is not None:
-            pass
+            self.set_bins(bins)
         if crop is not None:
-            pass
+            self.set_crop(crop)
 
         # TODO: Get hardware and software information
         #_chk(self.clib.GetHardwareVersion())
@@ -206,7 +210,7 @@ class AndorCamera(camera.Camera):
 
     def cooler_on(self):
         """Turn on the TEC."""
-        _chk(self.dll.CoolerON())
+        _chk(self.clib.CoolerON())
 
     def cooler_off(self):
         """Turn off the TEC."""
@@ -216,7 +220,7 @@ class AndorCamera(camera.Camera):
         """Check the TEC temperature."""
         temp = _int_ptr()
         _chk(self.clib.GetTemperature(temp))
-        return temp
+        return temp.contents.value
 
     def set_cooler_temperature(self, temp):
         """Set the cooler temperature to temp."""
@@ -224,7 +228,7 @@ class AndorCamera(camera.Camera):
             raise ValueError(
                 "Set point temperature must be between " + \
                 repr(self.T_min) + " and " + repr(self.T_max) + ".")
-        _chk(self.clib.SetTemperature(_int_ptr(temp)))
+        _chk(self.clib.SetTemperature(temp))
 
     # ROI, cropping, and binning
     # --------------------------
@@ -248,3 +252,9 @@ class AndorCamera(camera.Camera):
 
     def set_bins(self, bins):
         """Set binning to bins x bins."""
+        
+if __name__ == "__main__":
+    with AndorCamera(temperature=10) as cam:
+        for i in range(10):
+            print(cam.get_cooler_temperature())
+            time.sleep(2)
