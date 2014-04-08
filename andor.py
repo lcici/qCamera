@@ -235,6 +235,7 @@ class AndorCamera(camera.Camera):
 
     def set_roi(self, roi):
         """Define the region of interest."""
+        super(AndorCamera, self).set_roi(roi)
         
     def get_crop(self):
         """Get the current CCD crop settings."""

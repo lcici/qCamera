@@ -11,7 +11,7 @@ from __future__ import print_function
 from abc import ABCMeta, abstractmethod
 import numpy as np
 import numpy.random as npr
-from camera_errors import UnitsError
+from camera_errors import CameraError, UnitsError
 
 _t_units = {'ms': 1, 's': 1e3} # Allowed units for exposure time
 
@@ -139,6 +139,9 @@ class Camera:
     @abstractmethod
     def set_roi(self, roi):
         """Define the region of interest."""
+        if len(roi) != 4:
+            raise CameraError("roi must be a length 4 list.")
+        self.roi = roi
         
     @abstractmethod
     def get_crop(self):
@@ -165,8 +168,8 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     class Test(Camera):
         pass
-    cam = Test(real=False)
-    x0, y0 = npr.randint(0, self.shape[0]), npr.randint(0, self.shape[1])
-    plt.imshow(cam.get_simulated_image(x0, y0))
-    plt.colorbar()
-    plt.show()
+    with Test(real=False) as cam:
+        pass
+    #plt.imshow(cam.get_simulated_image(x0, y0))
+    #plt.colorbar()
+    #plt.show()
