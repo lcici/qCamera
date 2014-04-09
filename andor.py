@@ -4,9 +4,10 @@ Andor camera interface
 """
 
 from __future__ import print_function
-import ctypes
 import time
 import warnings
+import ctypes
+import numpy as np
 import camera
 from camera_errors import AndorError, AndorWarning
 from andor_error_codes import ANDOR_ERRORS
@@ -40,16 +41,17 @@ def _chk(status):
 
     """
     if status == 20072: # Acquiring
-        _warn(
-            "Action not completed when data acquisition is in progress!")
+        _warn("Action not completed when data acquisition is in progress!")
     elif status == 20034: # temperature off
-        _warn("Temperature control is off.")
+        #_warn("Temperature control is off.")
+        pass
     elif status == 20037: # temperature not reached
         _warn("Temperature set point not yet reached.")
     elif status == 20040: # temperature drift
         _warn("Temperature is drifting.")
     elif status == 20035 or status == 20036: # temperature not stabilized
-        _warn("Temperature set point reached but not yet stable.")
+        #_warn("Temperature set point reached but not yet stable.")
+        pass
     elif status == 20036: # temperature *is* stabilized
         pass
     elif status != 20002:
@@ -64,6 +66,14 @@ class AndorCamera(camera.Camera):
     so should work with most or all of their cameras.
 
     """
+
+    # Valid acquisition modes.
+    _acq_modes = {
+        "single": 1,
+        "accumulate": 2,
+        "kinetics": 3,
+        "fast kinetics": 4,
+        "run till abort": 5}
 
     # Valid trigger modes.
     # There are more that are not implemented here, some of which are
@@ -108,7 +118,7 @@ class AndorCamera(camera.Camera):
         _chk(self.clib.Initialize("."))
         xpx, ypx = _int_ptr(), _int_ptr()
         _chk(self.clib.GetDetector(xpx, ypx))
-        self.shape = [xpx.contents, ypx.contents]
+        self.shape = [xpx.contents.value, ypx.contents.value]
 
         # Configure binning and cropping
         if bins is not None:
@@ -116,20 +126,13 @@ class AndorCamera(camera.Camera):
         if crop is not None:
             self.set_crop(crop)
 
-        # TODO: Get hardware and software information
-        #_chk(self.clib.GetHardwareVersion())
-        #_chk(self.clib.GetSoftwareVersion())
-        #vspeeds, hspeeds = _int_ptr(), _int_ptr()
-        #_chk(self.clib.GetNumberVSSpeeds(vspeeds))
-        #_chk(self.clib.GetNumberHSSpeeds(hspeeds))
-        #_chk(self.clib.GetVSSpeed())
-        #_chk(self.clib.GetHSSpeed())
+        # TODO: Get hardware and software information?
 
         # Enable temperature control
         T_min, T_max = _int_ptr(), _int_ptr()
         _chk(self.clib.GetTemperatureRange(T_min, T_max))
-        self.T_min = (T_min.contents).value
-        self.T_max = (T_max.contents).value
+        self.T_min = T_min.contents.value
+        self.T_max = T_max.contents.value
         self.set_cooler_temperature(temperature)
         self.cooler_on()
 
@@ -145,6 +148,7 @@ class AndorCamera(camera.Camera):
 
         """
         self.cooler_off()
+        self.close_shutter()
         while True:
             temp = self.get_cooler_temperature()
             if temp > -20:
@@ -152,9 +156,42 @@ class AndorCamera(camera.Camera):
             else:
                 time.sleep(1)
         _chk(self.clib.ShutDown())
+        
+    # Image acquisition
+    # -----------------
+        
+    def set_acquisition_mode(self, mode):
+        """Set the image acquisition mode."""
+        if mode not in self._acq_modes:
+            raise AndorError(
+                "Acquisition mode must be one of " + repr(self._acq_modes))
+        self.acq_mode = mode
+        if not self.real_camera:
+            return
+        _chk(self.clib.SetAcquisitionMode(
+            ctypes.c_int(self._acq_modes['mode'])))
+    
+    def get_image(self):
+        """
+        Acquire the current image from the camera. This is mainly to
+        be used when running in some sort of single trigger
+        acquisition mode.
 
-    # Triggering and image acquisition
-    # --------------------------------
+        """
+        if self.acq_mode != "single":
+            _warn("Not in single acquisition mode!")
+        if not self.real_camera:
+            return self.get_simulated_image()
+        img_size = self.shape[0]*self.shape[1]/self.bins**2
+        img_array = np.zeros(img_size)
+        img_pointer = (ctypes.c_int32*img_size)(*img_array)
+        _chk(self.clib.GetAcquiredData(img_pointer, ctypes.c_ulong(img_size)))
+        img_array = np.frombuffer(img_pointer, dtype=ctypes.c_int32)
+        img_array.reshape(self.shape)
+        return img_array
+        
+    # Triggering
+    # ----------
 
     def get_trigger_mode(self):
         """Query the current trigger mode."""
@@ -173,18 +210,29 @@ class AndorCamera(camera.Camera):
         mode = mode.lower()
         if mode not in self._trigger_modes:
             raise AndorError("Invalid trigger mode: " + mode)
-        _chk(self.clib.SetTriggerMode(self._trigger_modes[mode]))
-
+        if self.real_camera:
+            _chk(self.clib.SetTriggerMode(self._trigger_modes[mode]))
+        
     def trigger(self):
         """Send a software trigger to take an image immediately."""
+        # TODO: only work if in software trigger mode
+        if self.real_camera:
+            _chk(self.clib.StartAcquisition())
+        
+    # Shutter control
+    # ---------------
 
-    def get_image(self):
-        """
-        Acquire the current image from the camera. This is mainly to
-        be used when running in some sort of single trigger
-        acquisition mode.
-
-        """
+    def open_shutter(self):
+        """Open the shutter."""
+        super(AndorCamera, self).open_shutter()
+        if self.real_camera:
+            _chk(self.clib.SetShutter(1, 1, 20, 20))
+        
+    def close_shutter(self):
+        """Close the shutter."""
+        super(AndorCamera, self).close_shutter()
+        if self.real_camera:
+            _chk(self.clib.SetShutter(1, 2, 20, 20))
 
     # Gain and exposure time
     # ----------------------
@@ -210,20 +258,28 @@ class AndorCamera(camera.Camera):
 
     def cooler_on(self):
         """Turn on the TEC."""
-        _chk(self.clib.CoolerON())
+        if self.real_camera:
+            _chk(self.clib.CoolerON())
 
     def cooler_off(self):
         """Turn off the TEC."""
-        _chk(self.clib.CoolerOFF())
+        if self.real_camera:
+            _chk(self.clib.CoolerOFF())
 
     def get_cooler_temperature(self):
         """Check the TEC temperature."""
+        # TODO: make this work better with simulated cameras
+        if not self.real_camera:
+            return 20
         temp = _int_ptr()
         _chk(self.clib.GetTemperature(temp))
         return temp.contents.value
 
     def set_cooler_temperature(self, temp):
         """Set the cooler temperature to temp."""
+        # TODO: make this work better with simulated cameras
+        if not self.real_camera:
+            pass
         if temp > self.T_max or temp < self.T_min:
             raise ValueError(
                 "Set point temperature must be between " + \
@@ -256,6 +312,7 @@ class AndorCamera(camera.Camera):
         
 if __name__ == "__main__":
     with AndorCamera(temperature=10) as cam:
-        for i in range(10):
-            print(cam.get_cooler_temperature())
-            time.sleep(2)
+        cam.set_acquisition_mode('single')
+        cam.set_exposure_time(10)
+        cam.trigger()
+        cam.get_image()

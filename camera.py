@@ -16,17 +16,44 @@ from camera_errors import CameraError, UnitsError
 _t_units = {'ms': 1, 's': 1e3} # Allowed units for exposure time
 
 class Camera:
-    """Abstract base class for all cameras."""
+    """
+    Abstract base class for all cameras.
+
+    Attributes
+    ----------
+    roi : tuple
+        The defined region of interest in the form [x, y, width, height].
+    t_ms : float
+        Exposure time in ms.
+    shape : tuple
+        Number of pixels [x, y]
+    bins : int
+        Bin size to use.
+    shutter_open : bool
+        For cameras that are equipped with an integrated shutter: is the
+        shutter open?
+    acq_mode : str
+        Camera acquisition mode.
+    trigger_mode : str
+        Camera triggering mode.
+    real_camera : bool
+        When set to False, the camera hardware can be simulated for working in
+        offline mode.
+    
+    """
     __metaclass__ = ABCMeta
 
     # Members
     # -------
     
-    roi = [1, 0, 1, 0]	# Region of interest
-    t_ms = 100.		# exposure time in ms
-    shape = [512, 512]	# number of pixels [x, y]
-    bins = 1		# binning of the sensor
-    real_camera = True  # True if the camera hardware actually exists
+    roi = [1, 1, 10, 10]
+    t_ms = 100.
+    shape = [512, 512]
+    bins = 1
+    shutter_open = False
+    acq_mode = "single"
+    trigger_mode = "software"
+    real_camera = True
 
     # Setup and shutdown
     # ------------------
@@ -38,6 +65,7 @@ class Camera:
         return self
 
     def __exit__(self, type_, value, traceback):
+        print("Shutting down camera.")
         self.close()
 
     @abstractmethod
@@ -47,21 +75,13 @@ class Camera:
         should be defined here.
         
         """
-
-    # Triggering and image acquisition
-    # --------------------------------
-
-    @abstractmethod
-    def get_trigger_mode(self):
-        """Query the current trigger mode."""
+        
+    # Image acquisition
+    # -----------------
 
     @abstractmethod
-    def set_trigger_mode(self, mode):
-        """Setup trigger mode."""
-
-    @abstractmethod
-    def trigger(self):
-        """Send a software trigger to take an image immediately."""
+    def set_acquisition_mode(self, mode):
+        """Set the image acquisition mode."""
 
     @abstractmethod
     def get_image(self):
@@ -89,6 +109,41 @@ class Camera:
         img /= np.max(img)
         img += 0.25*npr.random(self.shape)
         return img
+        
+    # Triggering
+    # ----------
+
+    @abstractmethod
+    def get_trigger_mode(self):
+        """Query the current trigger mode."""
+
+    @abstractmethod
+    def set_trigger_mode(self, mode):
+        """Setup trigger mode."""
+
+    @abstractmethod
+    def trigger(self):
+        """Send a software trigger to take an image immediately."""
+        
+    # Shutter control
+    # ---------------
+
+    @abstractmethod
+    def open_shutter(self):
+        """Open the shutter."""
+        self.shutter_open = True
+        
+    @abstractmethod
+    def close_shutter(self):
+        """Close the shutter."""
+        self.shutter_open = False
+        
+    def toggle_shutter(self):
+        """Toggle the shutter state from open to closed and vice versa."""
+        if self.shutter_open:
+            self.close_shutter()
+        else:
+            self.open_shutter()
 
     # Gain and exposure time
     # ----------------------
