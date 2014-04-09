@@ -10,7 +10,7 @@ import ctypes
 import numpy as np
 import camera
 from camera_errors import AndorError, AndorWarning
-from andor_error_codes import ANDOR_ERRORS
+from andor_status_codes import *
 
 def _int_ptr(val=0):
     """Utility function to create integer pointers."""
@@ -40,24 +40,23 @@ def _chk(status):
         stupid.
 
     """
-    if status == 20072: # Acquiring
+    if status == ANDOR_STATUS['DRV_ACQUIRING']:
         _warn("Action not completed when data acquisition is in progress!")
-    elif status == 20034: # temperature off
+    elif status == ANDOR_STATUS['DRV_TEMPERATURE_OFF']:
         #_warn("Temperature control is off.")
         pass
-    elif status == 20037: # temperature not reached
+    elif status == ANDOR_STATUS['DRV_TEMPERATURE_NOT_REACHED']:
         _warn("Temperature set point not yet reached.")
-    elif status == 20040: # temperature drift
+    elif status == ANDOR_STATUS['DRV_TEMPERATURE_DRIFT']:
         _warn("Temperature is drifting.")
-    elif status == 20035 or status == 20036: # temperature not stabilized
-        #_warn("Temperature set point reached but not yet stable.")
+    elif status == ANDOR_STATUS['DRV_TEMP_NOT_STABILIZED']:
+        _warn("Temperature set point reached but not yet stable.")
+    elif status == ANDOR_STATUS['DRV_TEMPERATURE_STABILIZED']:
         pass
-    elif status == 20036: # temperature *is* stabilized
-        pass
-    elif status != 20002:
+    elif status != ANDOR_STATUS['DRV_SUCCESS']:
         raise AndorError(
             "Andor returned the status message " + \
-            ANDOR_ERRORS[status])
+            ANDOR_CODES[status])
 
 class AndorCamera(camera.Camera):
     """
@@ -169,7 +168,7 @@ class AndorCamera(camera.Camera):
         if not self.real_camera:
             return
         _chk(self.clib.SetAcquisitionMode(
-            ctypes.c_int(self._acq_modes['mode'])))
+            ctypes.c_int(self._acq_modes[mode])))
     
     def get_image(self):
         """
@@ -178,12 +177,28 @@ class AndorCamera(camera.Camera):
         acquisition mode.
 
         """
+        # Abort if not in single image acquisition mode.
         if self.acq_mode != "single":
             _warn("Not in single acquisition mode!")
+            
+        # Return simulated image if not a real camera.
         if not self.real_camera:
             return self.get_simulated_image()
+            
+        # Check the camera status so we don't try to acquire an image while the
+        # camera is acquiring data.
+        status = _int_ptr()
+        while True:
+            _chk(self.clib.GetStatus(status))
+            status = status.contents.value
+            if status == ANDOR_STATUS['DRV_IDLE']:
+                break
+            else:
+                _chk(status)
+            
+        # Get the image
         img_size = self.shape[0]*self.shape[1]/self.bins**2
-        img_array = np.zeros(img_size)
+        img_array = np.zeros(img_size, dtype=ctypes.c_int32)
         img_pointer = (ctypes.c_int32*img_size)(*img_array)
         _chk(self.clib.GetAcquiredData(img_pointer, ctypes.c_ulong(img_size)))
         img_array = np.frombuffer(img_pointer, dtype=ctypes.c_int32)
@@ -315,4 +330,5 @@ if __name__ == "__main__":
         cam.set_acquisition_mode('single')
         cam.set_exposure_time(10)
         cam.trigger()
+        time.sleep(cam.t_ms)
         cam.get_image()
