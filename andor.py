@@ -12,6 +12,8 @@ import camera
 from camera_errors import AndorError, AndorWarning
 from andor_status_codes import *
 
+# TODO: make gain a class member
+
 def _int_ptr(val=0):
     """Utility function to create integer pointers."""
     return ctypes.pointer(ctypes.c_int(val))
@@ -22,8 +24,7 @@ def _warn(msg):
     warnings.warn(msg, AndorWarning)
 
 def _chk(status):
-    """
-    Checks the error status of an Andor DLL function call. If
+    """Checks the error status of an Andor DLL function call. If
     something catastrophic happened, an AndorError exception is
     raised. In non-critical cases, warnings are given.
 
@@ -59,10 +60,10 @@ def _chk(status):
             ANDOR_CODES[status])
 
 class AndorCamera(camera.Camera):
-    """
-    Class for controlling Andor cameras. This is designed specifically
-    with the iXon series cameras, but the Andor API is rather generic
-    so should work with most or all of their cameras.
+    """Class for controlling Andor cameras. This is designed
+    specifically with the iXon series cameras, but the Andor API is
+    rather generic so should work with most or all of their
+    cameras.
 
     """
 
@@ -87,8 +88,7 @@ class AndorCamera(camera.Camera):
     # ------------------
 
     def __init__(self, temperature=-50, bins=None, crop=None, real=True):
-        """
-        Initialize the Andor camera.
+        """Initialize the Andor camera.
 
         Keyword arguments
         -----------------
@@ -101,7 +101,7 @@ class AndorCamera(camera.Camera):
             cropped portion of the sensor to use. If None, use the
             full sensor.
         real : bool
-            If False, the camera will be simulated.        
+            If False, the camera will be simulated.
 
         """
         # Check if we are simulating a camera or using a real one
@@ -136,8 +136,7 @@ class AndorCamera(camera.Camera):
         self.cooler_on()
 
     def close(self):
-        """
-        Turn off temperature regulation and safely shutdown the
+        """Turn off temperature regulation and safely shutdown the
         camera.
 
         The Andor SDK guide indicates that for classic and ICCD
@@ -171,9 +170,8 @@ class AndorCamera(camera.Camera):
             ctypes.c_int(self._acq_modes[mode])))
     
     def get_image(self):
-        """
-        Acquire the current image from the camera. This is mainly to
-        be used when running in some sort of single trigger
+        """Acquire the current image from the camera. This is mainly
+        to be used when running in some sort of single trigger
         acquisition mode.
 
         """
@@ -189,19 +187,21 @@ class AndorCamera(camera.Camera):
         # camera is acquiring data.
         status = _int_ptr()
         while True:
-            _chk(self.clib.GetStatus(status))
-            status = status.contents.value
-            if status == ANDOR_STATUS['DRV_IDLE']:
+            self.clib.GetStatus(status)
+            status_val = status.contents.value
+            if status_val == ANDOR_STATUS['DRV_IDLE']:
                 break
-            else:
+            elif status_val != ANDOR_STATUS['DRV_ACQUIRING']:
                 _chk(status)
             
         # Get the image
         img_size = self.shape[0]*self.shape[1]/self.bins**2
-        img_array = np.zeros(img_size, dtype=ctypes.c_int32)
-        img_pointer = (ctypes.c_int32*img_size)(*img_array)
+        img_array = np.zeros(img_size)
+        print(img_size, len(img_array))
+        #img_pointer = (ctypes.c_int32*img_size)(*img_array)
+        img_pointer = img_array.ctypes.data_as(ctypes.POINTER(ctypes.c_int32))
         _chk(self.clib.GetAcquiredData(img_pointer, ctypes.c_ulong(img_size)))
-        img_array = np.frombuffer(img_pointer, dtype=ctypes.c_int32)
+        img_array = np.frombuffer(img_pointer, dtype=ctypes.c_long)
         img_array.reshape(self.shape)
         return img_array
         
@@ -212,8 +212,7 @@ class AndorCamera(camera.Camera):
         """Query the current trigger mode."""
 
     def set_trigger_mode(self, mode):
-        """
-        Setup trigger mode.
+        """Setup trigger mode.
 
         Parameters
         ----------
@@ -264,9 +263,43 @@ class AndorCamera(camera.Camera):
 
     def get_gain(self):
         """Query the current gain settings."""
+        if self.real_camera:
+            gain = _int_ptr()
+            _chk(self.clib.GetEMCCDGain(gain))
+            return gain.contents.value
+        else:
+            return 1
 
     def set_gain(self, gain, **kwargs):
-        """Set the camera gain."""
+        """Set the camera gain and mode.
+
+        Parameters
+        ----------
+        gain : float
+            Gain for the camera. The acceptable values depend on the
+            mode.
+
+        Keyword arguments
+        -----------------
+        em_gain : bool
+            When True, enable EM gain. The gain parameter is then
+            setting the gain value for EM gain rather than
+            conventional gain.
+
+        Raises
+        ------
+        ValueError
+
+        """
+        em_gain = kwargs.get('em_gain', False)
+        if em_gain:
+            _chk(self.clib.SetEMGainMode(0)) # gain is 0-255
+            if gain < 0 or gain > 255:
+                raise ValueError("gain must be in the range [0, 255].")
+            _chk(self.clib.SetEMCCDGain(ctypes.c_int(gain)))
+        else:
+            # TODO
+            pass
 
     # Cooling
     # -------
@@ -312,8 +345,7 @@ class AndorCamera(camera.Camera):
         """Get the current CCD crop settings."""
 
     def set_crop(self, crop):
-        """
-        Define the portion of the CCD to actually collect data
+        """Define the portion of the CCD to actually collect data
         from. Using a reduced sensor area typically allows for faster
         readout.
 
@@ -326,9 +358,16 @@ class AndorCamera(camera.Camera):
         """Set binning to bins x bins."""
         
 if __name__ == "__main__":
+    print("Connecting to camera...")
     with AndorCamera(temperature=10) as cam:
+        print("Setting acquisition mode to single.")
         cam.set_acquisition_mode('single')
+        print("Setting exposure time to 10 ms")
         cam.set_exposure_time(10)
+        print("Opening shutter")
+        cam.open_shutter()
+        print("Triggering")
         cam.trigger()
-        time.sleep(cam.t_ms)
+        #time.sleep(cam.t_ms)
+        print("Acquiring image")
         cam.get_image()
