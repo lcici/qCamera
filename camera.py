@@ -97,6 +97,8 @@ class Camera:
         acquisition mode.
 
         """
+        if not self.real_camera:
+            return self.get_simulated_image()
 
     def get_simulated_image(self, x0, y0):
         """

@@ -8,22 +8,39 @@ import warnings
 import ctypes
 import numpy as np
 import camera
-from camera_errors import CameraError
+from camera_errors import SensicamError, SensicamWarning
 
 class Sensicam(camera.Camera):
     """Class for controlling PCO Sensicam cameras."""
+
+    # COC gain modes. See p. 24 of the API documentation.
+    _coc_gain_modes = {
+        "normal": 0,
+        "extended": 1}
+
+    # COC submodes. See p. 24 of the API documentation.
+    # This sets specifics for exposure modes. For example, 'single'
+    # means one trigger yields one exposure and 'double' means one
+    # trigger yields two exposures.
+    _coc_submodes = {
+        "single": 0, # single trigger mode (DPSINGLE)
+        "multi": 1,  # multi trigger mode (DPMULTI)
+        "double": 2  # double trigger mode (DPDOUBLE)
+    }
+
+    # Valid trigger modes. See p. 16 of the API documentation.
+    # TODO: all possible options?
+    _trigger_modes = {
+        "internal": 0x0,
+        "external": 0x001 # external with rising edge
+    }
+    
     # Setup and shutdown
     # ------------------
 
     def __init__(self, real=True):
         super(Sensicam, self).__init__(real)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, type_, value, traceback):
-        print("Shutting down camera.")
-        self.close()
+        self.clib = ctypes.windll.LoadLibrary("") # TODO
 
     def close(self):
         """
@@ -31,12 +48,14 @@ class Sensicam(camera.Camera):
         should be defined here.
         
         """
+        pass
         
     # Image acquisition
     # -----------------
 
     def set_acquisition_mode(self, mode):
         """Set the image acquisition mode."""
+        super(Sensicam, self).set_acquisition_mode(mode)
 
     def get_image(self):
         """
@@ -45,6 +64,7 @@ class Sensicam(camera.Camera):
         acquisition mode.
 
         """
+        super(Sensicam, self).get_image()
         
     # Triggering
     # ----------
@@ -54,6 +74,7 @@ class Sensicam(camera.Camera):
 
     def set_trigger_mode(self, mode):
         """Setup trigger mode."""
+        super(Sensicam, self).set_trigger_mode(mode)
 
     def trigger(self):
         """Send a software trigger to take an image immediately."""
@@ -91,30 +112,14 @@ class Sensicam(camera.Camera):
 
     def set_gain(self, gain, **kwargs):
         """Set the camera gain."""
-
-    # Cooling
-    # -------
-
-    def cooler_on(self):
-        """Turn on the TEC."""
-
-    def cooler_off(self):
-        """Turn off the TEC."""
-
-    def get_cooler_temperature(self):
-        """Check the TEC temperature."""
-
-    def set_cooler_temperature(self, temp):
-        """Set the cooler temperature to temp."""
+        super(Sensicam, self).set_gain(gain, kwargs)
 
     # ROI, cropping, and binning
     # --------------------------
 
     def set_roi(self, roi):
         """Define the region of interest."""
-        if len(roi) != 4:
-            raise CameraError("roi must be a length 4 list.")
-        self.roi = roi
+        super(Sensicam, self).set_roi(roi)
         
     def get_crop(self):
         """Get the current CCD crop settings."""
@@ -126,12 +131,11 @@ class Sensicam(camera.Camera):
         readout.
 
         """
-        if len(crop) != 4:
-            raise CameraError("crop must be a length 4 array.")
-        self.crop = crop
+        super(Sensicam, self).set_crop(self, crop)
         
     def get_bins(self):
         """Query the current binning."""
 
     def set_bins(self, bins):
         """Set binning to bins x bins."""
+        super(Sensicam, self).set_bins(bins)

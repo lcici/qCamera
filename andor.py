@@ -176,13 +176,11 @@ class AndorCamera(camera.Camera):
         acquisition mode.
 
         """
+        super(Sensicam, self).get_image()
+        
         # Abort if not in single image acquisition mode.
         if self.acq_mode != "single":
             _warn("Not in single acquisition mode!")
-            
-        # Return simulated image if not a real camera.
-        if not self.real_camera:
-            return self.get_simulated_image()
             
         # Wait for acquisition to finish
         self.clib.WaitForAcquisition()

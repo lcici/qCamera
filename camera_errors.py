@@ -17,6 +17,10 @@ class AndorError(CameraError):
     """Andor-specific errors."""
     pass
 
+class SensicamError(CameraError):
+    """Sensicam errors."""
+    pass
+
 class UnitsError(Exception):
     """Errors caused by using inappropriate units."""
     pass
@@ -32,3 +36,6 @@ class CameraWarning(Warning):
 class AndorWarning(CameraWarning):
     """Andor-specific warnings."""
     pass
+
+class SensicamWarning(CameraWarning):
+    """Sensicam warnings."""
