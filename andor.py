@@ -334,6 +334,7 @@ class AndorCamera(camera.Camera):
         
     def get_crop(self):
         """Get the current CCD crop settings."""
+        # TODO
 
     def set_crop(self, crop):
         """Define the portion of the CCD to actually collect data
@@ -347,6 +348,7 @@ class AndorCamera(camera.Camera):
         
     def get_bins(self):
         """Query the current binning."""
+        # TODO
 
     def set_bins(self, bins):
         """Set binning to bins x bins."""
