@@ -1,5 +1,4 @@
-"""
-Andor camera interface
+"""Andor camera interface
 
 """
 
@@ -120,10 +119,12 @@ class AndorCamera(camera.Camera):
         self.shape = [xpx.contents.value, ypx.contents.value]
 
         # Configure binning and cropping
-        if bins is not None:
-            self.set_bins(bins)
-        if crop is not None:
-            self.set_crop(crop)
+        if bins is None:
+            bins = self.bins
+        if crop is None:
+            crop = [1, self.shape[0], 1, self.shape[1]]
+        self.set_bins(bins)
+        self.set_crop(crop)
 
         # TODO: Get hardware and software information?
 
@@ -183,26 +184,16 @@ class AndorCamera(camera.Camera):
         if not self.real_camera:
             return self.get_simulated_image()
             
-        # Check the camera status so we don't try to acquire an image while the
-        # camera is acquiring data.
-        status = _int_ptr()
-        while True:
-            self.clib.GetStatus(status)
-            status_val = status.contents.value
-            if status_val == ANDOR_STATUS['DRV_IDLE']:
-                break
-            elif status_val != ANDOR_STATUS['DRV_ACQUIRING']:
-                _chk(status)
+        # Wait for acquisition to finish
+        self.clib.WaitForAcquisition()
             
         # Get the image
         img_size = self.shape[0]*self.shape[1]/self.bins**2
-        img_array = np.zeros(img_size)
-        print(img_size, len(img_array))
-        #img_pointer = (ctypes.c_int32*img_size)(*img_array)
-        img_pointer = img_array.ctypes.data_as(ctypes.POINTER(ctypes.c_int32))
-        _chk(self.clib.GetAcquiredData(img_pointer, ctypes.c_ulong(img_size)))
-        img_array = np.frombuffer(img_pointer, dtype=ctypes.c_long)
-        img_array.reshape(self.shape)
+        c_array = ctypes.c_long*img_size
+        c_img = c_array()
+        _chk(self.clib.GetMostRecentImage(ctypes.pointer(c_img), ctypes.c_ulong(img_size)))
+        img_array = np.frombuffer(c_img, dtype=ctypes.c_long)
+        img_array.shape = np.array(self.shape)/self.bins
         return img_array
         
     # Triggering
@@ -350,24 +341,38 @@ class AndorCamera(camera.Camera):
         readout.
 
         """
+        super(AndorCamera, self).set_crop(crop)
+        _chk(self.clib.SetImage(self.bins, self.bins,
+                                self.crop[0], self.crop[1], self.crop[2], self.crop[3]))
         
     def get_bins(self):
         """Query the current binning."""
 
     def set_bins(self, bins):
         """Set binning to bins x bins."""
+        self.bins = bins
+        print(self.bins)
+        print(self.crop)
+        _chk(self.clib.SetImage(self.bins, self.bins,
+                                self.crop[0], self.crop[1], self.crop[2], self.crop[3]))
         
 if __name__ == "__main__":
+    import matplotlib.pyplot as plt
     print("Connecting to camera...")
-    with AndorCamera(temperature=10) as cam:
+    with AndorCamera(temperature=10, bins=8) as cam:
         print("Setting acquisition mode to single.")
         cam.set_acquisition_mode('single')
         print("Setting exposure time to 10 ms")
         cam.set_exposure_time(10)
         print("Opening shutter")
         cam.open_shutter()
-        print("Triggering")
-        cam.trigger()
-        #time.sleep(cam.t_ms)
-        print("Acquiring image")
-        cam.get_image()
+        for i in range(2):
+            print("Triggering")
+            cam.trigger()
+            print("Acquiring image")
+            img = cam.get_image()
+            plt.figure()
+            plt.gray()
+            plt.imshow(img, interpolation='none')
+            time.sleep(.2)
+        plt.show()

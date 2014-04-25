@@ -29,6 +29,11 @@ class Camera:
         Number of pixels [x, y]
     bins : int
         Bin size to use.
+    crop : tuple
+        Crop specifications. Should be of the form::
+            [horiz start, horiz end, vert start, vert end]
+    
+        with indeces starting from 1.
     shutter_open : bool
         For cameras that are equipped with an integrated shutter: is the
         shutter open?
@@ -50,6 +55,7 @@ class Camera:
     t_ms = 100.
     shape = [512, 512]
     bins = 1
+    crop = [1, shape[0], 1, shape[1]]
     shutter_open = False
     acq_mode = "single"
     trigger_mode = "software"
@@ -210,6 +216,9 @@ class Camera:
         readout.
 
         """
+        if len(crop) != 4:
+            raise CameraError("crop must be a length 4 array.")
+        self.crop = crop
         
     @abstractmethod
     def get_bins(self):
