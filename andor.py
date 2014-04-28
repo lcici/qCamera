@@ -170,14 +170,11 @@ class AndorCamera(camera.Camera):
         _chk(self.clib.SetAcquisitionMode(
             ctypes.c_int(self._acq_modes[mode])))
     
-    def get_image(self):
-        """Acquire the current image from the camera. This is mainly
-        to be used when running in some sort of single trigger
-        acquisition mode.
+    def acquire_image_data(self):
+        """Acquire the most recent image data from the camera. This
+        will work best in single image acquisition mode.
 
         """
-        super(Sensicam, self).get_image()
-        
         # Abort if not in single image acquisition mode.
         if self.acq_mode != "single":
             _warn("Not in single acquisition mode!")
@@ -359,7 +356,7 @@ class AndorCamera(camera.Camera):
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     print("Connecting to camera...")
-    with AndorCamera(temperature=10, bins=8) as cam:
+    with AndorCamera(temperature=10) as cam:
         print("Setting acquisition mode to single.")
         cam.set_acquisition_mode('single')
         print("Setting exposure time to 10 ms")

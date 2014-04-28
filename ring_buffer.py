@@ -39,6 +39,9 @@ class RingBuffer(object):
         return self
 
     def __exit__(self, type_, value, tb):
+        self.close()
+
+    def close(self):
         self.hdf_file.close()
 
     def write(self, data):

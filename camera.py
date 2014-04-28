@@ -76,14 +76,14 @@ class Camera:
 
     def __exit__(self, type_, value, traceback):
         print("Shutting down camera.")
+        self.rbuffer.close()
         self.close()
 
     @abstractmethod
     def close(self):
-        """
-        Close the camera safely. Anything necessary for doing so
+        """Close the camera safely. Anything necessary for doing so
         should be defined here.
-        
+
         """
         
     # Image acquisition
@@ -93,20 +93,30 @@ class Camera:
     def set_acquisition_mode(self, mode):
         """Set the image acquisition mode."""
 
-    @abstractmethod
     def get_image(self):
-        """
-        Acquire the current image from the camera. This is mainly to
-        be used when running in some sort of single trigger
-        acquisition mode.
+        """Acquire the current image from the camera and write it to
+        the ring buffer. This function should not be overwritten by
+        child classes. Instead, everything necessary to acquire an
+        image from the camera should be added to the
+        acquire_image_data function.
 
         """
         if not self.real_camera:
-            return self.get_simulated_image()
+            img = self.get_simulated_image()
+        else:
+            img = self.acquire_image_data()
+        self.rbuffer.write(img)
+        return img
+
+    def acquire_image_data(self):
+        """Code for getting image data from the camera should be
+        placed here.
+
+        """
+        raise NotImplementedError("You must define this method.")
 
     def get_simulated_image(self, x0, y0):
-        """
-        Generate and return a simulated image centered at the point
+        """Generate and return a simulated image centered at the point
         (x0, y0). This is primarily useful when testing out a full
         control program so that there is a simulated camera with an
         image to actually use.
@@ -216,8 +226,7 @@ class Camera:
 
     @abstractmethod
     def set_crop(self, crop):
-        """
-        Define the portion of the CCD to actually collect data
+        """Define the portion of the CCD to actually collect data
         from. Using a reduced sensor area typically allows for faster
         readout.
 
