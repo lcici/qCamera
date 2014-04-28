@@ -1,5 +1,4 @@
-"""
-qcamera base camera class
+"""qcamera base camera class
 
 This file contains the class definition for the Camera class on which
 all subsequent cameras should be based on.
@@ -11,6 +10,7 @@ from __future__ import print_function
 from abc import ABCMeta, abstractmethod
 import numpy as np
 import numpy.random as npr
+from ring_buffer import RingBuffer
 from camera_errors import CameraError, UnitsError
 
 _t_units = {'ms': 1, 's': 1e3} # Allowed units for exposure time
@@ -41,6 +41,8 @@ class Camera:
         Camera acquisition mode.
     trigger_mode : str
         Camera triggering mode.
+    rbuffer : RingBuffer
+        The RingBuffer object for autosaving of images.
     real_camera : bool
         When set to False, the camera hardware can be simulated for working in
         offline mode.
@@ -59,27 +61,29 @@ class Camera:
     shutter_open = False
     acq_mode = "single"
     trigger_mode = "software"
+    rbuffer = None
     real_camera = True
 
     # Setup and shutdown
     # ------------------
 
-    def __init__(self, real=True):
+    def __init__(self, real=True, buffer_dir='.'):
         self.real_camera = real
+        self.rbuffer = RingBuffer(directory=buffer_dir)
 
     def __enter__(self):
         return self
 
     def __exit__(self, type_, value, traceback):
         print("Shutting down camera.")
+        self.rbuffer.close()
         self.close()
 
     @abstractmethod
     def close(self):
-        """
-        Close the camera safely. Anything necessary for doing so
+        """Close the camera safely. Anything necessary for doing so
         should be defined here.
-        
+
         """
         
     # Image acquisition
@@ -89,20 +93,30 @@ class Camera:
     def set_acquisition_mode(self, mode):
         """Set the image acquisition mode."""
 
-    @abstractmethod
     def get_image(self):
-        """
-        Acquire the current image from the camera. This is mainly to
-        be used when running in some sort of single trigger
-        acquisition mode.
+        """Acquire the current image from the camera and write it to
+        the ring buffer. This function should not be overwritten by
+        child classes. Instead, everything necessary to acquire an
+        image from the camera should be added to the
+        acquire_image_data function.
 
         """
         if not self.real_camera:
-            return self.get_simulated_image()
+            img = self.get_simulated_image()
+        else:
+            img = self.acquire_image_data()
+        self.rbuffer.write(img)
+        return img
+
+    def acquire_image_data(self):
+        """Code for getting image data from the camera should be
+        placed here.
+
+        """
+        raise NotImplementedError("You must define this method.")
 
     def get_simulated_image(self, x0, y0):
-        """
-        Generate and return a simulated image centered at the point
+        """Generate and return a simulated image centered at the point
         (x0, y0). This is primarily useful when testing out a full
         control program so that there is a simulated camera with an
         image to actually use.
@@ -212,8 +226,7 @@ class Camera:
 
     @abstractmethod
     def set_crop(self, crop):
-        """
-        Define the portion of the CCD to actually collect data
+        """Define the portion of the CCD to actually collect data
         from. Using a reduced sensor area typically allows for faster
         readout.
 

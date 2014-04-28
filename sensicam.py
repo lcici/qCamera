@@ -57,14 +57,13 @@ class Sensicam(camera.Camera):
         """Set the image acquisition mode."""
         super(Sensicam, self).set_acquisition_mode(mode)
 
-    def get_image(self):
+    def acquire_image_data(self):
         """
         Acquire the current image from the camera. This is mainly to
         be used when running in some sort of single trigger
         acquisition mode.
 
         """
-        super(Sensicam, self).get_image()
         
     # Triggering
     # ----------
