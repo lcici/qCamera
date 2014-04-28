@@ -1,5 +1,4 @@
-"""
-qcamera base camera class
+"""qcamera base camera class
 
 This file contains the class definition for the Camera class on which
 all subsequent cameras should be based on.
@@ -11,6 +10,7 @@ from __future__ import print_function
 from abc import ABCMeta, abstractmethod
 import numpy as np
 import numpy.random as npr
+from ring_buffer import RingBuffer
 from camera_errors import CameraError, UnitsError
 
 _t_units = {'ms': 1, 's': 1e3} # Allowed units for exposure time
@@ -41,6 +41,8 @@ class Camera:
         Camera acquisition mode.
     trigger_mode : str
         Camera triggering mode.
+    rbuffer : RingBuffer
+        The RingBuffer object for autosaving of images.
     real_camera : bool
         When set to False, the camera hardware can be simulated for working in
         offline mode.
@@ -59,13 +61,15 @@ class Camera:
     shutter_open = False
     acq_mode = "single"
     trigger_mode = "software"
+    rbuffer = None
     real_camera = True
 
     # Setup and shutdown
     # ------------------
 
-    def __init__(self, real=True):
+    def __init__(self, real=True, buffer_dir='.'):
         self.real_camera = real
+        self.rbuffer = RingBuffer(directory=buffer_dir)
 
     def __enter__(self):
         return self
