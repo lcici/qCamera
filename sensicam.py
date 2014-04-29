@@ -1,4 +1,7 @@
-"""Sensicam interface.
+"""Sensicam interface
+
+Much of this was adapted from the older sensicam module written
+primarily by Magnus and Gregers.
 
 """
 
@@ -9,6 +12,26 @@ import ctypes
 import numpy as np
 import camera
 from camera_errors import SensicamError, SensicamWarning
+
+def _chk(code):
+    """Check the return code of a command.
+
+    TODO: Do saner testing (at least translate the error codes!)
+
+    """
+    if code != 0:
+        raise SensicamError("Camera error code " + str(code) + ".")
+
+class CAMTYPE(ctypes.Structure):
+    _pack_ = 0
+    _fields_ = [("gain", ctypes.c_bool*2),
+                ("CCDtype", ctypes.c_bool*2),
+                ("Cameratype", ctypes.c_bool*2),
+                ("sensicam", ctypes.c_bool*3),
+                ("CCDcolor", ctypes.c_bool),
+                ("Shutter", ctypes.c_bool*2),
+                ("temp_reg", ctypes.c_bool*1),
+                ("reserved", ctypes.c_bool*5)]
 
 class Sensicam(camera.Camera):
     """Class for controlling PCO Sensicam cameras."""
@@ -38,17 +61,66 @@ class Sensicam(camera.Camera):
     # Setup and shutdown
     # ------------------
 
-    def __init__(self, real=True):
-        super(Sensicam, self).__init__(real)
-        self.clib = ctypes.windll.LoadLibrary("") # TODO
+    def __init__(self, bins=None, crop=None, real=True):
+        """Initialize a PCO Sensicam.
 
-    def close(self):
-        """
-        Close the camera safely. Anything necessary for doing so
-        should be defined here.
+        Keyword arguments
+        -----------------
+        bins : int or None
+            Specifies the number of binned pixels to use.
+        crop : tuple or None
+            A tuple of the form [x, y, width, height] specifying the
+            cropped portion of the sensor to use. If None, use the
+            full sensor.
+        real : bool
+            If False, the camera will be simulated.
         
         """
-        pass
+        
+        # Check if using a real or simulated camera.
+        super(Sensicam, self).__init__(real=real)
+        if not self.real_camera:
+            return
+        self.clib = ctypes.windll.LoadLibrary("sen_cam.dll")
+
+        # Initalize the camera.
+        self.filehandle = ctypes.c_int()
+        _chk(self.clib.INITBOARD(0, ctypes.pointer(self.filehandle)))
+        _chk(self.clib.SETUP_CAMERA(self.filehandle))
+
+        # Acquire hardware information. See p. 34 of the API
+        # documentation for details.
+        camtype = CAMTYPE()
+        ele_temp = ctypes.c_int()
+        ccd_temp = ctypes.c_int()
+        _chk(self.clib.GET_STATUS(self.filehandle, ctypes.pointer(camtype),
+                                  ctypes.pointer(ele_temp), ctypes.pointer(ccd_temp)))
+        if camtype.CCDtype[0] == 0 and camtype.CCDtype[1] == 0:
+            self.shape = (640, 480)
+        elif camtype.CCDtype[0] == 0 and camtype.CCDtype[1] == 1:
+            self.shape = (640, 480)
+        elif camtype.CCDtype[0] == 1 and camtype.CCDtype[1] == 0:
+            self.shape = (1280, 1024)
+        else:
+            raise SensicamError("Unknown CCD type.")
+
+        # Buffer mapping
+        # I don't know what this means!
+        # TODO: figure out the 00000 parameters
+        self.address = ctypes.c_void_p
+        _chk(self.clib.MAP_BUFFER(
+            self.filehandle, 00000, 00000, 0, ctypes.pointer(self.address)))
+
+    def close(self):
+        """Close the camera safely. Anything necessary for doing so
+        should be defined here.
+
+        """
+        if not self.real_camera:
+            return
+        _chk(self.clib.REMOVE_ALL_BUFFERS_FROM_LIST(self.filehandle))
+        # TODO: _chk(self.clib.FREE_BUFFER(self.filehandle, 
+        _chk(self.clib.CLOSEBOARD(ctypes.pointer(self.filehandle)))
         
     # Image acquisition
     # -----------------
@@ -58,12 +130,19 @@ class Sensicam(camera.Camera):
         super(Sensicam, self).set_acquisition_mode(mode)
 
     def acquire_image_data(self):
-        """
-        Acquire the current image from the camera. This is mainly to
-        be used when running in some sort of single trigger
+        """Acquire the current image from the camera. This is mainly
+        to be used when running in some sort of single trigger
         acquisition mode.
 
+        TODO: make this DTRT (self.bytes_to_read not yet defined)
+
         """
+        _chk(self.clib.READ_IMAGE_12BIT(
+            self.filehandle, 0, self.shape[0], self.shape[1], self.address))
+        img = np.fromstring(ctypes.string_at(self.address, self.bytes_to_read),
+                            dtype=np.uint16)
+        img.shape = self.shape
+        return img
         
     # Triggering
     # ----------
@@ -138,3 +217,13 @@ class Sensicam(camera.Camera):
     def set_bins(self, bins):
         """Set binning to bins x bins."""
         super(Sensicam, self).set_bins(bins)
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    import time
+    with Sensicam(real=False) as cam:
+        for i in range(10):
+            img = cam.get_image()
+            plt.figure()
+            plt.imshow(img)
+            plt.show()

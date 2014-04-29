@@ -1,6 +1,4 @@
-"""Andor camera interface
-
-"""
+"""Andor camera interface"""
 
 from __future__ import print_function
 import time

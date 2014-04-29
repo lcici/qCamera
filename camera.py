@@ -16,22 +16,23 @@ from camera_errors import CameraError, UnitsError
 _t_units = {'ms': 1, 's': 1e3} # Allowed units for exposure time
 
 class Camera:
-    """
-    Abstract base class for all cameras.
+    """Abstract base class for all cameras.
 
     Attributes
     ----------
     roi : tuple
-        The defined region of interest in the form [x, y, width, height].
+        The defined region of interest in the form (x, y, width, height).
     t_ms : float
         Exposure time in ms.
+    gain : int or float
+        Gain setting. The type is dependent on the camera used.
     shape : tuple
-        Number of pixels [x, y]
+        Number of pixels (x, y)
     bins : int
         Bin size to use.
     crop : tuple
         Crop specifications. Should be of the form::
-            [horiz start, horiz end, vert start, vert end]
+            (horiz start, horiz end, vert start, vert end)
     
         with indeces starting from 1.
     shutter_open : bool
@@ -46,18 +47,19 @@ class Camera:
     real_camera : bool
         When set to False, the camera hardware can be simulated for working in
         offline mode.
-    
+
     """
     __metaclass__ = ABCMeta
 
     # Members
     # -------
     
-    roi = [1, 1, 10, 10]
+    roi = (1, 1, 10, 10)
     t_ms = 100.
-    shape = [512, 512]
+    gain = 0
+    shape = (512, 512)
     bins = 1
-    crop = [1, shape[0], 1, shape[1]]
+    crop = (1, shape[0], 1, shape[1])
     shutter_open = False
     acq_mode = "single"
     trigger_mode = "software"
@@ -70,6 +72,9 @@ class Camera:
     def __init__(self, real=True, buffer_dir='.'):
         self.real_camera = real
         self.rbuffer = RingBuffer(directory=buffer_dir)
+        x0 = npr.randint(self.shape[0]/4, self.shape[0]/2)
+        y0 = npr.randint(self.shape[1]/4, self.shape[1]/2)
+        self.sim_img_center = (x0, y0)
 
     def __enter__(self):
         return self
@@ -102,7 +107,8 @@ class Camera:
 
         """
         if not self.real_camera:
-            img = self.get_simulated_image()
+            x0, y0 = self.sim_img_center
+            img = self.get_simulated_image(x0, y0)
         else:
             img = self.acquire_image_data()
         self.rbuffer.write(img)
@@ -127,8 +133,9 @@ class Camera:
         x = np.arange(0, self.shape[0])
         y = np.arange(0, self.shape[1])
         X, Y = np.meshgrid(x, y)
-        img = g(x, y, x0, y0, 20)
+        img = g(X, Y, x0, y0, 20)
         img /= np.max(img)
+        print(img.shape)
         img += 0.25*npr.random(self.shape)
         return img
         
@@ -193,22 +200,26 @@ class Camera:
 
     # Cooling
     # -------
+    #
+    # Not all cameras have this capability, so these are not abstract
+    # methods but instead raise a NotImplementedError if you try to
+    # call them without defining them explicitly.
 
-    @abstractmethod
     def cooler_on(self):
         """Turn on the TEC."""
+        raise NotImplementedError("No cooler?")
 
-    @abstractmethod
     def cooler_off(self):
         """Turn off the TEC."""
+        raise NotImplementedError("No cooler?")
 
-    @abstractmethod
     def get_cooler_temperature(self):
         """Check the TEC temperature."""
+        raise NotImplementedError("No cooler?")
 
-    @abstractmethod
     def set_cooler_temperature(self, temp):
         """Set the cooler temperature to temp."""
+        raise NotImplementedError("No cooler?")
 
     # ROI, cropping, and binning
     # --------------------------
