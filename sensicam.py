@@ -111,6 +111,44 @@ class Sensicam(camera.Camera):
         _chk(self.clib.MAP_BUFFER(
             self.filehandle, 00000, 00000, 0, ctypes.pointer(self.address)))
 
+        # Write camera settings to the hardware
+        # TODO
+        self._update_coc()
+
+    def _update_coc(self, **kwargs):
+        """Update the 'camera operation code', i.e., set everything
+        from acquisition modes to triggering to binning. This function
+        is intended to be called internally, hence the leading
+        underscore. Only keyword arguments that are passed are
+        updated.
+
+        TODO: Proper documentation
+        TODO: Proper testing
+
+        Keyword arguments
+        -----------------
+        mode : ?
+        trigger : int
+        roi : tuple
+            Length 4 tuple specifying the new region of interest.
+        bins : int
+            Binning to use.
+        delay : int
+        t_exp : int
+            Exposure time in ms.
+
+        """
+        mode = None # TODO
+        trigger = kwargs.get('trigger', self.trigger_mode) # TODO
+        roi = kwargs.get('roi', self.roi)
+        bins = kwargs.get('bins', self.bins)
+        delay = kwargs.get('delay', 0)
+        t_exp = kwargs.get('t_exp', self.t_ms)
+        table = ctypes.c_char_p("%i,%i" % (delay, t_exp))
+        _chk(self.clib.SET_COC(
+            self.filehandle, mode, trigger, roi[0], roi[1], roi[2], roi[3],
+            bins, bins, table))
+
     def close(self):
         """Close the camera safely. Anything necessary for doing so
         should be defined here.
@@ -128,19 +166,21 @@ class Sensicam(camera.Camera):
     def set_acquisition_mode(self, mode):
         """Set the image acquisition mode."""
         super(Sensicam, self).set_acquisition_mode(mode)
+        
+        # TODO
+        self._update_coc()
 
     def acquire_image_data(self):
         """Acquire the current image from the camera. This is mainly
         to be used when running in some sort of single trigger
         acquisition mode.
 
-        TODO: make this DTRT (self.bytes_to_read not yet defined)
-
         """
+        bytes_to_read = self.shape[0]*self.shape[1]*2 # I don't know why
         _chk(self.clib.READ_IMAGE_12BIT(
             self.filehandle, 0, self.shape[0], self.shape[1], self.address))
-        img = np.fromstring(ctypes.string_at(self.address, self.bytes_to_read),
-                            dtype=np.uint16)
+        img = np.fromstring(
+            ctypes.string_at(self.address, bytes_to_read), dtype=np.uint16)
         img.shape = self.shape
         return img
         
@@ -154,6 +194,9 @@ class Sensicam(camera.Camera):
         """Setup trigger mode."""
         super(Sensicam, self).set_trigger_mode(mode)
 
+        # TODO
+        self._update_coc() 
+
     def trigger(self):
         """Send a software trigger to take an image immediately."""
         
@@ -162,18 +205,11 @@ class Sensicam(camera.Camera):
 
     def open_shutter(self):
         """Open the shutter."""
-        self.shutter_open = True
+        super(Sensicam, self).open_shutter()
         
     def close_shutter(self):
         """Close the shutter."""
-        self.shutter_open = False
-        
-    def toggle_shutter(self):
-        """Toggle the shutter state from open to closed and vice versa."""
-        if self.shutter_open:
-            self.close_shutter()
-        else:
-            self.open_shutter()
+        super(Sensicam, self).close_shutter()
 
     # Gain and exposure time
     # ----------------------
@@ -185,6 +221,9 @@ class Sensicam(camera.Camera):
         """Set the exposure time."""
         super(Sensicam, self).set_exposure_time(t, units)
 
+        # TODO
+        self._update_coc()
+
     def get_gain(self):
         """Query the current gain settings."""
 
@@ -192,12 +231,18 @@ class Sensicam(camera.Camera):
         """Set the camera gain."""
         super(Sensicam, self).set_gain(gain, kwargs)
 
+        # TODO
+        self._update_coc()
+
     # ROI, cropping, and binning
     # --------------------------
 
     def set_roi(self, roi):
         """Define the region of interest."""
         super(Sensicam, self).set_roi(roi)
+
+        # TODO
+        self._update_coc()
         
     def get_crop(self):
         """Get the current CCD crop settings."""
@@ -210,6 +255,9 @@ class Sensicam(camera.Camera):
 
         """
         super(Sensicam, self).set_crop(self, crop)
+
+        # TODO
+        self._update_coc()
         
     def get_bins(self):
         """Query the current binning."""
@@ -218,9 +266,11 @@ class Sensicam(camera.Camera):
         """Set binning to bins x bins."""
         super(Sensicam, self).set_bins(bins)
 
+        # TODO
+        self._update_coc() 
+
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-    import time
     with Sensicam(real=False) as cam:
         for i in range(10):
             img = cam.get_image()
