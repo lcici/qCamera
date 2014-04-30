@@ -107,9 +107,16 @@ class Sensicam(camera.Camera):
         # Buffer mapping
         # I don't know what this means!
         # TODO: figure out the 00000 parameters
+        # TODO: self.size
         self.address = ctypes.c_void_p
+        self.buffer_number = ctypes.c_int(-1)
+        self.size = None # c_int(self.width.value * self.height.value * ((self.bit_pix.value + 7) / 8))
+        
         _chk(self.clib.MAP_BUFFER(
             self.filehandle, 00000, 00000, 0, ctypes.pointer(self.address)))
+        _chk(self.clib.ALLOCATE_BUFFER(
+            self.filehandle, ctypes.pointer(self.buffer_number),
+            ctypes.pointer(self.size)))
 
         # Write camera settings to the hardware
         # TODO
@@ -157,7 +164,7 @@ class Sensicam(camera.Camera):
         if not self.real_camera:
             return
         _chk(self.clib.REMOVE_ALL_BUFFERS_FROM_LIST(self.filehandle))
-        # TODO: _chk(self.clib.FREE_BUFFER(self.filehandle, 
+        # TODO: _chk(self.clib.FREE_BUFFER(self.filehandle, self.buffer_number) 
         _chk(self.clib.CLOSEBOARD(ctypes.pointer(self.filehandle)))
         
     # Image acquisition
@@ -166,6 +173,8 @@ class Sensicam(camera.Camera):
     def set_acquisition_mode(self, mode):
         """Set the image acquisition mode."""
         super(Sensicam, self).set_acquisition_mode(mode)
+        if not self.real_camera:
+            return
         
         # TODO
         self._update_coc()
@@ -193,6 +202,8 @@ class Sensicam(camera.Camera):
     def set_trigger_mode(self, mode):
         """Setup trigger mode."""
         super(Sensicam, self).set_trigger_mode(mode)
+        if not self.real_camera:
+            return
 
         # TODO
         self._update_coc() 
@@ -220,6 +231,8 @@ class Sensicam(camera.Camera):
     def set_exposure_time(self, t, units='ms'):
         """Set the exposure time."""
         super(Sensicam, self).set_exposure_time(t, units)
+        if not self.real_camera:
+            return
 
         # TODO
         self._update_coc()
@@ -230,6 +243,8 @@ class Sensicam(camera.Camera):
     def set_gain(self, gain, **kwargs):
         """Set the camera gain."""
         super(Sensicam, self).set_gain(gain, kwargs)
+        if not self.real_camera:
+            return
 
         # TODO
         self._update_coc()
