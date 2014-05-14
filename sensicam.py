@@ -6,8 +6,6 @@ primarily by Magnus and Gregers.
 """
 
 from __future__ import print_function
-from __future__ import division
-import warnings
 import logging
 import ctypes
 import numpy as np
@@ -93,22 +91,6 @@ class Sensicam(camera.Camera):
         self.filehandle = ctypes.c_int()
         self._chk(self.clib.INITBOARD(0, ctypes.pointer(self.filehandle)))
         self._chk(self.clib.SETUP_CAMERA(self.filehandle))
-
-        # Acquire hardware information. See p. 34 of the API
-        # documentation for details.
-        camtype = CAMTYPE()
-        ele_temp = ctypes.c_int()
-        ccd_temp = ctypes.c_int()
-        self._chk(self.clib.GET_STATUS(self.filehandle, ctypes.pointer(camtype),
-                                  ctypes.pointer(ele_temp), ctypes.pointer(ccd_temp)))
-        if camtype.CCDtype[0] == 0 and camtype.CCDtype[1] == 0:
-            self.shape = (640, 480)
-        elif camtype.CCDtype[0] == 0 and camtype.CCDtype[1] == 1:
-            self.shape = (640, 480)
-        elif camtype.CCDtype[0] == 1 and camtype.CCDtype[1] == 0:
-            self.shape = (1280, 1024)
-        else:
-            raise SensicamError("Unknown CCD type.")
         self.mode = (0, 0) # Long exposure, normal analog gain
 
         # Get the "actual" sizes and bits per pixel.
@@ -123,6 +105,10 @@ class Sensicam(camera.Camera):
             ctypes.pointer(x), ctypes.pointer(y),
             ctypes.pointer(self.x_actual), ctypes.pointer(self.y_actual),
             ctypes.pointer(self.bit_pix))
+        self.x_actual = self.x_actual.value
+        self.y_actual = self.y_actual.value
+        self.bit_pix = self.bit_pix.value
+        self.shape = (x.value, y.value)
 
         # Write camera settings to the hardware
         self._update_coc()
@@ -130,7 +116,7 @@ class Sensicam(camera.Camera):
         # Buffer allocation.
         self.address = ctypes.c_void_p()
         self.buffer_number = ctypes.c_int(-1)
-        self.size = self.x_actual*self.y_actual*((self.bit_pix + 7)/8)
+        self.size = ctypes.c_int(int(self.x_actual*self.y_actual*((self.bit_pix + 7)/8)))
         self._chk(self.clib.ALLOCATE_BUFFER(
             self.filehandle, ctypes.pointer(self.buffer_number),
             ctypes.pointer(self.size)))
@@ -171,7 +157,8 @@ class Sensicam(camera.Camera):
         mode = kwargs.get('mode', (0, 0))
         if len(mode) != 2:
             raise SensicamError("mode must be a length 2 tuple.")
-        c_mode = MODE(mode[0], mode[1])
+        #c_mode = MODE(mode[0], mode[1])
+        c_mode = 0
 
         # Update trigger.
         trigger = kwargs.get('trigger', self._trigger_modes[self.trigger_mode])
@@ -180,11 +167,23 @@ class Sensicam(camera.Camera):
 
         # Update crop
         # NOTE: In the SDK, this is referred to as the ROI, but in our
-        # usage, the ROI is set in software.
+        # usage, the ROI is set in software. Also, for some reason it
+        # wants units of 32 pixels.
+        # TODO: clean this up with list comprehension
         crop = kwargs.get('crop', self.crop)
         if len(crop) != 4:
             raise SensicamError("crop must be a length 4 tuple.")
-
+        sensi_crop = [0, 0, 0, 0]
+        for i in range(4):
+            rem = crop[i] % 32
+            if rem != 0:
+                sensi_crop[i] = crop[i] + 32*rem
+            else:
+                sensi_crop[i] = crop[i]
+            sensi_crop[i] = sensi_crop[i]/32
+        self.crop = crop
+        crop = sensi_crop
+        
         # Update bins.
         bins = kwargs.get('bins', self.bins)
         if bins not in [2**x for x in range(5)]:
@@ -199,8 +198,7 @@ class Sensicam(camera.Camera):
             raise SensicamError("t_exp must be between 1 and 1E6 ms.")
         table = ctypes.c_char_p("%i,%i" % (delay, t_exp))
 
-        # Log settings being updated.
-        print(mode, trigger, crop, bins, delay, t_exp)
+        # Log and update settings.
         logging.debug(
             "Updating Sensicam COC:\n" + \
             "\tmode: %i, %i\n" % (mode[0], mode[1]) + \
@@ -208,7 +206,6 @@ class Sensicam(camera.Camera):
             "\tcrop: %i, %i, %i, %i\n" % (crop[0], crop[1], crop[2], crop[3]) + \
             "\tbins: %i\n" % bins + \
             "\ttable: %i, %i" % (delay, t_exp))
-
         if not self.real_camera:
              return
         self._chk(self.clib.STOP_COC(self.filehandle, 0))
@@ -256,7 +253,10 @@ class Sensicam(camera.Camera):
             self.filehandle, 0, self.shape[0], self.shape[1], self.address))
         img = np.fromstring(
             ctypes.string_at(self.address, bytes_to_read), dtype=np.uint16)
-        img.shape = self.shape
+        print(img.shape)
+        shape = (self.crop[1], self.crop[3])
+        print(shape)
+        img.shape = shape
         return img
         
     # Triggering
@@ -348,6 +348,10 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     logging.basicConfig(level=logging.DEBUG)
     with Sensicam(real=True) as cam:
+        #cam.set_crop([1, 1376, 1, 1040]) # TODO: FIXME
         img = cam.acquire_image_data()
+        print(img.shape)
         plt.imshow(img, interpolation='none')
+        plt.gray()
+        plt.show()
         
