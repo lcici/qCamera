@@ -6,8 +6,9 @@ primarily by Magnus and Gregers.
 """
 
 from __future__ import print_function
-import time
+from __future__ import division
 import warnings
+import logging
 import ctypes
 import numpy as np
 import camera
@@ -33,6 +34,11 @@ class CAMTYPE(ctypes.Structure):
                 ("temp_reg", ctypes.c_bool*1),
                 ("reserved", ctypes.c_bool*5)]
 
+class MODE(ctypes.Structure):
+    _pack_ = 0
+    _fields_ = [("mode", ctypes.c_int8),
+                ("submode", ctypes.c_int8)]
+
 class Sensicam(camera.Camera):
     """Class for controlling PCO Sensicam cameras."""
 
@@ -51,11 +57,11 @@ class Sensicam(camera.Camera):
         "double": 2  # double trigger mode (DPDOUBLE)
     }
 
-    # Valid trigger modes. See p. 16 of the API documentation.
-    # TODO: all possible options?
+    # Valid trigger modes.
     _trigger_modes = {
-        "internal": 0x0,
-        "external": 0x001 # external with rising edge
+        "software": 0,
+        "rising": 1,
+        "falling": 2
     }
     
     # Setup and shutdown
@@ -103,24 +109,36 @@ class Sensicam(camera.Camera):
             self.shape = (1280, 1024)
         else:
             raise SensicamError("Unknown CCD type.")
+        self.mode = (0, 0) # Long exposure, normal analog gain
 
-        # Buffer mapping
-        # I don't know what this means!
-        # TODO: figure out the 00000 parameters
-        # TODO: self.size
-        self.address = ctypes.c_void_p
-        self.buffer_number = ctypes.c_int(-1)
-        self.size = None # c_int(self.width.value * self.height.value * ((self.bit_pix.value + 7) / 8))
-        
-        _chk(self.clib.MAP_BUFFER(
-            self.filehandle, 00000, 00000, 0, ctypes.pointer(self.address)))
-        _chk(self.clib.ALLOCATE_BUFFER(
-            self.filehandle, ctypes.pointer(self.buffer_number),
-            ctypes.pointer(self.size)))
+        # Get the "actual" sizes and bits per pixel.
+        # Presumably this takes into account hardware cropping and
+        # binning, but the documentation is not terribly clear.
+        x, y = ctypes.c_int(), ctypes.c_int()
+        self.x_actual, self.y_actual, self.bit_pix = 0, 0, 0
+        self.clib.GETSIZES(
+            self.filehandle,
+            ctypes.pointer(x), ctypes.pointer(y),
+            ctypes.pointer(self.x_actual), ctypes.pointer(self.y_actual),
+            ctypes.pointer(self.bit_pix))
 
         # Write camera settings to the hardware
         # TODO
         self._update_coc()
+
+        # Buffer allocation.
+        self.address = ctypes.c_void_p()
+        self.buffer_number = ctypes.c_int(-1)
+        self.size = self.x_actual*self.y_actual*((self.bit_pix + 7)/8)
+        _chk(self.clib.ALLOCATE_BUFFER(
+            self.filehandle, ctypes.pointer(self.buffer_number),
+            ctypes.pointer(self.size)))
+        _chk(self.clib.MAP_BUFFER(
+            self.filehandle, self.buffer_number, self.size, 0,
+            ctypes.pointer(self.address)))
+        _chk(self.clib.SETBUFFER_EVENT(
+            self.filehandle, self.buffer_number,
+            ctypes.pointer(ctypes.c_int())))
 
     def _update_coc(self, **kwargs):
         """Update the 'camera operation code', i.e., set everything
@@ -134,7 +152,9 @@ class Sensicam(camera.Camera):
 
         Keyword arguments
         -----------------
-        mode : ?
+        mode : tuple
+            Length 2 tuple describing the camera operation type and
+            analog gain. See p. 12 of the manual.
         trigger : int
         roi : tuple
             Length 4 tuple specifying the new region of interest.
@@ -145,15 +165,52 @@ class Sensicam(camera.Camera):
             Exposure time in ms.
 
         """
-        mode = None # TODO
-        trigger = kwargs.get('trigger', self.trigger_mode) # TODO
-        roi = kwargs.get('roi', self.roi)
+        
+        # Update mode.
+        mode = kwargs.get('mode', (0, 0))
+        if len(mode) != 2:
+            raise SensicamError("mode must be a length 2 tuple.")
+        c_mode = MODE(mode[0], mode[1])
+
+        # Update trigger.
+        trigger = kwargs.get('trigger', self._trigger_modes[self.trigger_mode])
+        if trigger not in range(2):
+            raise SensicamError("trigger_mode most be one of 0, 1, 2.")
+
+        # Update crop
+        # NOTE: In the SDK, this is referred to as the ROI, but in our
+        # usage, the ROI is set in software.
+        crop = kwargs.get('crop', self.crop)
+        if len(crop) != 4:
+            raise SensicamError("crop must be a length 4 tuple.")
+
+        # Update bins.
         bins = kwargs.get('bins', self.bins)
+        if bins not in [2**x for x in range(5)]:
+            raise SensicamError("bins must be a power of 2 and <= 16.")
+
+        # Update timing.
+        # TODO: Error checking
         delay = kwargs.get('delay', 0)
         t_exp = kwargs.get('t_exp', self.t_ms)
         table = ctypes.c_char_p("%i,%i" % (delay, t_exp))
+
+        # Log settings being updated.
+        print(mode, trigger, crop, bins, delay, t_exp)
+        logging.info(
+            "Updating Sensicam COC:\n" + \
+            "\tmode: %i, %i\n" % (mode[0], mode[1]) + \
+            "\ttrigger: %i\n" % trigger + \
+            "\tcrop: %i, %i, %i, %i\n" % (crop[0], crop[1], crop[2], crop[3]) + \
+            "\tbins: %i\n" % bins + \
+            "\ttable: %i, %i" % (delay, t_exp))
+
+        # Write settings to the camera.
+        if not self.real_camera:
+             return
         _chk(self.clib.SET_COC(
-            self.filehandle, mode, trigger, roi[0], roi[1], roi[2], roi[3],
+            self.filehandle, c_mode, trigger,
+            crop[0], crop[1], crop[2], crop[3],
             bins, bins, table))
 
     def close(self):
@@ -286,9 +343,6 @@ class Sensicam(camera.Camera):
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
+    logging.basicConfig(level=logging.INFO)
     with Sensicam(real=False) as cam:
-        for i in range(10):
-            img = cam.get_image()
-            plt.figure()
-            plt.imshow(img)
-            plt.show()
+        cam._update_coc()
