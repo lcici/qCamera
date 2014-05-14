@@ -8,6 +8,7 @@ all subsequent cameras should be based on.
 from __future__ import division
 from __future__ import print_function
 from abc import ABCMeta, abstractmethod
+import logging
 import numpy as np
 import numpy.random as npr
 from ring_buffer import RingBuffer
@@ -70,6 +71,8 @@ class Camera:
     # ------------------
 
     def __init__(self, real=True, buffer_dir='.'):
+        logging.info(
+            "Connecting to %s camera" % ("real" if real else "simulated"))
         self.real_camera = real
         self.rbuffer = RingBuffer(directory=buffer_dir)
         x0 = npr.randint(self.shape[0]/4, self.shape[0]/2)
@@ -80,7 +83,7 @@ class Camera:
         return self
 
     def __exit__(self, type_, value, traceback):
-        print("Shutting down camera.")
+        logging.info("Shutting down camera.")
         self.rbuffer.close()
         self.close()
 
@@ -135,7 +138,6 @@ class Camera:
         X, Y = np.meshgrid(x, y)
         img = g(X, Y, x0, y0, 20)
         img /= np.max(img)
-        print(img.shape)
         img += 0.25*npr.random(self.shape)
         return img
         
