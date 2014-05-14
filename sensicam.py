@@ -14,15 +14,6 @@ import numpy as np
 import camera
 from camera_errors import SensicamError, SensicamWarning
 
-def _chk(code):
-    """Check the return code of a command.
-
-    TODO: Do saner testing (at least translate the error codes!)
-
-    """
-    if code != 0:
-        raise SensicamError("Camera error code " + str(code) + ".")
-
 class CAMTYPE(ctypes.Structure):
     _pack_ = 0
     _fields_ = [("gain", ctypes.c_bool*2),
@@ -63,6 +54,15 @@ class Sensicam(camera.Camera):
         "rising": 1,
         "falling": 2
     }
+
+    def _chk(self, code):
+        """Check the return code of a command.
+        
+        TODO: Do saner testing (at least translate the error codes!)
+        
+        """
+        if code != 0:
+            raise SensicamError("Camera error code " + str(hex(code)) + ".")
     
     # Setup and shutdown
     # ------------------
@@ -91,15 +91,15 @@ class Sensicam(camera.Camera):
 
         # Initalize the camera.
         self.filehandle = ctypes.c_int()
-        _chk(self.clib.INITBOARD(0, ctypes.pointer(self.filehandle)))
-        _chk(self.clib.SETUP_CAMERA(self.filehandle))
+        self._chk(self.clib.INITBOARD(0, ctypes.pointer(self.filehandle)))
+        self._chk(self.clib.SETUP_CAMERA(self.filehandle))
 
         # Acquire hardware information. See p. 34 of the API
         # documentation for details.
         camtype = CAMTYPE()
         ele_temp = ctypes.c_int()
         ccd_temp = ctypes.c_int()
-        _chk(self.clib.GET_STATUS(self.filehandle, ctypes.pointer(camtype),
+        self._chk(self.clib.GET_STATUS(self.filehandle, ctypes.pointer(camtype),
                                   ctypes.pointer(ele_temp), ctypes.pointer(ccd_temp)))
         if camtype.CCDtype[0] == 0 and camtype.CCDtype[1] == 0:
             self.shape = (640, 480)
@@ -115,7 +115,9 @@ class Sensicam(camera.Camera):
         # Presumably this takes into account hardware cropping and
         # binning, but the documentation is not terribly clear.
         x, y = ctypes.c_int(), ctypes.c_int()
-        self.x_actual, self.y_actual, self.bit_pix = 0, 0, 0
+        self.x_actual = ctypes.c_int()
+        self.y_actual = ctypes.c_int()
+        self.bit_pix = ctypes.c_int()
         self.clib.GETSIZES(
             self.filehandle,
             ctypes.pointer(x), ctypes.pointer(y),
@@ -123,20 +125,19 @@ class Sensicam(camera.Camera):
             ctypes.pointer(self.bit_pix))
 
         # Write camera settings to the hardware
-        # TODO
         self._update_coc()
 
         # Buffer allocation.
         self.address = ctypes.c_void_p()
         self.buffer_number = ctypes.c_int(-1)
         self.size = self.x_actual*self.y_actual*((self.bit_pix + 7)/8)
-        _chk(self.clib.ALLOCATE_BUFFER(
+        self._chk(self.clib.ALLOCATE_BUFFER(
             self.filehandle, ctypes.pointer(self.buffer_number),
             ctypes.pointer(self.size)))
-        _chk(self.clib.MAP_BUFFER(
+        self._chk(self.clib.MAP_BUFFER(
             self.filehandle, self.buffer_number, self.size, 0,
             ctypes.pointer(self.address)))
-        _chk(self.clib.SETBUFFER_EVENT(
+        self._chk(self.clib.SETBUFFER_EVENT(
             self.filehandle, self.buffer_number,
             ctypes.pointer(ctypes.c_int())))
 
@@ -156,7 +157,7 @@ class Sensicam(camera.Camera):
             Length 2 tuple describing the camera operation type and
             analog gain. See p. 12 of the manual.
         trigger : int
-        roi : tuple
+        crop : tuple
             Length 4 tuple specifying the new region of interest.
         bins : int
             Binning to use.
@@ -190,14 +191,17 @@ class Sensicam(camera.Camera):
             raise SensicamError("bins must be a power of 2 and <= 16.")
 
         # Update timing.
-        # TODO: Error checking
         delay = kwargs.get('delay', 0)
+        if not 0 <= delay <= 1000000:
+            raise SensicamError("delay must be between 0 and 1E6 ms.")
         t_exp = kwargs.get('t_exp', self.t_ms)
+        if not 1 <= t_exp <= 1000000:
+            raise SensicamError("t_exp must be between 1 and 1E6 ms.")
         table = ctypes.c_char_p("%i,%i" % (delay, t_exp))
 
         # Log settings being updated.
         print(mode, trigger, crop, bins, delay, t_exp)
-        logging.info(
+        logging.debug(
             "Updating Sensicam COC:\n" + \
             "\tmode: %i, %i\n" % (mode[0], mode[1]) + \
             "\ttrigger: %i\n" % trigger + \
@@ -205,13 +209,17 @@ class Sensicam(camera.Camera):
             "\tbins: %i\n" % bins + \
             "\ttable: %i, %i" % (delay, t_exp))
 
-        # Write settings to the camera.
         if not self.real_camera:
              return
-        _chk(self.clib.SET_COC(
+        self._chk(self.clib.STOP_COC(self.filehandle, 0))
+        self._chk(self.clib.SET_COC(
             self.filehandle, c_mode, trigger,
             crop[0], crop[1], crop[2], crop[3],
             bins, bins, table))
+
+        # Re-start the camera.
+        # 0 indicates continuous triggering (4 for single trigger).
+        self._chk(self.clib.RUN_COC(self.filehandle, 0))
 
     def close(self):
         """Close the camera safely. Anything necessary for doing so
@@ -220,9 +228,9 @@ class Sensicam(camera.Camera):
         """
         if not self.real_camera:
             return
-        _chk(self.clib.REMOVE_ALL_BUFFERS_FROM_LIST(self.filehandle))
-        # TODO: _chk(self.clib.FREE_BUFFER(self.filehandle, self.buffer_number) 
-        _chk(self.clib.CLOSEBOARD(ctypes.pointer(self.filehandle)))
+        self._chk(self.clib.REMOVE_ALL_BUFFERS_FROM_LIST(self.filehandle))
+        self._chk(self.clib.FREE_BUFFER(self.filehandle, self.buffer_number))
+        self._chk(self.clib.CLOSEBOARD(ctypes.pointer(self.filehandle)))
         
     # Image acquisition
     # -----------------
@@ -232,9 +240,9 @@ class Sensicam(camera.Camera):
         super(Sensicam, self).set_acquisition_mode(mode)
         if not self.real_camera:
             return
-        
         # TODO
-        self._update_coc()
+        logging.warn("No action: set_acquisition_mode not yet implemented.")
+        #self._update_coc()
 
     def acquire_image_data(self):
         """Acquire the current image from the camera. This is mainly
@@ -242,8 +250,9 @@ class Sensicam(camera.Camera):
         acquisition mode.
 
         """
-        bytes_to_read = self.shape[0]*self.shape[1]*2 # I don't know why
-        _chk(self.clib.READ_IMAGE_12BIT(
+        # *2 because the camera returns 16 bit data
+        bytes_to_read = self.x_actual*self.y_actual*2
+        self._chk(self.clib.READ_IMAGE_12BIT(
             self.filehandle, 0, self.shape[0], self.shape[1], self.address))
         img = np.fromstring(
             ctypes.string_at(self.address, bytes_to_read), dtype=np.uint16)
@@ -261,9 +270,9 @@ class Sensicam(camera.Camera):
         super(Sensicam, self).set_trigger_mode(mode)
         if not self.real_camera:
             return
-
         # TODO
-        self._update_coc() 
+        logging.warn("No action. set_trigger_mode not yet implemented.")
+        #self._update_coc() 
 
     def trigger(self):
         """Send a software trigger to take an image immediately."""
@@ -290,9 +299,7 @@ class Sensicam(camera.Camera):
         super(Sensicam, self).set_exposure_time(t, units)
         if not self.real_camera:
             return
-
-        # TODO
-        self._update_coc()
+        self._update_coc(t_exp=self.t_ms)
 
     def get_gain(self):
         """Query the current gain settings."""
@@ -302,9 +309,9 @@ class Sensicam(camera.Camera):
         super(Sensicam, self).set_gain(gain, kwargs)
         if not self.real_camera:
             return
-
         # TODO
-        self._update_coc()
+        logging.warn("No action. set_gain not yet implemented.")
+        #self._update_coc()
 
     # ROI, cropping, and binning
     # --------------------------
@@ -312,9 +319,7 @@ class Sensicam(camera.Camera):
     def set_roi(self, roi):
         """Define the region of interest."""
         super(Sensicam, self).set_roi(roi)
-
         # TODO
-        self._update_coc()
         
     def get_crop(self):
         """Get the current CCD crop settings."""
@@ -327,8 +332,7 @@ class Sensicam(camera.Camera):
 
         """
         super(Sensicam, self).set_crop(self, crop)
-
-        # TODO
+        logging.info("Setting crop to: %s" % repr(self.crop))
         self._update_coc()
         
     def get_bins(self):
@@ -337,12 +341,13 @@ class Sensicam(camera.Camera):
     def set_bins(self, bins):
         """Set binning to bins x bins."""
         super(Sensicam, self).set_bins(bins)
-
-        # TODO
+        logging.info("Setting bins to: %i" % self.bins)
         self._update_coc() 
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-    logging.basicConfig(level=logging.INFO)
-    with Sensicam(real=False) as cam:
-        cam._update_coc()
+    logging.basicConfig(level=logging.DEBUG)
+    with Sensicam(real=True) as cam:
+        img = cam.acquire_image_data()
+        plt.imshow(img, interpolation='none')
+        
