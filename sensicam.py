@@ -97,17 +97,17 @@ class Sensicam(camera.Camera):
         # Presumably this takes into account hardware cropping and
         # binning, but the documentation is not terribly clear.
         x, y = ctypes.c_int(), ctypes.c_int()
-        self.x_actual = ctypes.c_int()
-        self.y_actual = ctypes.c_int()
-        self.bit_pix = ctypes.c_int()
+        x_actual = ctypes.c_int()
+        y_actual = ctypes.c_int()
+        bit_pix = ctypes.c_int()
         self.clib.GETSIZES(
             self.filehandle,
             ctypes.pointer(x), ctypes.pointer(y),
-            ctypes.pointer(self.x_actual), ctypes.pointer(self.y_actual),
-            ctypes.pointer(self.bit_pix))
-        self.x_actual = self.x_actual.value
-        self.y_actual = self.y_actual.value
-        self.bit_pix = self.bit_pix.value
+            ctypes.pointer(x_actual), ctypes.pointer(y_actual),
+            ctypes.pointer(bit_pix))
+        self.x_actual = x_actual.value
+        self.y_actual = y_actual.value
+        self.bit_pix = bit_pix.value
         self.shape = (x.value, y.value)
 
         # Write camera settings to the hardware
@@ -116,16 +116,16 @@ class Sensicam(camera.Camera):
         # Buffer allocation.
         self.address = ctypes.c_void_p()
         self.buffer_number = ctypes.c_int(-1)
-        self.size = ctypes.c_int(int(self.x_actual*self.y_actual*((self.bit_pix + 7)/8)))
+        self.buffer_size = ctypes.c_int(int(self.x_actual*self.y_actual*((self.bit_pix + 7)/8)))
         self._chk(self.clib.ALLOCATE_BUFFER(
             self.filehandle, ctypes.pointer(self.buffer_number),
-            ctypes.pointer(self.size)))
+            ctypes.pointer(self.buffer_size)))
         self._chk(self.clib.MAP_BUFFER(
-            self.filehandle, self.buffer_number, self.size, 0,
+            self.filehandle, self.buffer_number, self.buffer_size, 0,
             ctypes.pointer(self.address)))
         self._chk(self.clib.SETBUFFER_EVENT(
             self.filehandle, self.buffer_number,
-            ctypes.pointer(ctypes.c_int())))
+            ctypes.pointer(ctypes.c_int(-1))))
 
     def _update_coc(self, **kwargs):
         """Update the 'camera operation code', i.e., set everything
@@ -213,6 +213,16 @@ class Sensicam(camera.Camera):
             self.filehandle, c_mode, trigger,
             crop[0], crop[1], crop[2], crop[3],
             bins, bins, table))
+    
+        # TODO: Update x/y_actual more sensibly. Or handle the variable better.            
+        dummy = ctypes.pointer(ctypes.c_int(-1))
+        x_actual = ctypes.c_int(0)
+        y_actual = ctypes.c_int(0)
+        self.clib.GETSIZES(
+            self.filehandle, dummy, dummy,
+            ctypes.pointer(x_actual), ctypes.pointer(y_actual), dummy)
+        self.x_actual = x_actual.value
+        self.y_actual = y_actual.value
 
         # Re-start the camera.
         # 0 indicates continuous triggering (4 for single trigger).
@@ -250,12 +260,10 @@ class Sensicam(camera.Camera):
         # *2 because the camera returns 16 bit data
         bytes_to_read = self.x_actual*self.y_actual*2
         self._chk(self.clib.READ_IMAGE_12BIT(
-            self.filehandle, 0, self.shape[0], self.shape[1], self.address))
+            self.filehandle, 0, self.x_actual, self.y_actual, self.address))
         img = np.fromstring(
             ctypes.string_at(self.address, bytes_to_read), dtype=np.uint16)
-        print(img.shape)
         shape = (self.crop[1], self.crop[3])
-        print(shape)
         img.shape = shape
         return img
         
@@ -349,7 +357,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     with Sensicam(real=True) as cam:
         #cam.set_crop([1, 1376, 1, 1040]) # TODO: FIXME
-        img = cam.acquire_image_data()
+        img = cam.get_image()
         print(img.shape)
         plt.imshow(img, interpolation='none')
         plt.gray()
