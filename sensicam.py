@@ -11,6 +11,7 @@ import ctypes
 import numpy as np
 import camera
 from camera_errors import SensicamError, SensicamWarning
+from sensicam_status_codes import SENSICAM_CODES
 
 class CAMTYPE(ctypes.Structure):
     _pack_ = 0
@@ -54,13 +55,60 @@ class Sensicam(camera.Camera):
     }
 
     def _chk(self, code):
-        """Check the return code of a command.
-        
-        TODO: Do saner testing (at least translate the error codes!)
-        
-        """
+        """Check the return code of a command."""
         if code != 0:
-            raise SensicamError("Camera error code " + str(hex(code)) + ".")
+            raise SensicamError("Camera error code " + SENSICAM_CODES[code] + ".")
+
+    def _init_clib(self):
+        """Defines the restype of all function calls since the
+        documentation incorrectly claims they are ints when in fact it
+        should be an unsigned integer.
+
+        """
+        restype = ctypes.c_uint
+        self.clib.INITBOARD.restype = restype
+        self.clib.CLOSEBOARD.restype = restype
+        #self.clib.RESETBOARD.restype = restype
+        self.clib.ENABLE_MESSAGE_LOG.restype = restype
+        #self.clib.GETBOARDPAR.restype = restype
+        self.clib.SETUP_CAMERA.restype = restype
+        self.clib.RUN_COC.restype = restype
+        self.clib.STOP_COC.restype = restype
+        self.clib.SET_COC.restype = restype
+        self.clib.TEST_COC.restype = restype
+        self.clib.GET_COC_SETTING.restype = restype
+        self.clib.LOAD_USER_COC.restype = restype
+        self.clib.LOAD_USER_AOI.restype = restype
+        self.clib.GETSIZES.restype = restype
+        self.clib.SET_POWERDOWN.restype = restype
+        self.clib.SET_DICAM_WAIT.restype = restype
+        self.clib.GET_CAM_PARAM.restype = restype
+        self.clib.GET_CAM_VALUES.restype = restype
+        self.clib.GET_CAM_SETTINGS.restype = restype
+        self.clib.GET_DICAM_SETTINGS.restype = restype
+        self.clib.GET_STATUS.restype = restype
+        self.clib.CLEAR_BOARD_BUFFER.restype = restype
+        self.clib.GETBUFFER_STATUS.restype = restype
+        self.clib.ADD_BUFFER_TO_LIST.restype = restype
+        self.clib.REMOVE_BUFFER_FROM_LIST.restype = restype
+        self.clib.REMOVE_ALL_BUFFERS_FROM_LIST.restype = restype
+        self.clib.ALLOCATE_BUFFER.restype = restype
+        self.clib.FREE_BUFFER.restype = restype
+        self.clib.SETBUFFER_EVENT.restype = restype
+        self.clib.CLEARBUFFER_EVENT.restype = restype
+        self.clib.MAP_BUFFER.restype = restype
+        self.clib.UNMAP_BUFFER.restype = restype
+        self.clib.SETDRIVER_EVENT.restype = restype
+        #self.clib.CHECK_BOARD_MEMORY.restype = restype
+        self.clib.GET_DIALOG_DLLNAME.restype = restype
+        self.clib.READ_IMAGE_12BIT.restype = restype
+        self.clib.WAIT_FOR_IMAGE.restype = restype
+        self.clib.ADD_BUFFER.restype = restype
+        self.clib.REMOVE_BUFFER.restype = restype
+        self.clib.ALLOCATE_BUFFER_EX.restype = restype
+        self.clib.GET_CAMERA_DESC.restype = restype
+        self.clib.GET_DICAMPRO_DESC.restype = restype
+        self.clib.GET_CAMERA_LINETIME_DESC.restype = restype
     
     # Setup and shutdown
     # ------------------
@@ -86,6 +134,7 @@ class Sensicam(camera.Camera):
         if not self.real_camera:
             return
         self.clib = ctypes.windll.LoadLibrary("sen_cam.dll")
+        self._init_clib()
 
         # Initalize the camera.
         self.filehandle = ctypes.c_int()
@@ -214,7 +263,8 @@ class Sensicam(camera.Camera):
             crop[0], crop[1], crop[2], crop[3],
             bins, bins, table))
     
-        # TODO: Update x/y_actual more sensibly. Or handle the variable better.            
+        # TODO: Update x/y_actual more sensibly. Or handle the
+        # variable better.
         dummy = ctypes.pointer(ctypes.c_int(-1))
         x_actual = ctypes.c_int(0)
         y_actual = ctypes.c_int(0)
@@ -226,6 +276,7 @@ class Sensicam(camera.Camera):
 
         # Re-start the camera.
         # 0 indicates continuous triggering (4 for single trigger).
+        # TODO: This should really go somewhere else.
         self._chk(self.clib.RUN_COC(self.filehandle, 0))
 
     def close(self):
@@ -252,11 +303,7 @@ class Sensicam(camera.Camera):
         #self._update_coc()
 
     def acquire_image_data(self):
-        """Acquire the current image from the camera. This is mainly
-        to be used when running in some sort of single trigger
-        acquisition mode.
-
-        """
+        """Acquire the current image from the camera."""
         # *2 because the camera returns 16 bit data
         bytes_to_read = self.x_actual*self.y_actual*2
         self._chk(self.clib.READ_IMAGE_12BIT(
@@ -360,6 +407,5 @@ if __name__ == "__main__":
         img = cam.get_image()
         print(img.shape)
         plt.imshow(img, interpolation='none')
-        plt.gray()
         plt.show()
         
