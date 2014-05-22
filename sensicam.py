@@ -71,7 +71,6 @@ class Sensicam(camera.Camera):
         """
         code = code & 0xFFFFFFFF # convert the negative integer to the proper hex representation
         hex_ = lambda x: "0x%0.8X" % code
-        print(hex_(code))
         if code != 0:
             logging.error("Entering error check mode.")
             if not (code & SENSICAM_CODES['PCO_ERROR_IS_WARNING']):
@@ -166,6 +165,68 @@ class Sensicam(camera.Camera):
             self.filehandle, self.buffer_number,
             ctypes.pointer(ctypes.c_int(-1))))
 
+    def _test_coc(self, mode, trigger, crop, bins, delay, t_exp):
+        """Test the parameters to give to the SDK SET_COC
+        function. This will modify the values using the SDK TEST_COC
+        function to the nearest acceptable values.
+
+        The arguments are the same as the kwargs given to
+        :func:`_update_coc.`.
+
+        """
+        # Prepare C data
+        _ptr = lambda x: ctypes.pointer(x)
+        logging.debug(
+            "Trying the following values for TEST_COC:\n" + \
+            "\tmode: %i, %i\n" % (mode[0], mode[1]) + \
+            "\ttrigger: %i\n" % trigger + \
+            "\tcrop: %i, %i, %i, %i\n" % (crop[0], crop[1], crop[2], crop[3]) + \
+            "\tbins: %i\n" % bins + \
+            "\ttiming: %i, %i" % (delay, t_exp))
+        c_mode = ctypes.c_int(0) #MODE(mode[0], mode[1])
+        c_trigger = ctypes.c_int(trigger)
+        c_crop_x1 = ctypes.c_int(crop[0])
+        c_crop_x2 = ctypes.c_int(crop[1])
+        c_crop_y1 = ctypes.c_int(crop[2])
+        c_crop_y2 = ctypes.c_int(crop[3])
+        xbins, ybins = ctypes.c_int(bins), ctypes.c_int(bins)
+        timing = "%i,%i" % (delay, t_exp)
+        c_timing = ctypes.c_char_p(timing)
+        self._chk(self.clib.TEST_COC(
+            self.filehandle, _ptr(c_mode), _ptr(c_trigger),
+            _ptr(c_crop_x1), _ptr(c_crop_x2), _ptr(c_crop_y1), _ptr(c_crop_y2),
+            _ptr(xbins), _ptr(ybins),
+            c_timing, _ptr(ctypes.c_int(len(timing)))))
+
+        # Update values if there are differences
+        # TODO: fix mode check
+        #if c_mode.value != mode:
+        #    logging.debug(
+        #        "Desired mode not accepted by TEST_COC, adjusting: %i -> %i" \
+        #        % (mode, c_mode.value))
+        if c_trigger.value != trigger:
+            logging.debug(
+                "Desired trigger not accepted by TEST_COC, adjusting: %i -> %i" \
+                % (trigger, c_trigger.value))
+            trigger = c_trigger.value
+        new_crop = [c_crop_x1.value, c_crop_x2.value,
+                    c_crop_y1.value, c_crop_y2.value]
+        for i, x in enumerate(new_crop):
+            if x != crop[i]:
+                logging.debug(
+                    "Invalid crop parameter from TEST_COC: " + \
+                    "Changing crop[%i] = %i -> %i" % (i, crop[i], new_crop[i]))
+                crop[i] = x
+        if xbins.value != bins or ybins.value != bins:
+            logging.debug(
+                "Invalid bin argument in TEST_COC. Changing %i -> %i" \
+                % (bins, xbins.value))
+            bins = xbins
+        # TODO: add timing check
+
+        # Return new parameters
+        return mode, trigger, crop, bins, delay, t_exp
+        
     def _update_coc(self, **kwargs):
         """Update the 'camera operation code', i.e., set everything
         from acquisition modes to triggering to binning. This function
@@ -196,8 +257,7 @@ class Sensicam(camera.Camera):
         mode = kwargs.get('mode', (0, 0))
         if len(mode) != 2:
             raise SensicamError("mode must be a length 2 tuple.")
-        #c_mode = MODE(mode[0], mode[1])
-        c_mode = 0
+        c_mode = MODE(mode[0], mode[1])
 
         # Update trigger.
         trigger = kwargs.get('trigger', self._trigger_modes[self.trigger_mode])
@@ -235,7 +295,14 @@ class Sensicam(camera.Camera):
         t_exp = kwargs.get('t_exp', self.t_ms)
         if not 1 <= t_exp <= 1000000:
             raise SensicamError("t_exp must be between 1 and 1E6 ms.")
-        table = ctypes.c_char_p("%i,%i" % (delay, t_exp))
+        timing = ctypes.c_char_p("%i,%i" % (delay, t_exp))
+
+        # Test new values and update class attributes.
+        mode, trigger, crop, bins, delay, t_exp = \
+            self._test_coc(mode, trigger, crop, bins, delay, t_exp)
+        self.crop = crop
+        self.bins = bins
+        self.t_ms = t_exp
 
         # Log and update settings.
         logging.debug(
@@ -244,14 +311,14 @@ class Sensicam(camera.Camera):
             "\ttrigger: %i\n" % trigger + \
             "\tcrop: %i, %i, %i, %i\n" % (crop[0], crop[1], crop[2], crop[3]) + \
             "\tbins: %i\n" % bins + \
-            "\ttable: %i, %i" % (delay, t_exp))
+            "\ttiming: %i, %i" % (delay, t_exp))
         if not self.real_camera:
              return
         self._chk(self.clib.STOP_COC(self.filehandle, 0))
         self._chk(self.clib.SET_COC(
             self.filehandle, c_mode, trigger,
             crop[0], crop[1], crop[2], crop[3],
-            bins, bins, table))
+            bins, bins, timing))
     
         # TODO: Update x/y_actual more sensibly. Or handle the
         # variable better.
@@ -300,7 +367,7 @@ class Sensicam(camera.Camera):
             self.filehandle, 0, self.x_actual, self.y_actual, self.address))
         img = np.fromstring(
             ctypes.string_at(self.address, bytes_to_read), dtype=np.uint16)
-        shape = (self.crop[1], self.crop[3])
+        shape = (self.crop[1]*32, self.crop[3]*32)[::-1]
         img.shape = shape
         return img
         
