@@ -10,8 +10,8 @@ import logging
 import ctypes
 import numpy as np
 import camera
-from camera_errors import SensicamError, SensicamWarning
-from sensicam_status_codes import SENSICAM_CODES
+from camera_errors import SensicamError
+from sensicam_status_codes import *
 
 class CAMTYPE(ctypes.Structure):
     _pack_ = 0
@@ -55,60 +55,51 @@ class Sensicam(camera.Camera):
     }
 
     def _chk(self, code):
-        """Check the return code of a command."""
-        if code != 0:
-            raise SensicamError("Camera error code " + SENSICAM_CODES[code] + ".")
+        """Check the return code of a command. The error messages are
+        complicated 32 bit strings which are described in detail in
+        the SDK manual. In short, to quote the manual:
 
-    def _init_clib(self):
-        """Defines the restype of all function calls since the
-        documentation incorrectly claims they are ints when in fact it
-        should be an unsigned integer.
+        * Bits 0-11 are used to indicate the error number.
+        * Bits 12-15 shows the layer of the error source.
+        * Bits 16-23 reflect the error source.
+        * Bits 24-28 are not used.
+        * Bit 29 is the common error group flag. This flag is used to lookup
+        * the error text inside the correct array.
+        * Bit 31 indicates an error.
+        * Bit 30 is set in addition to bit 31 and indicates a warning. 
 
         """
-        restype = ctypes.c_uint
-        self.clib.INITBOARD.restype = restype
-        self.clib.CLOSEBOARD.restype = restype
-        #self.clib.RESETBOARD.restype = restype
-        self.clib.ENABLE_MESSAGE_LOG.restype = restype
-        #self.clib.GETBOARDPAR.restype = restype
-        self.clib.SETUP_CAMERA.restype = restype
-        self.clib.RUN_COC.restype = restype
-        self.clib.STOP_COC.restype = restype
-        self.clib.SET_COC.restype = restype
-        self.clib.TEST_COC.restype = restype
-        self.clib.GET_COC_SETTING.restype = restype
-        self.clib.LOAD_USER_COC.restype = restype
-        self.clib.LOAD_USER_AOI.restype = restype
-        self.clib.GETSIZES.restype = restype
-        self.clib.SET_POWERDOWN.restype = restype
-        self.clib.SET_DICAM_WAIT.restype = restype
-        self.clib.GET_CAM_PARAM.restype = restype
-        self.clib.GET_CAM_VALUES.restype = restype
-        self.clib.GET_CAM_SETTINGS.restype = restype
-        self.clib.GET_DICAM_SETTINGS.restype = restype
-        self.clib.GET_STATUS.restype = restype
-        self.clib.CLEAR_BOARD_BUFFER.restype = restype
-        self.clib.GETBUFFER_STATUS.restype = restype
-        self.clib.ADD_BUFFER_TO_LIST.restype = restype
-        self.clib.REMOVE_BUFFER_FROM_LIST.restype = restype
-        self.clib.REMOVE_ALL_BUFFERS_FROM_LIST.restype = restype
-        self.clib.ALLOCATE_BUFFER.restype = restype
-        self.clib.FREE_BUFFER.restype = restype
-        self.clib.SETBUFFER_EVENT.restype = restype
-        self.clib.CLEARBUFFER_EVENT.restype = restype
-        self.clib.MAP_BUFFER.restype = restype
-        self.clib.UNMAP_BUFFER.restype = restype
-        self.clib.SETDRIVER_EVENT.restype = restype
-        #self.clib.CHECK_BOARD_MEMORY.restype = restype
-        self.clib.GET_DIALOG_DLLNAME.restype = restype
-        self.clib.READ_IMAGE_12BIT.restype = restype
-        self.clib.WAIT_FOR_IMAGE.restype = restype
-        self.clib.ADD_BUFFER.restype = restype
-        self.clib.REMOVE_BUFFER.restype = restype
-        self.clib.ALLOCATE_BUFFER_EX.restype = restype
-        self.clib.GET_CAMERA_DESC.restype = restype
-        self.clib.GET_DICAMPRO_DESC.restype = restype
-        self.clib.GET_CAMERA_LINETIME_DESC.restype = restype
+        code = code & 0xFFFFFFFF # convert the negative integer to the proper hex representation
+        hex_ = lambda x: "0x%0.8X" % code
+        print(hex_(code))
+        if code != 0:
+            logging.error("Entering error check mode.")
+            if not (code & SENSICAM_CODES['PCO_ERROR_IS_WARNING']):
+                # Get the offending device and layer.
+                #device = code & SENSICAM_CODES['PCO_ERROR_DEVICE_MASK']
+                layer = code & SENSICAM_CODES['PCO_ERROR_LAYER_MASK']
+                index = code & SENSICAM_CODES['PCO_ERROR_CODE_MASK']
+
+                # Evaluate errors.
+                error_text = ''
+                if code & SENSICAM_CODES['PCO_ERROR_IS_COMMON']:
+                    error_text = PCO_ERROR_COMMON_TXT[index]
+                else:
+                    if layer == SENSICAM_CODES['PCO_ERROR_FIRMWARE']:
+                        error_text = PCO_ERROR_FIRMWARE_TXT[index]
+                    elif layer == SENSICAM_CODES['PCO_ERROR_DRIVER']:
+                        error_text = PCO_ERROR_DRIVER_TXT[index]
+                    elif layer == SENSICAM_CODES['PCO_ERROR_SDKDLL']:
+                        error_text = PCO_ERROR_SDKDLL_TXT[index]
+                    elif layer == SENSICAM_CODES['PCO_ERROR_APPLICATION']:
+                        error_text = PCO_ERROR_APPLICATION_TXT[index]
+                    else:
+                        error_text = "Unknown error???"
+                logging.error(error_text)
+                logging.debug("code: " + hex_(code))
+                raise SensicamError("Camera error code " + error_text)
+            else:
+                logging.warn("Sensicam warning: TODO")
     
     # Setup and shutdown
     # ------------------
@@ -134,7 +125,6 @@ class Sensicam(camera.Camera):
         if not self.real_camera:
             return
         self.clib = ctypes.windll.LoadLibrary("sen_cam.dll")
-        self._init_clib()
 
         # Initalize the camera.
         self.filehandle = ctypes.c_int()
