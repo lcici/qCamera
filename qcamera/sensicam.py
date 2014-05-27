@@ -1,12 +1,14 @@
-"""Sensicam interface
+"""PCO Sensicam interface
 
-Much of this was adapted from the older sensicam module written
-primarily by Magnus and Gregers.
+There are a lot of hacks in this interface because the PCO SDK is
+extremely low level. Therefore, it could likely use a lot of
+optimization.
 
 """
 
 from __future__ import print_function
 import logging
+import math
 import ctypes
 import numpy as np
 import camera
@@ -70,35 +72,50 @@ class Sensicam(camera.Camera):
 
         """
         code = code & 0xFFFFFFFF # convert the negative integer to the proper hex representation
-        hex_ = lambda x: "0x%0.8X" % code
+        hex_ = "0x%0.8X" % code
         if code != 0:
-            logging.error("Entering error check mode.")
-            if not (code & SENSICAM_CODES['PCO_ERROR_IS_WARNING']):
-                # Get the offending device and layer.
-                #device = code & SENSICAM_CODES['PCO_ERROR_DEVICE_MASK']
-                layer = code & SENSICAM_CODES['PCO_ERROR_LAYER_MASK']
-                index = code & SENSICAM_CODES['PCO_ERROR_CODE_MASK']
+            # Get the offending device and layer.                
+            #device = code & SENSICAM_CODES['PCO_ERROR_DEVICE_MASK']
+            layer = code & SENSICAM_CODES['PCO_ERROR_LAYER_MASK']
+            index = code & SENSICAM_CODES['PCO_ERROR_CODE_MASK']
 
-                # Evaluate errors.
-                error_text = ''
-                if code & SENSICAM_CODES['PCO_ERROR_IS_COMMON']:
-                    error_text = PCO_ERROR_COMMON_TXT[index]
-                else:
-                    if layer == SENSICAM_CODES['PCO_ERROR_FIRMWARE']:
-                        error_text = PCO_ERROR_FIRMWARE_TXT[index]
-                    elif layer == SENSICAM_CODES['PCO_ERROR_DRIVER']:
-                        error_text = PCO_ERROR_DRIVER_TXT[index]
-                    elif layer == SENSICAM_CODES['PCO_ERROR_SDKDLL']:
-                        error_text = PCO_ERROR_SDKDLL_TXT[index]
-                    elif layer == SENSICAM_CODES['PCO_ERROR_APPLICATION']:
-                        error_text = PCO_ERROR_APPLICATION_TXT[index]
-                    else:
-                        error_text = "Unknown error???"
-                logging.error(error_text)
-                logging.debug("code: " + hex_(code))
-                raise SensicamError("Camera error code " + error_text)
+            # Evaluate layer text
+            if layer == SENSICAM_CODES['PCO_ERROR_FIRMWARE']:
+                layer_text = "Firmware"
+            elif layer == SENSICAM_CODES['PCO_ERROR_DRIVER']:
+                layer_text = "Driver"
+            elif layer == SENSICAM_CODES['PCO_ERROR_SDKDLL']:
+                layer_text = "SDK DLL"
+            elif layer == SENSICAM_CODES['PCO_ERROR_APPLICATION']:
+                layer_text = "Application"
             else:
-                logging.warn("Sensicam warning: TODO")
+                layer_text = "Unknown layer???"
+
+            # Evaluate errors and warnings
+            is_warning = code & SENSICAM_CODES['PCO_ERROR_IS_WARNING']
+            if code & SENSICAM_CODES['PCO_ERROR_IS_COMMON']:
+                error_text = PCO_ERROR_COMMON_TXT[index]
+            if layer == SENSICAM_CODES['PCO_ERROR_FIRMWARE']:
+                error_text = PCO_ERROR_FIRMWARE_TXT[index]
+            elif layer == SENSICAM_CODES['PCO_ERROR_DRIVER']:
+                error_text = PCO_ERROR_DRIVER_TXT[index]
+            elif layer == SENSICAM_CODES['PCO_ERROR_SDKDLL']:
+                error_text = PCO_ERROR_SDKDLL_TXT[index]
+            elif layer == SENSICAM_CODES['PCO_ERROR_APPLICATION']:
+                error_text = PCO_ERROR_APPLICATION_TXT[index]
+            else:
+                error_text = "Unknown error???"
+
+            # Raise error or warn
+            if not is_warning:
+                logging.error(error_text)
+                logging.debug("error code: " + hex_)
+                raise SensicamError(error_text)
+            else:
+                logging.warn(
+                    "Sensicam warning: " + error_text + \
+                    "\n\tLayer = " + layer_text)
+                logging.debug("warning code: " + hex_)
     
     # Setup and shutdown
     # ------------------
@@ -123,7 +140,7 @@ class Sensicam(camera.Camera):
         super(Sensicam, self).__init__(real=real)
         if not self.real_camera:
             return
-        self.clib = ctypes.windll.LoadLibrary("sen_cam.dll")
+        self.clib = ctypes.windll.sen_cam
 
         # Initalize the camera.
         self.filehandle = ctypes.c_int()
@@ -147,6 +164,12 @@ class Sensicam(camera.Camera):
         self.y_actual = y_actual.value
         self.bit_pix = bit_pix.value
         self.shape = (x.value, y.value)
+        logging.debug(
+            "Result of GETSIZES:\n" + \
+            "\tx pixels: %i, y pixels: %i\n" % (self.shape[0], self.shape[1]) + \
+            "\tx_actual: %i, y_actual: %i\n" % (self.x_actual, self.y_actual) + \
+            "\tbit_pix: %i" % self.bit_pix)
+        self.crop = [1, self.shape[0], 1, self.shape[1]]
 
         # Write camera settings to the hardware
         self._update_coc()
@@ -164,6 +187,17 @@ class Sensicam(camera.Camera):
         self._chk(self.clib.SETBUFFER_EVENT(
             self.filehandle, self.buffer_number,
             ctypes.pointer(ctypes.c_int(-1))))
+
+    def _to_sensi_crop(self, crop):
+        """Convert a crop tuple/list in actual pixels into PCO's units
+        of 32 pixels.
+
+        """
+        if len(crop) != 4:
+            raise SensicamError("crop must be a length 4 tuple.")
+        sensi_crop = [int(math.floor(x/32.)) for x in crop]
+        sensi_crop = [1 if x == 0 else x for x in sensi_crop]
+        return sensi_crop
 
     def _test_coc(self, mode, trigger, crop, bins, delay, t_exp):
         """Test the parameters to give to the SDK SET_COC
@@ -268,20 +302,14 @@ class Sensicam(camera.Camera):
         # NOTE: In the SDK, this is referred to as the ROI, but in our
         # usage, the ROI is set in software. Also, for some reason it
         # wants units of 32 pixels.
-        # TODO: clean this up with list comprehension
         crop = kwargs.get('crop', self.crop)
+        self.crop = crop
         if len(crop) != 4:
             raise SensicamError("crop must be a length 4 tuple.")
-        sensi_crop = [0, 0, 0, 0]
-        for i in range(4):
-            rem = crop[i] % 32
-            if rem != 0:
-                sensi_crop[i] = crop[i] + 32*rem
-            else:
-                sensi_crop[i] = crop[i]
-            sensi_crop[i] = sensi_crop[i]/32
-        self.crop = crop
-        crop = sensi_crop
+        crop = self._to_sensi_crop(crop)
+        logging.debug("Result of _to_sensi_crop:" + \
+            "\n\tself.crop = " + str(self.crop) +\
+            "\n\tsensi_crop = " + str(crop))
         
         # Update bins.
         bins = kwargs.get('bins', self.bins)
@@ -298,11 +326,10 @@ class Sensicam(camera.Camera):
         timing = ctypes.c_char_p("%i,%i" % (delay, t_exp))
 
         # Test new values and update class attributes.
-        mode, trigger, crop, bins, delay, t_exp = \
-            self._test_coc(mode, trigger, crop, bins, delay, t_exp)
-        self.crop = crop
-        self.bins = bins
-        self.t_ms = t_exp
+        # mode, trigger, crop, bins, delay, t_exp = \
+        #     self._test_coc(mode, trigger, crop, bins, delay, t_exp)
+        # self.bins = bins
+        # self.t_ms = t_exp
 
         # Log and update settings.
         logging.debug(
@@ -314,7 +341,6 @@ class Sensicam(camera.Camera):
             "\ttiming: %i, %i" % (delay, t_exp))
         if not self.real_camera:
              return
-        self._chk(self.clib.STOP_COC(self.filehandle, 0))
         self._chk(self.clib.SET_COC(
             self.filehandle, c_mode, trigger,
             crop[0], crop[1], crop[2], crop[3],
@@ -330,11 +356,6 @@ class Sensicam(camera.Camera):
             ctypes.pointer(x_actual), ctypes.pointer(y_actual), dummy)
         self.x_actual = x_actual.value
         self.y_actual = y_actual.value
-
-        # Re-start the camera.
-        # 0 indicates continuous triggering (4 for single trigger).
-        # TODO: This should really go somewhere else.
-        self._chk(self.clib.RUN_COC(self.filehandle, 0))
 
     def close(self):
         """Close the camera safely. Anything necessary for doing so
@@ -367,7 +388,8 @@ class Sensicam(camera.Camera):
             self.filehandle, 0, self.x_actual, self.y_actual, self.address))
         img = np.fromstring(
             ctypes.string_at(self.address, bytes_to_read), dtype=np.uint16)
-        shape = (self.crop[1]*32, self.crop[3]*32)[::-1]
+        shape = (self.crop[1]/self.bins, self.crop[3]/self.bins)
+        print(shape, len(img))
         img.shape = shape
         return img
         
@@ -443,9 +465,11 @@ class Sensicam(camera.Camera):
         readout.
 
         """
-        super(Sensicam, self).set_crop(self, crop)
+        super(Sensicam, self).set_crop(crop)
         logging.info("Setting crop to: %s" % repr(self.crop))
-        self._update_coc()
+        self._chk(self.clib.STOP_COC(self.filehandle, 0))
+        self._update_coc(crop=crop)
+        self._chk(self.clib.RUN_COC(self.filehandle, 0))
         
     def get_bins(self):
         """Query the current binning."""
@@ -454,15 +478,20 @@ class Sensicam(camera.Camera):
         """Set binning to bins x bins."""
         super(Sensicam, self).set_bins(bins)
         logging.info("Setting bins to: %i" % self.bins)
-        self._update_coc() 
+        self._chk(self.clib.STOP_COC(self.filehandle, 0))
+        self._update_coc(bins=bins)
+        self._chk(self.clib.RUN_COC(self.filehandle, 0))
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     logging.basicConfig(level=logging.DEBUG)
     with Sensicam(real=True) as cam:
-        #cam.set_crop([1, 1376, 1, 1040]) # TODO: FIXME
-        img = cam.get_image()
-        print(img.shape)
-        plt.imshow(img, interpolation='none')
+        #cam.set_crop([1, 640, 1, 350])
+        #cam.set_bins(1)
+        for i in range(1):
+            img = np.transpose(cam.get_image())
+            plt.figure()
+            plt.imshow(img, interpolation='none', origin='upper')
         plt.show()
+
         
