@@ -488,15 +488,6 @@ class Sensicam(camera.Camera):
         self._chk(self.clib.RUN_COC(self.filehandle, 0))
 
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
     logging.basicConfig(level=logging.DEBUG)
     with Sensicam(real=True) as cam:
-        #cam.set_crop([1, 640, 1, 350])
-        #cam.set_bins(1)
-        for i in range(1):
-            img = cam.get_image()
-            plt.figure()
-            plt.imshow(img, interpolation='none')
-    plt.show()
-
-        
+        cam.test_real_time_acquisition()

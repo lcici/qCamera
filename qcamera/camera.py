@@ -256,8 +256,33 @@ class Camera:
     def set_bins(self, bins):
         """Set binning to bins x bins."""
 
+    # Standard tests
+    # --------------
+
+    def test_real_time_acquisition(self, max_exposures=1000):
+        """Test real time acquisition.
+
+        Parameters
+        ----------
+        max_exposures : int
+            Maximum number of exposures to take for the real time
+            test.
+
+        """
+        import matplotlib.pyplot as plt
+        try:
+            for i in range(max_exposures):
+                img = self.get_image()
+                if i == 0:
+                    p = plt.imshow(img, interpolation='none')
+                    plt.clim()
+                else:
+                    p.set_data(img)
+                    plt.pause(0.0001)
+        except KeyboardInterrupt:
+            pass
+
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
     class Test(Camera):
         pass
     with Test(real=False) as cam:
