@@ -8,6 +8,7 @@ optimization.
 
 from __future__ import print_function
 import logging
+import traceback as tb
 import math
 import ctypes
 import numpy as np
@@ -15,21 +16,11 @@ import camera
 from camera_errors import SensicamError
 from sensicam_status_codes import *
 
-class CAMTYPE(ctypes.Structure):
-    _pack_ = 0
-    _fields_ = [("gain", ctypes.c_bool*2),
-                ("CCDtype", ctypes.c_bool*2),
-                ("Cameratype", ctypes.c_bool*2),
-                ("sensicam", ctypes.c_bool*3),
-                ("CCDcolor", ctypes.c_bool),
-                ("Shutter", ctypes.c_bool*2),
-                ("temp_reg", ctypes.c_bool*1),
-                ("reserved", ctypes.c_bool*5)]
-
 class MODE(ctypes.Structure):
     _pack_ = 0
-    _fields_ = [("mode", ctypes.c_int8),
-                ("submode", ctypes.c_int8)]
+    _fields_ = [
+        ("mode", ctypes.c_int8),
+        ("submode", ctypes.c_int8)]
 
 class Sensicam(camera.Camera):
     """Class for controlling PCO Sensicam cameras."""
@@ -116,6 +107,8 @@ class Sensicam(camera.Camera):
                     "Sensicam warning: " + error_text + \
                     "\n\tLayer = " + layer_text)
                 logging.debug("warning code: " + hex_)
+                stack = tb.extract_stack()
+                logging.debug(''.join(tb.format_list(stack)))
     
     # Setup and shutdown
     # ------------------
@@ -164,15 +157,12 @@ class Sensicam(camera.Camera):
         self.y_actual = y_actual.value
         self.bit_pix = bit_pix.value
         self.shape = (x.value, y.value)
+        self.crop = (1, x.value, 1, y.value)
         logging.debug(
             "Result of GETSIZES:\n" + \
             "\tx pixels: %i, y pixels: %i\n" % (self.shape[0], self.shape[1]) + \
             "\tx_actual: %i, y_actual: %i\n" % (self.x_actual, self.y_actual) + \
             "\tbit_pix: %i" % self.bit_pix)
-        self.crop = [1, self.shape[0], 1, self.shape[1]]
-
-        # Write camera settings to the hardware
-        self._update_coc()
 
         # Buffer allocation.
         self.address = ctypes.c_void_p()
@@ -187,6 +177,12 @@ class Sensicam(camera.Camera):
         self._chk(self.clib.SETBUFFER_EVENT(
             self.filehandle, self.buffer_number,
             ctypes.pointer(ctypes.c_int(-1))))
+
+        # Write camera settings to the hardware
+        self._update_coc()
+
+        # Run COC
+        self._chk(self.clib.RUN_COC(self.filehandle, 0))
 
     def _to_sensi_crop(self, crop):
         """Convert a crop tuple/list in actual pixels into PCO's units
@@ -208,6 +204,12 @@ class Sensicam(camera.Camera):
         :func:`_update_coc.`.
 
         """
+
+        # TODO: Maybe the check should go somewhere else so that this
+        # can fake something if it's not a real camera?
+        if not self.real_camera:
+            return
+            
         # Prepare C data
         _ptr = lambda x: ctypes.pointer(x)
         logging.debug(
@@ -326,10 +328,10 @@ class Sensicam(camera.Camera):
         timing = ctypes.c_char_p("%i,%i" % (delay, t_exp))
 
         # Test new values and update class attributes.
-        # mode, trigger, crop, bins, delay, t_exp = \
-        #     self._test_coc(mode, trigger, crop, bins, delay, t_exp)
-        # self.bins = bins
-        # self.t_ms = t_exp
+        mode, trigger, crop, bins, delay, t_exp = \
+            self._test_coc(mode, trigger, crop, bins, delay, t_exp)
+        self.bins = bins
+        self.t_ms = t_exp
 
         # Log and update settings.
         logging.debug(
@@ -364,6 +366,7 @@ class Sensicam(camera.Camera):
         """
         if not self.real_camera:
             return
+        self._chk(self.clib.STOP_COC(self.filehandle, 0))
         self._chk(self.clib.REMOVE_ALL_BUFFERS_FROM_LIST(self.filehandle))
         self._chk(self.clib.FREE_BUFFER(self.filehandle, self.buffer_number))
         self._chk(self.clib.CLOSEBOARD(ctypes.pointer(self.filehandle)))
@@ -382,14 +385,16 @@ class Sensicam(camera.Camera):
 
     def acquire_image_data(self):
         """Acquire the current image from the camera."""
-        # *2 because the camera returns 16 bit data
+        # Times 2 because the camera returns 16 bit data... despite
+        # the function having 12 bit in the name...
         bytes_to_read = self.x_actual*self.y_actual*2
+        timeout = int(self.t_ms*3)
+        self._chk(self.clib.WAIT_FOR_IMAGE(self.filehandle, timeout))
         self._chk(self.clib.READ_IMAGE_12BIT(
             self.filehandle, 0, self.x_actual, self.y_actual, self.address))
         img = np.fromstring(
             ctypes.string_at(self.address, bytes_to_read), dtype=np.uint16)
-        shape = (self.crop[1]/self.bins, self.crop[3]/self.bins)
-        print(shape, len(img))
+        shape = (self.crop[1]/self.bins, self.crop[3]/self.bins)[::-1]
         img.shape = shape
         return img
         
@@ -489,9 +494,9 @@ if __name__ == "__main__":
         #cam.set_crop([1, 640, 1, 350])
         #cam.set_bins(1)
         for i in range(1):
-            img = np.transpose(cam.get_image())
+            img = cam.get_image()
             plt.figure()
-            plt.imshow(img, interpolation='none', origin='upper')
-        plt.show()
+            plt.imshow(img, interpolation='none')
+    plt.show()
 
         
