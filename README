@@ -34,7 +34,22 @@ Python packages are required:
 
 * [Numpy](http://www.numpy.org/)
 * [h5py](http://www.h5py.org/)
-* [Matplotlib](http://matplotlib.org/) (for running tests)
+
+Optional requirements which if not met will result in limited
+functionality:
+
+* [Matplotlib](http://matplotlib.org/) for running tests
+* [PyQt4](http://pyqt.sourceforge.net/Docs/PyQt4/) for embedding in
+  GUI applications. This may be replaced with
+  [PyQt5](http://pyqt.sourceforge.net/Docs/PyQt5/) in the future.
 
 All of these are contained in the default installation of
 [Python(x,y)](https://code.google.com/p/pythonxy/) for Windows.
+
+TODO
+----
+
+* Verify that all docstrings are up to date and accurately reflecting
+  arguments, class attributes, etc.
+
+

@@ -283,6 +283,7 @@ class Sensicam(camera.Camera):
             Length 2 tuple describing the camera operation type and
             analog gain. See p. 12 of the manual.
         trigger : int
+            Trigger mode to use. Defaults to software triggering.
         crop : tuple
             Length 4 tuple specifying the new region of interest.
         bins : int
@@ -300,7 +301,7 @@ class Sensicam(camera.Camera):
         c_mode = MODE(mode[0], mode[1])
 
         # Update trigger.
-        trigger = kwargs.get('trigger', self._trigger_modes[self.trigger_mode])
+        trigger = kwargs.get('trigger', self._trigger_modes['software'])
         if trigger not in range(2):
             raise SensicamError("trigger_mode most be one of 0, 1, 2.")
 
@@ -413,9 +414,11 @@ class Sensicam(camera.Camera):
         super(Sensicam, self).set_trigger_mode(mode)
         if not self.real_camera:
             return
-        # TODO
-        self.logger.warn("No action. set_trigger_mode not yet implemented.")
-        #self._update_coc() 
+        if type(mode) == str:
+            self.trigger_mode = self._trigger_modes[mode]
+        else:
+            self.trigger_mode = mode
+        self._update_coc() 
 
     def trigger(self):
         """Send a software trigger to take an image immediately."""

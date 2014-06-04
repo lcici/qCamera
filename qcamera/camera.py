@@ -13,11 +13,18 @@ import numpy as np
 import numpy.random as npr
 from ring_buffer import RingBuffer
 from camera_errors import CameraError, UnitsError
+try:
+    from PyQt4 import QtGui
+except ImportError:
+    logging.warn(
+        "Error importing PyQt4. Some functionality will not work.")
 
 _t_units = {'ms': 1, 's': 1e3} # Allowed units for exposure time
 
 class Camera:
     """Abstract base class for all cameras.
+
+    TODO: Verify that this documentation is up to date!
 
     Attributes
     ----------
@@ -41,8 +48,9 @@ class Camera:
         shutter open?
     acq_mode : str
         Camera acquisition mode.
-    trigger_mode : str
-        Camera triggering mode.
+    trigger_mode : int
+        Camera triggering mode. These are obviously defined
+        differently depending on the particular camera's SDK.
     rbuffer : RingBuffer
         The RingBuffer object for autosaving of images.
     real_camera : bool
@@ -63,7 +71,7 @@ class Camera:
     crop = (1, shape[0], 1, shape[1])
     shutter_open = False
     acq_mode = "single"
-    trigger_mode = "software"
+    trigger_mode = 0
     rbuffer = None
     real_camera = True
 

@@ -3,7 +3,11 @@ syntax: glob
 *.pyc
 *.o
 .ropeproject
-*.h5
 build
+dist
 MANIFEST
+*.h5
 files.txt
+.ipynb_checkpoints
+*.ipynb
+*.csv
