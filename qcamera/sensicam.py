@@ -99,40 +99,44 @@ class Sensicam(camera.Camera):
 
             # Raise error or warn
             if not is_warning:
-                logging.error(error_text)
-                logging.debug("error code: " + hex_)
+                self.logger.error(error_text)
+                self.logger.debug("error code: " + hex_)
                 raise SensicamError(error_text)
             else:
-                logging.warn(
+                self.logger.warn(
                     "Sensicam warning: " + error_text + \
                     "\n\tLayer = " + layer_text)
-                logging.debug("warning code: " + hex_)
+                self.logger.debug("warning code: " + hex_)
                 stack = tb.extract_stack()
-                logging.debug(''.join(tb.format_list(stack)))
+                self.logger.debug(''.join(tb.format_list(stack)))
     
     # Setup and shutdown
     # ------------------
 
-    def __init__(self, bins=None, crop=None, real=True):
+    def initialize(self, **kwargs):
         """Initialize a PCO Sensicam.
 
         Keyword arguments
         -----------------
-        bins : int or None
-            Specifies the number of binned pixels to use.
-        crop : tuple or None
+        bins : int
+            Specifies the number of binned pixels to use. Defaults to
+            1.
+        crop : list
             A tuple of the form [x, y, width, height] specifying the
             cropped portion of the sensor to use. If None, use the
-            full sensor.
-        real : bool
-            If False, the camera will be simulated.
-        
+            full sensor. Defaults to [1, 1, 640, 480].
+
         """
+
+        # Get kwargs.
+        bins = kwargs.get('bins', 1)
+        crop = kwargs.get('crop', [1, 1, 640, 480])
+
+        # Check kwargs.
+        assert isinstance(bins, int)
+        assert isinstance(crop, (list, tuple, np.ndarray))
         
-        # Check if using a real or simulated camera.
-        super(Sensicam, self).__init__(real=real)
-        if not self.real_camera:
-            return
+        # Load the DLL.
         self.clib = ctypes.windll.sen_cam
 
         # Initalize the camera.
@@ -158,7 +162,7 @@ class Sensicam(camera.Camera):
         self.bit_pix = bit_pix.value
         self.shape = (x.value, y.value)
         self.crop = (1, x.value, 1, y.value)
-        logging.debug(
+        self.logger.debug(
             "Result of GETSIZES:\n" + \
             "\tx pixels: %i, y pixels: %i\n" % (self.shape[0], self.shape[1]) + \
             "\tx_actual: %i, y_actual: %i\n" % (self.x_actual, self.y_actual) + \
@@ -212,7 +216,7 @@ class Sensicam(camera.Camera):
             
         # Prepare C data
         _ptr = lambda x: ctypes.pointer(x)
-        logging.debug(
+        self.logger.debug(
             "Trying the following values for TEST_COC:\n" + \
             "\tmode: %i, %i\n" % (mode[0], mode[1]) + \
             "\ttrigger: %i\n" % trigger + \
@@ -241,7 +245,7 @@ class Sensicam(camera.Camera):
         #        "Desired mode not accepted by TEST_COC, adjusting: %i -> %i" \
         #        % (mode, c_mode.value))
         if c_trigger.value != trigger:
-            logging.debug(
+            self.logger.debug(
                 "Desired trigger not accepted by TEST_COC, adjusting: %i -> %i" \
                 % (trigger, c_trigger.value))
             trigger = c_trigger.value
@@ -249,12 +253,12 @@ class Sensicam(camera.Camera):
                     c_crop_y1.value, c_crop_y2.value]
         for i, x in enumerate(new_crop):
             if x != crop[i]:
-                logging.debug(
+                self.logger.debug(
                     "Invalid crop parameter from TEST_COC: " + \
                     "Changing crop[%i] = %i -> %i" % (i, crop[i], new_crop[i]))
                 crop[i] = x
         if xbins.value != bins or ybins.value != bins:
-            logging.debug(
+            self.logger.debug(
                 "Invalid bin argument in TEST_COC. Changing %i -> %i" \
                 % (bins, xbins.value))
             bins = xbins
@@ -309,7 +313,7 @@ class Sensicam(camera.Camera):
         if len(crop) != 4:
             raise SensicamError("crop must be a length 4 tuple.")
         crop = self._to_sensi_crop(crop)
-        logging.debug("Result of _to_sensi_crop:" + \
+        self.logger.debug("Result of _to_sensi_crop:" + \
             "\n\tself.crop = " + str(self.crop) +\
             "\n\tsensi_crop = " + str(crop))
         
@@ -334,7 +338,7 @@ class Sensicam(camera.Camera):
         self.t_ms = t_exp
 
         # Log and update settings.
-        logging.debug(
+        self.logger.debug(
             "Updating Sensicam COC:\n" + \
             "\tmode: %i, %i\n" % (mode[0], mode[1]) + \
             "\ttrigger: %i\n" % trigger + \
@@ -380,7 +384,7 @@ class Sensicam(camera.Camera):
         if not self.real_camera:
             return
         # TODO
-        logging.warn("No action: set_acquisition_mode not yet implemented.")
+        self.logger.warn("No action: set_acquisition_mode not yet implemented.")
         #self._update_coc()
 
     def acquire_image_data(self):
@@ -410,7 +414,7 @@ class Sensicam(camera.Camera):
         if not self.real_camera:
             return
         # TODO
-        logging.warn("No action. set_trigger_mode not yet implemented.")
+        self.logger.warn("No action. set_trigger_mode not yet implemented.")
         #self._update_coc() 
 
     def trigger(self):
@@ -449,7 +453,7 @@ class Sensicam(camera.Camera):
         if not self.real_camera:
             return
         # TODO
-        logging.warn("No action. set_gain not yet implemented.")
+        self.logger.warn("No action. set_gain not yet implemented.")
         #self._update_coc()
 
     # ROI, cropping, and binning
@@ -471,7 +475,7 @@ class Sensicam(camera.Camera):
 
         """
         super(Sensicam, self).set_crop(crop)
-        logging.info("Setting crop to: %s" % repr(self.crop))
+        self.logger.info("Setting crop to: %s" % repr(self.crop))
         self._chk(self.clib.STOP_COC(self.filehandle, 0))
         self._update_coc(crop=crop)
         self._chk(self.clib.RUN_COC(self.filehandle, 0))
@@ -482,7 +486,7 @@ class Sensicam(camera.Camera):
     def set_bins(self, bins):
         """Set binning to bins x bins."""
         super(Sensicam, self).set_bins(bins)
-        logging.info("Setting bins to: %i" % self.bins)
+        self.logger.info("Setting bins to: %i" % self.bins)
         self._chk(self.clib.STOP_COC(self.filehandle, 0))
         self._update_coc(bins=bins)
         self._chk(self.clib.RUN_COC(self.filehandle, 0))
@@ -491,3 +495,4 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     with Sensicam(real=True) as cam:
         cam.test_real_time_acquisition()
+        

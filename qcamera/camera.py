@@ -1,4 +1,4 @@
-"""qcamera base camera class
+"""qCamera base camera class
 
 This file contains the class definition for the Camera class on which
 all subsequent cameras should be based on.
@@ -52,8 +52,8 @@ class Camera:
     """
     __metaclass__ = ABCMeta
 
-    # Members
-    # -------
+    # Attributes
+    # ----------
     
     roi = (1, 1, 10, 10)
     t_ms = 100.
@@ -70,20 +70,57 @@ class Camera:
     # Setup and shutdown
     # ------------------
 
-    def __init__(self, real=True, buffer_dir='.'):
-        logging.info(
+    def __init__(self, real=True, buffer_dir='.', **kwargs):
+        """Initialize a camera. Additional keyword arguments may also
+        be passed and checked for the initialize function to be
+        defined by child classes.
+
+        Keyword arguments
+        -----------------
+        real : bool
+            If True, the camera is real; otherwise it is
+            simulated. Default: True.
+        buffer_dir : str
+            Directory to store the ring buffer HDF5 file to. Default:
+            '.'.
+        logger : str
+            Name of the logger to use. Defaults to 'Camera'.
+
+        """
+        # Get kwargs and set defaults
+        real = kwargs.get('real', True)
+        buffer_dir = kwargs.get('buffer_dir', '.')
+        logger = kwargs.get('logger', 'Camera')
+        
+        # Check kwarg types are correct
+        assert isinstance(real, (bool, int))
+        assert isinstance(buffer_dir, str)
+        assert isinstance(logger, str)
+
+        # Initialize
+        self.logger = logging.getLogger(logger)
+        self.logger.info(
             "Connecting to %s camera" % ("real" if real else "simulated"))
         self.real_camera = real
         self.rbuffer = RingBuffer(directory=buffer_dir)
         x0 = npr.randint(self.shape[0]/4, self.shape[0]/2)
         y0 = npr.randint(self.shape[1]/4, self.shape[1]/2)
         self.sim_img_center = (x0, y0)
+        self.initialize(**kwargs)
+
+    def initialize(self, **kwargs):
+        """Any extra initialization required should be placed in this
+        function for child camera classes.
+
+        """
+        self.logger.warn(
+            "Nothing done in initialize. Did you forget to override it?")
 
     def __enter__(self):
         return self
 
     def __exit__(self, type_, value, traceback):
-        logging.info("Shutting down camera.")
+        self.logger.info("Shutting down camera.")
         self.rbuffer.close()
         self.close()
 
