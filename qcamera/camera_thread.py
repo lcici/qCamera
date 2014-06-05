@@ -2,11 +2,11 @@
 
 import time
 import logging
-import threading
 import numpy as np
+from PyQt4 import QtCore
 from camera import Camera
 
-class CameraThread(threading.Thread):
+class CameraThread(QtCore.QThread):
     """Thread class for producing live feed images from a camera.
 
     Attributes
@@ -15,10 +15,6 @@ class CameraThread(threading.Thread):
         True when the thread is running.
     abort : bool
         Set to True when stopping of the thread is requested.
-    transmitters : list
-        A list of functions used for transmitting QPixmaps and raw
-        image data for GUI integration. See :func:`add_transmitter`
-        for details.
     logger : Logger
         A Logger object for logging any important output from the
         thread.
@@ -27,7 +23,7 @@ class CameraThread(threading.Thread):
 
     running = False
     abort = False
-    transmitters = []
+    image_acquired = QtCore.pyqtSignal(np.ndarray)
     
     def __init__(self, cam, **kwargs):
         """Initialize the camera thread.
@@ -68,36 +64,13 @@ class CameraThread(threading.Thread):
         while not self.abort:
             try:
                 image = self.cam.get_image()
-                self.transmit_pixmap(image)
+                self.image_acquired.emit(image)
             except:
                 # TODO: DTRT, have exception in case camera is busy
                 # changing settings or whatever
-                print('exception')
+                import sys, traceback as tb
+                e = sys.exc_info()
+                print(e[1])
+                tb.print_last()
                 time.sleep(0.01)
 
-    def add_transmitter(self, function):
-        """Add a transmitter function to the list of transmitters.
-
-        Parameters
-        ----------
-        function : callable
-            A Python callable accepting two arguments: a QPixmap and a
-            :mod:`numpy` array containing the raw image data, i.e.,
-            ``function(q_pixmap, img_array)``.
-
-        """
-        assert callable(function)
-        self.transmitters.append(function)
-
-    def transmit_pixmap(self, image):
-        """Create and transmit the pixmap for use in a GUI. See
-        :func:`add_transmitter` for a description of valid transmitter
-        functions.
-
-        """
-        assert isinstance(image, np.ndarray)
-        pixmap = image # TODO: get from image mapper
-
-        for transmitter in self.transmitters:
-            transmitter(pixmap, image)
-            

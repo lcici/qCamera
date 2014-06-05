@@ -42,6 +42,8 @@ functionality:
 * [PyQt4](http://pyqt.sourceforge.net/Docs/PyQt4/) for embedding in
   GUI applications. This may be replaced with
   [PyQt5](http://pyqt.sourceforge.net/Docs/PyQt5/) in the future.
+* [GUIQwt](https://pythonhosted.org/guiqwt/) for image widgets in
+  tests.
 
 All of these are contained in the default installation of
 [Python(x,y)](https://code.google.com/p/pythonxy/) for Windows.
@@ -51,5 +53,4 @@ TODO
 
 * Verify that all docstrings are up to date and accurately reflecting
   arguments, class attributes, etc.
-
 

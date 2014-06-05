@@ -5,10 +5,10 @@ it in a Qt GUI.
 
 from __future__ import print_function
 
-import time
 import sys
+import numpy as np
 sys.path[0:0] = ['..']
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 from qcamera import Sensicam
 from qcamera.camera_thread import CameraThread
 
@@ -69,12 +69,13 @@ class Window(QtGui.QWidget):
         self.bStartContinuous.setText('Start continuous acquisition')
         self.bStartContinuous.setToolTip(
             'Begin continous, real time acquisition.')
-        self.bStartContinuous.setDisabled(True)
+        self.bStartContinuous.clicked.connect(self.start_continuous)
 
         # Stop continuous acquisition
         self.bStopContinuous = QtGui.QPushButton()
         self.bStopContinuous.setText('Stop continuous acquisition')
         self.bStopContinuous.setDisabled(True)
+        self.bStopContinuous.clicked.connect(self.stop_continuous)
 
         # GUI Layout
         # ----------
@@ -107,12 +108,33 @@ class Window(QtGui.QWidget):
     def take_picture(self):
         """Take a single image."""
         img_data = self.cam.get_image()
+        self.update_image(img_data)
+
+    @QtCore.pyqtSlot(np.ndarray)
+    def update_image(self, img_data):
+        """Update the image plot."""
         plot = self.img.get_plot()
         plot.del_all_items(except_grid=True)
         img = make.image(img_data, colormap='Spectral')
         img.set_lut_range((self.sbThresholdMin.value(), self.sbThresholdMax.value()))
         plot.add_item(img)
         plot.set_plot_limits(0, img_data.shape[1], 0, img_data.shape[0])
+
+    def start_continuous(self):
+        """Start continuous image acquisition."""
+        self.bStartContinuous.setEnabled(False)
+        self.bTakePicture.setEnabled(False)
+        self.bStopContinuous.setEnabled(True)
+        self.cam_thread = CameraThread(self.cam)
+        self.cam_thread.image_acquired.connect(self.update_image)
+        self.cam_thread.start()
+
+    def stop_continuous(self):
+        """Stop continous image acquisition."""
+        self.cam_thread.stop()
+        self.bStopContinuous.setEnabled(False)
+        self.bTakePicture.setEnabled(True)
+        self.bStartContinuous.setEnabled(True)
 
     def set_t_exp(self):
         """Change the exposure time."""

@@ -13,11 +13,6 @@ import numpy as np
 import numpy.random as npr
 from ring_buffer import RingBuffer
 from camera_errors import CameraError, UnitsError
-try:
-    from PyQt4 import QtGui
-except ImportError:
-    logging.warn(
-        "Error importing PyQt4. Some functionality will not work.")
 
 _t_units = {'ms': 1, 's': 1e3} # Allowed units for exposure time
 
