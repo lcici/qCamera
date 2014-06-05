@@ -5,13 +5,14 @@ it in a Qt GUI.
 
 from __future__ import print_function
 
+import time
 import sys
 sys.path[0:0] = ['..']
 from PyQt4 import QtGui
 from qcamera import Sensicam
 from qcamera.camera_thread import CameraThread
-from qcamera.image_mapper import ImageMapper
 
+from guiqwt.image import ImageItem
 from guiqwt.plot import ImageDialog
 from guiqwt.builder import make
 
@@ -24,7 +25,7 @@ class Window(QtGui.QWidget):
     def init_ui(self):
         """Initialize all the Qt UI components."""
         # Image plotting
-        self.img = ImageDialog(edit=False, toolbar=True)
+        self.img = ImageDialog(edit=False, toolbar=False)
         self.img.resize(640, 480)
         plot = self.img.get_plot()
         plot.set_aspect_ratio(640/480., lock=True)
@@ -45,11 +46,13 @@ class Window(QtGui.QWidget):
         self.sbThresholdMin.setRange(0, 2**12)
         self.sbThresholdMin.setValue(0)
         self.sbThresholdMin.setSingleStep(10)
+        self.sbThresholdMin.valueChanged.connect(self.set_lut_range)
         
         self.sbThresholdMax = QtGui.QSpinBox()
         self.sbThresholdMax.setRange(0, 2**12)
         self.sbThresholdMax.setValue(500)
         self.sbThresholdMax.setSingleStep(10)
+        self.sbThresholdMax.valueChanged.connect(self.set_lut_range)
 
         # Image acquisition controls
         # --------------------------
@@ -105,14 +108,25 @@ class Window(QtGui.QWidget):
         """Take a single image."""
         img_data = self.cam.get_image()
         plot = self.img.get_plot()
+        plot.del_all_items(except_grid=True)
         img = make.image(img_data, colormap='Spectral')
-        img.set_lut_range([self.sbThresholdMin.value(), self.sbThresholdMax.value()])
+        img.set_lut_range((self.sbThresholdMin.value(), self.sbThresholdMax.value()))
         plot.add_item(img)
+        plot.set_plot_limits(0, img_data.shape[1], 0, img_data.shape[0])
 
     def set_t_exp(self):
         """Change the exposure time."""
         t = self.sbExpTime.value()
         self.cam.set_exposure_time(t)
+
+    def set_lut_range(self):
+        """Change the LUT maximum value."""
+        for item in self.img.get_plot().get_items():
+            img = item
+            if isinstance(item, ImageItem):
+                break
+        img.set_lut_range(
+            (self.sbThresholdMin.value(), self.sbThresholdMax.value()))
 
 if __name__ == "__main__":
     import logging
