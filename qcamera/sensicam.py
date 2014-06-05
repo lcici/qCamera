@@ -103,12 +103,13 @@ class Sensicam(camera.Camera):
                 self.logger.debug("error code: " + hex_)
                 raise SensicamError(error_text)
             else:
+                stack = tb.extract_stack()
                 self.logger.warn(
                     "Sensicam warning: " + error_text + \
-                    "\n\tLayer = " + layer_text)
-                self.logger.debug("warning code: " + hex_)
-                stack = tb.extract_stack()
-                self.logger.debug(''.join(tb.format_list(stack)))
+                    "\n\tLayer = " + layer_text + \
+                    "\n\twarning code: " + hex_ + \
+                    '\n\tTraceback follows:\n' + \
+                    ''.join(tb.format_list(stack)))
     
     # Setup and shutdown
     # ------------------
