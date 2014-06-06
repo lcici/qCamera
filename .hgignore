@@ -1,6 +1,7 @@
 syntax: glob
+*.dll
 *~
-*.pyc
+*.py[cod]
 *.o
 .ropeproject
 build
@@ -11,3 +12,4 @@ files.txt
 .ipynb_checkpoints
 *.ipynb
 *.csv
+docs/_build

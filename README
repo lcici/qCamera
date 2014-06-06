@@ -23,6 +23,10 @@ Coming soon:
   [DCx-series](http://www.thorlabs.de/software_pages/ViewSoftwarePage.cfm?Code=DCx)
   CCD/CMOS cameras
 
+Possible for future inclusion∆
+
+* Generic web cam driver interface (avicap32.dll on Windows)
+
 Requirements
 ------------
 
