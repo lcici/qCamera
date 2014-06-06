@@ -34,8 +34,8 @@ class Sensicam(camera.Camera):
     # Valid trigger modes.
     _trigger_modes = {
         "software": 0,
-        "rising": 1,
-        "falling": 2
+        "external": 1 # rising TTL
+        #"falling": 2 # falling TTL
     }
 
     def _chk(self, code):
@@ -94,6 +94,10 @@ class Sensicam(camera.Camera):
                 self.logger.debug("error code: " + hex_)
                 raise SensicamError(error_text)
             else:
+                if "Option is not available" in error_text:
+                    # This is a terrible hack to stop spitting out a
+                    # bunch of garbage that isn't helpful anyway.
+                    return
                 stack = tb.extract_stack()
                 self.logger.warn(
                     "Sensicam warning: " + error_text + \
@@ -418,7 +422,6 @@ class Sensicam(camera.Camera):
             self.trigger_mode = self._trigger_modes[mode]
         else:
             self.trigger_mode = mode
-        print("new trigger mode =", mode)
         self._update_coc() 
         
     # Shutter control
