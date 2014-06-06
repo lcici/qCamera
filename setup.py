@@ -1,4 +1,5 @@
 from distutils.core import setup
+import qcamera
 
 long_description = \
 """qCamera is a unified camera interface meant to be used in
@@ -9,7 +10,7 @@ a line of code to reflect the new hardware."""
 
 setup(
     name='qCamera',
-    version='0.1.0',
+    version=qcamera.__version__,
     author='Michael V. DePalatis',
     author_email='depalatis@phys.au.dk',
     url='http://phys.au.dk/forskning/forskningsomraader/amo/the-ion-trap-group/',

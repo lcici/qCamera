@@ -1,4 +1,10 @@
-"""Threading for camera live feeds"""
+"""Threading for camera live feeds
+
+TODO: Figure out a way to do this with generic Python threading
+      instead of relying on Qt threading so that this can be used in
+      non-GUI environments.
+
+"""
 
 import time
 import logging
@@ -67,7 +73,7 @@ class CameraThread(QtCore.QThread):
                 self.image_acquired.emit(image)
             except:
                 # TODO: DTRT, have exception in case camera is busy
-                # changing settings or whatever
+                #       changing settings or whatever
                 import sys, traceback as tb
                 e = sys.exc_info()
                 print(e[1])

@@ -143,10 +143,10 @@ class Camera:
 
     def get_image(self):
         """Acquire the current image from the camera and write it to
-        the ring buffer. This function should not be overwritten by
+        the ring buffer. This function should *not* be overwritten by
         child classes. Instead, everything necessary to acquire an
         image from the camera should be added to the
-        acquire_image_data function.
+        :meth:`acquire_image_data` method.
 
         """
         if not self.real_camera:
@@ -191,10 +191,6 @@ class Camera:
     @abstractmethod
     def set_trigger_mode(self, mode):
         """Setup trigger mode."""
-
-    @abstractmethod
-    def trigger(self):
-        """Send a software trigger to take an image immediately."""
         
     # Shutter control
     # ---------------

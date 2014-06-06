@@ -1,8 +1,10 @@
-"""Status codes for the Sensicam. These were taken by conversion using
-h2py and then writing to a dictionary from PCO_err.h. Additionally,
-this implements the incredibly messy way of looking up error texts
-found in PCO_errt.h. Why they chose to make things this complicated, I
-really don't know.
+"""Status codes for the Sensicam
+
+These were taken by conversion using h2py and then writing to a
+dictionary from PCO_err.h. Additionally, this implements the
+incredibly messy way of looking up error texts found in
+PCO_errt.h. Why they chose to make things this complicated, I really
+don't know.
 
 """
 

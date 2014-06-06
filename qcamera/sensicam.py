@@ -10,6 +10,7 @@ from __future__ import print_function
 import logging
 import traceback as tb
 import math
+import sys
 import ctypes
 import numpy as np
 import camera
@@ -29,16 +30,6 @@ class Sensicam(camera.Camera):
     _coc_gain_modes = {
         "normal": 0,
         "extended": 1}
-
-    # COC submodes. See p. 24 of the API documentation.
-    # This sets specifics for exposure modes. For example, 'single'
-    # means one trigger yields one exposure and 'double' means one
-    # trigger yields two exposures.
-    _coc_submodes = {
-        "single": 0, # single trigger mode (DPSINGLE)
-        "multi": 1,  # multi trigger mode (DPMULTI)
-        "double": 2  # double trigger mode (DPDOUBLE)
-    }
 
     # Valid trigger modes.
     _trigger_modes = {
@@ -138,7 +129,10 @@ class Sensicam(camera.Camera):
         assert isinstance(crop, (list, tuple, np.ndarray))
         
         # Load the DLL.
-        self.clib = ctypes.windll.sen_cam
+        if 'win' in sys.platform:
+            self.clib = ctypes.windll.sen_cam
+        else:
+            self.clib = ctypes.cdll.sen_cam
 
         # Initalize the camera.
         self.filehandle = ctypes.c_int()
@@ -276,7 +270,6 @@ class Sensicam(camera.Camera):
         updated.
 
         TODO: Proper documentation
-        TODO: Proper testing
 
         Keyword arguments
         -----------------
@@ -302,8 +295,8 @@ class Sensicam(camera.Camera):
         c_mode = MODE(mode[0], mode[1])
 
         # Update trigger.
-        trigger = kwargs.get('trigger', self._trigger_modes['software'])
-        if trigger not in range(2):
+        trigger = kwargs.get('trigger', self.trigger_mode)
+        if trigger not in range(3):
             raise SensicamError("trigger_mode most be one of 0, 1, 2.")
 
         # Update crop
@@ -394,8 +387,13 @@ class Sensicam(camera.Camera):
         # Times 2 because the camera returns 16 bit data... despite
         # the function having 12 bit in the name...
         bytes_to_read = self.x_actual*self.y_actual*2
-        timeout = int(self.t_ms*100)
-        self._chk(self.clib.WAIT_FOR_IMAGE(self.filehandle, timeout))
+        if self.trigger_mode != 0:
+            while True:
+                result = self.clib.WAIT_FOR_IMAGE(self.filehandle, 1)
+                if result == 0:
+                    break
+        else:
+            self._chk(self.clib.WAIT_FOR_IMAGE(self.filehandle, int(self.t_ms*100)))
         self._chk(self.clib.READ_IMAGE_12BIT(
             self.filehandle, 0, self.x_actual, self.y_actual, self.address))
         img = np.fromstring(
@@ -409,6 +407,7 @@ class Sensicam(camera.Camera):
 
     def get_trigger_mode(self):
         """Query the current trigger mode."""
+        return self.trigger_mode
 
     def set_trigger_mode(self, mode):
         """Setup trigger mode."""
@@ -419,10 +418,8 @@ class Sensicam(camera.Camera):
             self.trigger_mode = self._trigger_modes[mode]
         else:
             self.trigger_mode = mode
+        print("new trigger mode =", mode)
         self._update_coc() 
-
-    def trigger(self):
-        """Send a software trigger to take an image immediately."""
         
     # Shutter control
     # ---------------
@@ -440,6 +437,7 @@ class Sensicam(camera.Camera):
 
     def get_exposure_time(self):
         """Query for the current exposure time."""
+        return self.t_ms
 
     def set_exposure_time(self, t, units='ms'):
         """Set the exposure time."""

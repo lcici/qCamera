@@ -37,7 +37,7 @@ class Window(QtGui.QWidget):
         self.sbExpTime = QtGui.QSpinBox()
         self.sbExpTime.setRange(10, 10000)
         self.sbExpTime.setValue(100)
-        self.sbExpTime.setSingleStep(100)
+        self.sbExpTime.setSingleStep(20)
         self.sbExpTime.setToolTip('Exposure time in ms.')
         self.sbExpTime.valueChanged.connect(self.set_t_exp)
 
@@ -53,6 +53,11 @@ class Window(QtGui.QWidget):
         self.sbThresholdMax.setValue(500)
         self.sbThresholdMax.setSingleStep(10)
         self.sbThresholdMax.valueChanged.connect(self.set_lut_range)
+
+        # Trigger modes
+        self.cboTriggerModes = QtGui.QComboBox()
+        self.cboTriggerModes.addItems(['software', 'external'])
+        self.cboTriggerModes.currentIndexChanged.connect(self.set_trigger_mode)
 
         # Image acquisition controls
         # --------------------------
@@ -86,8 +91,14 @@ class Window(QtGui.QWidget):
         
         hbox = QtGui.QHBoxLayout()
         hbox.addStretch(1)
-        hbox.addWidget(QtGui.QLabel('t:'))
+        hbox.addWidget(QtGui.QLabel('Exposure time:'))
         hbox.addWidget(self.sbExpTime)
+        hbox.addWidget(QtGui.QLabel('Trigger mode:'))
+        hbox.addWidget(self.cboTriggerModes)
+        vbox.addLayout(hbox)
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.addStretch(1)
         hbox.addWidget(QtGui.QLabel('Min:'))
         hbox.addWidget(self.sbThresholdMin)
         hbox.addWidget(QtGui.QLabel('Max:'))
@@ -102,7 +113,7 @@ class Window(QtGui.QWidget):
         vbox.addLayout(hbox)
         self.setLayout(vbox)
 
-        self.setWindowTitle('qCamera Qt Test')
+        self.setWindowTitle('qCamera Viewer')
         self.show()
 
     def take_picture(self):
@@ -150,7 +161,19 @@ class Window(QtGui.QWidget):
         img.set_lut_range(
             (self.sbThresholdMin.value(), self.sbThresholdMax.value()))
 
+    def set_trigger_mode(self):
+        """Change the camera's triggering mode."""
+        trigger_mode = self.cboTriggerModes.currentIndex()
+        if trigger_mode == 0:
+            self.bTakePicture.setEnabled(True)
+        else:
+            self.bTakePicture.setEnabled(False)
+        cam.set_trigger_mode(trigger_mode)
+
 if __name__ == "__main__":
+    # TODO: Allow for using this with other cameras (either
+    #       command-line option, display a dialog to select a camera
+    #       at startup, or select camera in a menu).
     import logging
     logging.basicConfig(level=logging.DEBUG)
     app = QtGui.QApplication(sys.argv)
