@@ -33,9 +33,9 @@ class Camera:
         Number of pixels (x, y)
     bins : int
         Bin size to use.
-    crop : tuple
+    crop : list
         Crop specifications. Should be of the form::
-            (horiz start, horiz end, vert start, vert end)
+            [horiz start, horiz end, vert start, vert end]
     
         with indeces starting from 1.
     shutter_open : bool
@@ -242,7 +242,7 @@ class Camera:
 
     # Cooling
     # -------
-    #
+    
     # Not all cameras have this capability, so these are not abstract
     # methods but instead raise a NotImplementedError if you try to
     # call them without defining them explicitly.
@@ -266,11 +266,26 @@ class Camera:
     # ROI, cropping, and binning
     # --------------------------
 
-    @abstractmethod
     def set_roi(self, roi):
-        """Define the region of interest."""
+        """Define the region of interest. Since ROI stuff is generally
+        handled entirely in software, this function does not need to
+        be implemented in inheriting classes.
+
+        """
         if len(roi) != 4:
             raise CameraError("roi must be a length 4 list.")
+        if roi[0] < self.crop[0] or roi[1] > self.crop[1]:
+            roi[0] = self.crop[0]
+            roi[1] = self.crop[1]
+            self.logger.wran(
+                'Requested horizontal ROI is outside of the crop! ' + \
+                'Coercing to crop edge.')
+        if roi[2] < self.crop[2] or roi[3] > self.crop[3]:
+            roi[2] = self.crop[2]
+            roi[3] = self.crop[3]
+            self.logger.wran(
+                'Requested vertical ROI is outside of the crop! ' + \
+                'Coercing to crop edge.')
         self.roi = roi
         
     @abstractmethod

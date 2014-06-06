@@ -394,7 +394,7 @@ class Sensicam(camera.Camera):
         # Times 2 because the camera returns 16 bit data... despite
         # the function having 12 bit in the name...
         bytes_to_read = self.x_actual*self.y_actual*2
-        timeout = int(self.t_ms*3)
+        timeout = int(self.t_ms*100)
         self._chk(self.clib.WAIT_FOR_IMAGE(self.filehandle, timeout))
         self._chk(self.clib.READ_IMAGE_12BIT(
             self.filehandle, 0, self.x_actual, self.y_actual, self.address))
@@ -462,11 +462,6 @@ class Sensicam(camera.Camera):
 
     # ROI, cropping, and binning
     # --------------------------
-
-    def set_roi(self, roi):
-        """Define the region of interest."""
-        super(Sensicam, self).set_roi(roi)
-        # TODO
         
     def get_crop(self):
         """Get the current CCD crop settings."""
