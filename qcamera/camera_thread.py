@@ -1,18 +1,14 @@
-"""Threading for camera live feeds
-
-TODO: Figure out a way to do this with generic Python threading
-      instead of relying on Qt threading so that this can be used in
-      non-GUI environments.
-
-"""
+"""Threading for camera live feeds"""
 
 import time
 import logging
-import numpy as np
-from PyQt4 import QtCore
+import threading
+from Queue import Queue
 from camera import Camera
 
-class CameraThread(QtCore.QThread):
+image_queue = Queue(maxsize=1)
+
+class CameraThread(threading.Thread):
     """Thread class for producing live feed images from a camera.
 
     Attributes
@@ -29,7 +25,6 @@ class CameraThread(QtCore.QThread):
 
     running = False
     abort = False
-    image_acquired = QtCore.pyqtSignal(np.ndarray)
     
     def __init__(self, cam, **kwargs):
         """Initialize the camera thread.
@@ -70,7 +65,7 @@ class CameraThread(QtCore.QThread):
         while not self.abort:
             try:
                 image = self.cam.get_image()
-                self.image_acquired.emit(image)
+                image_queue.put(image)
             except:
                 # TODO: DTRT, have exception in case camera is busy
                 #       changing settings or whatever
