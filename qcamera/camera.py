@@ -1,4 +1,4 @@
-"""qcamera base camera class
+"""qCamera base camera class
 
 This file contains the class definition for the Camera class on which
 all subsequent cameras should be based on.
@@ -19,6 +19,8 @@ _t_units = {'ms': 1, 's': 1e3} # Allowed units for exposure time
 class Camera:
     """Abstract base class for all cameras.
 
+    TODO: Verify that this documentation is up to date!
+
     Attributes
     ----------
     roi : tuple
@@ -31,9 +33,9 @@ class Camera:
         Number of pixels (x, y)
     bins : int
         Bin size to use.
-    crop : tuple
+    crop : list
         Crop specifications. Should be of the form::
-            (horiz start, horiz end, vert start, vert end)
+            [horiz start, horiz end, vert start, vert end]
     
         with indeces starting from 1.
     shutter_open : bool
@@ -41,8 +43,9 @@ class Camera:
         shutter open?
     acq_mode : str
         Camera acquisition mode.
-    trigger_mode : str
-        Camera triggering mode.
+    trigger_mode : int
+        Camera triggering mode. These are obviously defined
+        differently depending on the particular camera's SDK.
     rbuffer : RingBuffer
         The RingBuffer object for autosaving of images.
     real_camera : bool
@@ -52,8 +55,8 @@ class Camera:
     """
     __metaclass__ = ABCMeta
 
-    # Members
-    # -------
+    # Attributes
+    # ----------
     
     roi = (1, 1, 10, 10)
     t_ms = 100.
@@ -63,27 +66,64 @@ class Camera:
     crop = (1, shape[0], 1, shape[1])
     shutter_open = False
     acq_mode = "single"
-    trigger_mode = "software"
+    trigger_mode = 0
     rbuffer = None
     real_camera = True
 
     # Setup and shutdown
     # ------------------
 
-    def __init__(self, real=True, buffer_dir='.'):
-        logging.info(
+    def __init__(self, real=True, buffer_dir='.', **kwargs):
+        """Initialize a camera. Additional keyword arguments may also
+        be passed and checked for the initialize function to be
+        defined by child classes.
+
+        Keyword arguments
+        -----------------
+        real : bool
+            If True, the camera is real; otherwise it is
+            simulated. Default: True.
+        buffer_dir : str
+            Directory to store the ring buffer HDF5 file to. Default:
+            '.'.
+        logger : str
+            Name of the logger to use. Defaults to 'Camera'.
+
+        """
+        # Get kwargs and set defaults
+        real = kwargs.get('real', True)
+        buffer_dir = kwargs.get('buffer_dir', '.')
+        logger = kwargs.get('logger', 'Camera')
+        
+        # Check kwarg types are correct
+        assert isinstance(real, (bool, int))
+        assert isinstance(buffer_dir, str)
+        assert isinstance(logger, str)
+
+        # Initialize
+        self.logger = logging.getLogger(logger)
+        self.logger.info(
             "Connecting to %s camera" % ("real" if real else "simulated"))
         self.real_camera = real
         self.rbuffer = RingBuffer(directory=buffer_dir)
         x0 = npr.randint(self.shape[0]/4, self.shape[0]/2)
         y0 = npr.randint(self.shape[1]/4, self.shape[1]/2)
         self.sim_img_center = (x0, y0)
+        self.initialize(**kwargs)
+
+    def initialize(self, **kwargs):
+        """Any extra initialization required should be placed in this
+        function for child camera classes.
+
+        """
+        self.logger.warn(
+            "Nothing done in initialize. Did you forget to override it?")
 
     def __enter__(self):
         return self
 
     def __exit__(self, type_, value, traceback):
-        logging.info("Shutting down camera.")
+        self.logger.info("Shutting down camera.")
         self.rbuffer.close()
         self.close()
 
@@ -103,10 +143,10 @@ class Camera:
 
     def get_image(self):
         """Acquire the current image from the camera and write it to
-        the ring buffer. This function should not be overwritten by
+        the ring buffer. This function should *not* be overwritten by
         child classes. Instead, everything necessary to acquire an
         image from the camera should be added to the
-        acquire_image_data function.
+        :meth:`acquire_image_data` method.
 
         """
         if not self.real_camera:
@@ -151,10 +191,6 @@ class Camera:
     @abstractmethod
     def set_trigger_mode(self, mode):
         """Setup trigger mode."""
-
-    @abstractmethod
-    def trigger(self):
-        """Send a software trigger to take an image immediately."""
         
     # Shutter control
     # ---------------
@@ -202,7 +238,7 @@ class Camera:
 
     # Cooling
     # -------
-    #
+    
     # Not all cameras have this capability, so these are not abstract
     # methods but instead raise a NotImplementedError if you try to
     # call them without defining them explicitly.
@@ -226,11 +262,26 @@ class Camera:
     # ROI, cropping, and binning
     # --------------------------
 
-    @abstractmethod
     def set_roi(self, roi):
-        """Define the region of interest."""
+        """Define the region of interest. Since ROI stuff is generally
+        handled entirely in software, this function does not need to
+        be implemented in inheriting classes.
+
+        """
         if len(roi) != 4:
             raise CameraError("roi must be a length 4 list.")
+        if roi[0] < self.crop[0] or roi[1] > self.crop[1]:
+            roi[0] = self.crop[0]
+            roi[1] = self.crop[1]
+            self.logger.wran(
+                'Requested horizontal ROI is outside of the crop! ' + \
+                'Coercing to crop edge.')
+        if roi[2] < self.crop[2] or roi[3] > self.crop[3]:
+            roi[2] = self.crop[2]
+            roi[3] = self.crop[3]
+            self.logger.wran(
+                'Requested vertical ROI is outside of the crop! ' + \
+                'Coercing to crop edge.')
         self.roi = roi
         
     @abstractmethod
@@ -256,8 +307,33 @@ class Camera:
     def set_bins(self, bins):
         """Set binning to bins x bins."""
 
+    # Standard tests
+    # --------------
+
+    def test_real_time_acquisition(self, max_exposures=1000):
+        """Test real time acquisition.
+
+        Parameters
+        ----------
+        max_exposures : int
+            Maximum number of exposures to take for the real time
+            test.
+
+        """
+        import matplotlib.pyplot as plt
+        try:
+            for i in range(max_exposures):
+                img = self.get_image()
+                if i == 0:
+                    p = plt.imshow(img, interpolation='none')
+                    plt.clim()
+                else:
+                    p.set_data(img)
+                    plt.pause(0.0001)
+        except KeyboardInterrupt:
+            pass
+
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
     class Test(Camera):
         pass
     with Test(real=False) as cam:
