@@ -18,6 +18,10 @@ class ThorlabsDCx(Camera):
 
     def __init__(self, real=True, buffer_dir='.'):
         super(self, ThorlabsDCx).__init__(real, buffer_dir)
+        self.filehandle = ctypes.int(1)
+        self.clib.is_InitCamera(
+            ctypes.pointer(self.filehandle),
+            ctypes.pointer(ctypes.c_void_p(0)))
 
     def close(self):
         """Close the camera safely. Anything necessary for doing so
@@ -30,22 +34,6 @@ class ThorlabsDCx(Camera):
 
     def set_acquisition_mode(self, mode):
         """Set the image acquisition mode."""
-
-    def get_image(self):
-        """Acquire the current image from the camera and write it to
-        the ring buffer. This function should not be overwritten by
-        child classes. Instead, everything necessary to acquire an
-        image from the camera should be added to the
-        acquire_image_data function.
-
-        """
-        if not self.real_camera:
-            x0, y0 = self.sim_img_center
-            img = self.get_simulated_image(x0, y0)
-        else:
-            img = self.acquire_image_data()
-        self.rbuffer.write(img)
-        return img
 
     def acquire_image_data(self):
         """Code for getting image data from the camera should be
