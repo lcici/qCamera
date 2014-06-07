@@ -78,6 +78,7 @@ class Camera:
         x0 = npr.randint(self.shape[0]/4, self.shape[0]/2)
         y0 = npr.randint(self.shape[1]/4, self.shape[1]/2)
         self.sim_img_center = (x0, y0)
+        self.initialize()
 
     def __enter__(self):
         return self
@@ -86,6 +87,13 @@ class Camera:
         logging.info("Shutting down camera.")
         self.rbuffer.close()
         self.close()
+
+    @abstractmethod
+    def initialize(self):
+        """Place any code for initialization here rather than
+        overwriting __init__.
+
+        """
 
     @abstractmethod
     def close(self):

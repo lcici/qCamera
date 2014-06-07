@@ -7,8 +7,14 @@ __ http://www.thorlabs.de/software_pages/viewsoftwarepage.cfm?code=DCx
 """
 
 from __future__ import print_function
+import sys
 from camera import Camera
 import ctypes
+
+def _chk(msg):
+    """Check for errors from the C library."""
+    # TODO
+    pass
 
 class ThorlabsDCx(Camera):
     """Class for Thorlabs DCx series cameras."""
@@ -16,18 +22,33 @@ class ThorlabsDCx(Camera):
     # Setup and shutdown
     # ------------------
 
-    def __init__(self, real=True, buffer_dir='.'):
-        super(self, ThorlabsDCx).__init__(real, buffer_dir)
-        self.filehandle = ctypes.int(1)
-        self.clib.is_InitCamera(
-            ctypes.pointer(self.filehandle),
-            ctypes.pointer(ctypes.c_void_p(0)))
+    def initialize(self):
+        """Initialize the camera."""
+        # Load the library.
+        if 'win' in sys.platform:
+            try:
+                self.clib = ctypes.windll.uc480_64
+            except:
+                self.clib = ctypes.windll.uc480
+        else:
+            self.clib = ctypes.cdll.LoadLibrary('libueye_api.so')
+
+        # Initialize the camera. The filehandle being 0 initially
+        # means that the first available camera will be used. This is
+        # not really the right way of doing things if there are
+        # multiple cameras installed, but it's good enough for a lot
+        # of cases.
+        self.filehandle = ctypes.c_int(0)
+        _chk(self.clib.is_InitCamera(
+            ctypes.pointer(self.filehandle), None))
+
+        # Enable autoclosing. This allows for safely closing the
+        # camera if it is disconnected.
+        _chk(self.clib.is_EnableAutoExit(self.filehandle, 1))
 
     def close(self):
-        """Close the camera safely. Anything necessary for doing so
-        should be defined here.
-
-        """
+        """Close the camera safely."""
+        _chk(self.clib.is_ExitCamera(self.filehandle))
         
     # Image acquisition
     # -----------------
@@ -123,3 +144,7 @@ class ThorlabsDCx(Camera):
 
     def set_bins(self, bins):
         """Set binning to bins x bins."""
+
+if __name__ == "__main__":
+    with ThorlabsDCx() as cam:
+        pass
