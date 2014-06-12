@@ -397,7 +397,7 @@ class Sensicam(camera.Camera):
                 if result == 0:
                     break
         else:
-            self._chk(self.clib.WAIT_FOR_IMAGE(self.filehandle, int(self.t_ms*100)))
+            self._chk(self.clib.WAIT_FOR_IMAGE(self.filehandle, int(self.t_ms*10)))
         self._chk(self.clib.READ_IMAGE_12BIT(
             self.filehandle, 0, self.x_actual, self.y_actual, self.address))
         img = np.fromstring(

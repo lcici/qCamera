@@ -73,7 +73,7 @@ class Camera:
     # Setup and shutdown
     # ------------------
 
-    def __init__(self, real=True, buffer_dir='.', **kwargs):
+    def __init__(self, **kwargs):
         """Initialize a camera. Additional keyword arguments may also
         be passed and checked for the initialize function to be
         defined by child classes.
@@ -298,6 +298,10 @@ class Camera:
         if len(crop) != 4:
             raise CameraError("crop must be a length 4 array.")
         self.crop = crop
+
+    def reset_crop(self):
+        """Reset the crop to the maximum size."""
+        self.crop = [1, self.shape[0], 1, self.shape[1]]
         
     @abstractmethod
     def get_bins(self):
