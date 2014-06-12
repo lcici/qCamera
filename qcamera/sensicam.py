@@ -26,6 +26,11 @@ class MODE(ctypes.Structure):
 class Sensicam(camera.Camera):
     """Class for controlling PCO Sensicam cameras."""
 
+    # This will later become a ctypes int and points to the board's
+    # image buffer. To begin, it's set to None so that we don't try to
+    # remove a non-existant buffer!
+    buffer_number = None
+
     # COC gain modes. See p. 24 of the API documentation.
     _coc_gain_modes = {
         "normal": 0,
@@ -105,48 +110,38 @@ class Sensicam(camera.Camera):
                     "\n\twarning code: " + hex_ + \
                     '\n\tTraceback follows:\n' + \
                     ''.join(tb.format_list(stack)))
-    
-    # Setup and shutdown
-    # ------------------
 
-    def initialize(self, **kwargs):
-        """Initialize a PCO Sensicam.
+    # Low level utility functions
+    # ---------------------------
 
-        Keyword arguments
-        -----------------
-        bins : int
-            Specifies the number of binned pixels to use. Defaults to
-            1.
-        crop : list
-            A tuple of the form [x, y, width, height] specifying the
-            cropped portion of the sensor to use. If None, use the
-            full sensor. Defaults to [1, 1, 640, 480].
+    # The PCO SDK is EXTREMELY low level, so here are some of their
+    # functions implemented in a slightly more convenient way.
+
+    def _get_sizes(self):
+        """Get the "actual" sizes and bits per pixel. Presumably this
+        takes into account hardware cropping and binning, but the
+        documentation is not terribly clear.
+
+        This function sets some class variables, namely:
+
+          * x_actual
+          * y_actual
+          * crop
+
+        The values it returns (see below) are not set in this function
+        since ideally they only need to be set once. However, the low
+        level GETSIZES function of the SDK returns all this data every
+        time, so this function does the same.
+
+        Returns
+        -------
+        shape : tuple
+            A tuple of the form (x_pixels, y_pixels) which is the
+            total number of pixels on the CCD.
+        bit_pix : int
+            Number of bits per pixel.
 
         """
-
-        # Get kwargs.
-        bins = kwargs.get('bins', 1)
-        crop = kwargs.get('crop', [1, 1, 640, 480])
-
-        # Check kwargs.
-        assert isinstance(bins, int)
-        assert isinstance(crop, (list, tuple, np.ndarray))
-        
-        # Load the DLL.
-        if 'win' in sys.platform:
-            self.clib = ctypes.windll.sen_cam
-        else:
-            self.clib = ctypes.cdll.sen_cam
-
-        # Initalize the camera.
-        self.filehandle = ctypes.c_int()
-        self._chk(self.clib.INITBOARD(0, ctypes.pointer(self.filehandle)))
-        self._chk(self.clib.SETUP_CAMERA(self.filehandle))
-        self.mode = (0, 0) # Long exposure, normal analog gain
-
-        # Get the "actual" sizes and bits per pixel.
-        # Presumably this takes into account hardware cropping and
-        # binning, but the documentation is not terribly clear.
         x, y = ctypes.c_int(), ctypes.c_int()
         x_actual = ctypes.c_int()
         y_actual = ctypes.c_int()
@@ -158,18 +153,33 @@ class Sensicam(camera.Camera):
             ctypes.pointer(bit_pix))
         self.x_actual = x_actual.value
         self.y_actual = y_actual.value
-        self.bit_pix = bit_pix.value
-        self.shape = (x.value, y.value)
+        bit_pix = bit_pix.value
+        shape = (x.value, y.value)
         self.crop = (1, x.value, 1, y.value)
         self.logger.debug(
             "Result of GETSIZES:\n" + \
-            "\tx pixels: %i, y pixels: %i\n" % (self.shape[0], self.shape[1]) + \
+            "\tx pixels: %i, y pixels: %i\n" % (shape[0], shape[1]) + \
             "\tx_actual: %i, y_actual: %i\n" % (self.x_actual, self.y_actual) + \
-            "\tbit_pix: %i" % self.bit_pix)
+            "\tbit_pix: %i" % bit_pix)
+        return shape, bit_pix
 
-        # Buffer allocation.
+    def _allocate_buffers(self):
+        """Allocate image buffers. This will also get rid of any
+        previously allocated buffers if necessary.
+
+        """
+        # Get any updated sizes (e.g., if the cropping has changed).
+        self._get_sizes()
+        
+        # Free the buffer that already exists if one exists.
+        if self.buffer_number is not None:
+            self._chk(self.clib.REMOVE_ALL_BUFFERS_FROM_LIST(self.filehandle))
+            self._chk(self.clib.FREE_BUFFER(self.filehandle, self.buffer_number))
+        else:
+            self.buffer_number = ctypes.c_int(-1)
+
+        # Allocate a new bufer.
         self.address = ctypes.c_void_p()
-        self.buffer_number = ctypes.c_int(-1)
         self.buffer_size = ctypes.c_int(int(self.x_actual*self.y_actual*((self.bit_pix + 7)/8)))
         self._chk(self.clib.ALLOCATE_BUFFER(
             self.filehandle, ctypes.pointer(self.buffer_number),
@@ -180,13 +190,7 @@ class Sensicam(camera.Camera):
         self._chk(self.clib.SETBUFFER_EVENT(
             self.filehandle, self.buffer_number,
             ctypes.pointer(ctypes.c_int(-1))))
-
-        # Write camera settings to the hardware
-        self._update_coc()
-
-        # Run COC
-        self._chk(self.clib.RUN_COC(self.filehandle, 0))
-
+                
     def _to_sensi_crop(self, crop):
         """Convert a crop tuple/list in actual pixels into PCO's units
         of 32 pixels.
@@ -196,6 +200,10 @@ class Sensicam(camera.Camera):
             raise SensicamError("crop must be a length 4 tuple.")
         sensi_crop = [int(math.floor(x/32.)) for x in crop]
         sensi_crop = [1 if x == 0 else x for x in sensi_crop]
+        if sensi_crop[1] == 1:
+            sensi_crop[1] = 2
+        if sensi_crop[3] == 1:
+            sensi_crop[3] = 2
         return sensi_crop
 
     def _test_coc(self, mode, trigger, crop, bins, delay, t_exp):
@@ -315,6 +323,7 @@ class Sensicam(camera.Camera):
         self.logger.debug("Result of _to_sensi_crop:" + \
             "\n\tself.crop = " + str(self.crop) +\
             "\n\tsensi_crop = " + str(crop))
+        self.x_actual, self.y_actual = self._get_actual()
         
         # Update bins.
         bins = kwargs.get('bins', self.bins)
@@ -350,17 +359,68 @@ class Sensicam(camera.Camera):
             self.filehandle, c_mode, trigger,
             crop[0], crop[1], crop[2], crop[3],
             bins, bins, timing))
-    
-        # TODO: Update x/y_actual more sensibly. Or handle the
-        # variable better.
-        dummy = ctypes.pointer(ctypes.c_int(-1))
-        x_actual = ctypes.c_int(0)
-        y_actual = ctypes.c_int(0)
+
+        # (Re)allocate buffers
+        self._allocate_buffers()
+
+    def _get_actual(self):
+        """Return the 'actual' sizes. Whatever that means."""
+        dummy = ctypes.c_int()
+        x_actual, y_actual = ctypes.c_int(), ctypes.c_int()
         self.clib.GETSIZES(
-            self.filehandle, dummy, dummy,
-            ctypes.pointer(x_actual), ctypes.pointer(y_actual), dummy)
-        self.x_actual = x_actual.value
-        self.y_actual = y_actual.value
+            self.filehandle,
+            ctypes.pointer(dummy), ctypes.pointer(dummy),
+            ctypes.pointer(x_actual), ctypes.pointer(y_actual),
+            ctypes.pointer(dummy))
+        return x_actual.value, y_actual.value
+    
+    # Setup and shutdown
+    # ------------------
+
+    def initialize(self, **kwargs):
+        """Initialize a PCO Sensicam.
+
+        Keyword arguments
+        -----------------
+        bins : int
+            Specifies the number of binned pixels to use. Defaults to
+            1.
+        crop : list
+            A tuple of the form [x, y, width, height] specifying the
+            cropped portion of the sensor to use. If None, use the
+            full sensor. Defaults to [1, 1, 640, 480].
+
+        """
+
+        # Get kwargs.
+        bins = kwargs.get('bins', 1)
+        crop = kwargs.get('crop', [1, 1, 640, 480])
+
+        # Check kwargs.
+        assert isinstance(bins, int)
+        assert isinstance(crop, (list, tuple, np.ndarray))
+        
+        # Load the DLL.
+        if 'win' in sys.platform:
+            self.clib = ctypes.windll.sen_cam
+        else:
+            self.clib = ctypes.cdll.sen_cam
+
+        # Initalize the camera.
+        self.filehandle = ctypes.c_int()
+        self._chk(self.clib.INITBOARD(0, ctypes.pointer(self.filehandle)))
+        self._chk(self.clib.SETUP_CAMERA(self.filehandle))
+        self.mode = (0, 0) # Long exposure, normal analog gain
+
+        # Get the shape and bits per pixel (as well as the other stuff
+        # that this horrendous function does).
+        self.shape, self.bit_pix = self._get_sizes()
+
+        # Write camera settings to the hardware
+        self._update_coc()
+
+        # Run COC
+        self._chk(self.clib.RUN_COC(self.filehandle, 0))
 
     def close(self):
         """Close the camera safely. Anything necessary for doing so
@@ -402,8 +462,17 @@ class Sensicam(camera.Camera):
             self.filehandle, 0, self.x_actual, self.y_actual, self.address))
         img = np.fromstring(
             ctypes.string_at(self.address, bytes_to_read), dtype=np.uint16)
-        shape = (self.crop[1]/self.bins, self.crop[3]/self.bins)[::-1]
-        img.shape = shape
+        crop = self._to_sensi_crop(self.crop)
+        shape = np.array([crop[1] - crop[0] + 1, crop[3] - crop[2] + 1])[::-1]*(32/self.bins)
+        #shape = (self.crop[1]/self.bins, self.crop[3]/self.bins)[::-1]
+        try:
+            img.shape = shape
+        except:
+            self.logger.debug('bytes_to_read = %i' % bytes_to_read)
+            self.logger.debug('self.crop = ' + ', '.join([str(i) for i in self.crop]))
+            self.logger.debug("img.shape = %i" % (img.shape[0]))
+            self.logger.debug("shape = (%i, %i)" % (shape[0], shape[1]))
+            tb.print_stack()
         return img
         
     # Triggering
@@ -466,10 +535,10 @@ class Sensicam(camera.Camera):
         
     def get_crop(self):
         """Get the current CCD crop settings."""
+        return self.crop
 
     def set_crop(self, crop):
-        """
-        Define the portion of the CCD to actually collect data
+        """Define the portion of the CCD to actually collect data
         from. Using a reduced sensor area typically allows for faster
         readout.
 
@@ -482,6 +551,7 @@ class Sensicam(camera.Camera):
         
     def get_bins(self):
         """Query the current binning."""
+        return self.bins
 
     def set_bins(self, bins):
         """Set binning to bins x bins."""

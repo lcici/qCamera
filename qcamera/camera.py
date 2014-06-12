@@ -270,6 +270,8 @@ class Camera:
         """
         if len(roi) != 4:
             raise CameraError("roi must be a length 4 list.")
+        assert roi[1] > roi[0]
+        assert roi[3] > roi[2]
         if roi[0] < self.crop[0] or roi[1] > self.crop[1]:
             roi[0] = self.crop[0]
             roi[1] = self.crop[1]
@@ -284,9 +286,13 @@ class Camera:
                 'Coercing to crop edge.')
         self.roi = roi
         
-    @abstractmethod
     def get_crop(self):
-        """Get the current CCD crop settings."""
+        """Get the current CCD crop settings. If this function is not
+        overloaded, it will simply return the value stored in the crop
+        attribute.
+
+        """
+        return self.crop
 
     @abstractmethod
     def set_crop(self, crop):
@@ -295,6 +301,8 @@ class Camera:
         readout.
 
         """
+        assert crop[1] > crop[0]
+        assert crop[3] > crop[2]
         if len(crop) != 4:
             raise CameraError("crop must be a length 4 array.")
         self.crop = crop
@@ -303,9 +311,13 @@ class Camera:
         """Reset the crop to the maximum size."""
         self.crop = [1, self.shape[0], 1, self.shape[1]]
         
-    @abstractmethod
     def get_bins(self):
-        """Query the current binning."""
+        """Query the current binning. If this function is not
+        overloaded, it will simply return the value stored in the bins
+        attribute.
+
+        """
+        return self.bins
 
     @abstractmethod
     def set_bins(self, bins):
