@@ -58,3 +58,10 @@ TODO
 * Verify that all docstrings are up to date and accurately reflecting
   arguments, class attributes, etc.
 
+Issues
+------
+
+* The ring buffer has problems if the image size changes. This needs
+  to be addressed so that binning can be changed and images are still
+  recorded to the buffer properly.
+
