@@ -93,6 +93,7 @@ class Camera:
         # Get kwargs and set defaults
         real = kwargs.get('real', True)
         buffer_dir = kwargs.get('buffer_dir', '.')
+        recording = kwargs.get('recording', True)
         logger = kwargs.get('logger', 'Camera')
         
         # Check kwarg types are correct
@@ -105,7 +106,7 @@ class Camera:
         self.logger.info(
             "Connecting to %s camera" % ("real" if real else "simulated"))
         self.real_camera = real
-        self.rbuffer = RingBuffer(directory=buffer_dir)
+        self.rbuffer = RingBuffer(directory=buffer_dir, recording=recording)
         x0 = npr.randint(self.shape[0]/4, self.shape[0]/2)
         y0 = npr.randint(self.shape[1]/4, self.shape[1]/2)
         self.sim_img_center = (x0, y0)

@@ -3,6 +3,7 @@
 from __future__ import print_function
 import sys
 import time
+import traceback
 from Queue import Queue
 import numpy as np
 from PyQt4 import QtCore
@@ -46,26 +47,27 @@ class CameraThread(QtCore.QThread):
         """Run the thread until receiving a stop request."""
         self.paused = True
         while not self.abort:
-            try:
-                # Check from the main thread if we need to pause
-                # (e.g., if a hardware update is happening).
-                if not self.queue.empty():
-                    msg = self.queue.get()
-                    print(msg)
-                    if msg == 'pause':
-                        self.paused = True
-                    elif msg == 'unpause':
-                        self.paused = False
+            # Check from the main thread if we need to pause
+            # (e.g., if a hardware update is happening).
+            if not self.queue.empty():
+                msg = self.queue.get()
+                print(msg)
+                if msg == 'pause':
+                    self.paused = True
+                    self.cam._stop()
+                elif msg == 'unpause':
+                    self.paused = False
+                    self.cam._start()
 
-                # Acquire data.
-                if not self.paused:
+            # Acquire data.
+            if not self.paused:
+                try:
                     img_data = self.cam.get_image()
                     self.image_signal.emit(img_data)
-                else:
-                    time.sleep(0.02)
-            except:
-                import traceback as tb
-                e = sys.exc_info()
-                print(e[1])
-                tb.print_last()
+                except:
+                    e = sys.exc_info()
+                    print(e)
+                    traceback.format_exc()
+                    time.sleep(0.01)
+            else:
                 time.sleep(0.01)

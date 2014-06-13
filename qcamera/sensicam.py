@@ -206,6 +206,12 @@ class Sensicam(camera.Camera):
             sensi_crop[3] = 2
         return sensi_crop
 
+    def _start(self):
+        self._chk(self.clib.RUN_COC(self.filehandle, 0))
+
+    def _stop(self):
+        self._chk(self.clib.STOP_COC(self.filehandle, 0))
+
     def _test_coc(self, mode, trigger, crop, bins, delay, t_exp):
         """Test the parameters to give to the SDK SET_COC
         function. This will modify the values using the SDK TEST_COC
@@ -303,12 +309,9 @@ class Sensicam(camera.Camera):
 
         """
 
-        # Free existing buffers.
-        #self._chk(self.clib.REMOVE_ALL_BUFFERS_FROM_LIST(self.filehandle))
-        #self._chk(self.clib.FREE_BUFFER(self.filehandle, self.buffer_number))
-
         # If previously running, stop.
-        self._chk(self.clib.STOP_COC(self.filehandle, 0))
+        if(kwargs.get('stop', True)):
+            self._stop()
         
         # Update mode.
         mode = kwargs.get('mode', (0, 0))
@@ -375,7 +378,7 @@ class Sensicam(camera.Camera):
 
         # Restart acquisition.
         if kwargs.get('start', True):
-            self._chk(self.clib.RUN_COC(self.filehandle, 0))
+            self._start()
 
     def _get_actual(self):
         """Return the 'actual' sizes. Whatever that means."""
@@ -415,6 +418,8 @@ class Sensicam(camera.Camera):
         assert isinstance(crop, (list, tuple, np.ndarray))
         
         # Load the DLL.
+        if not self.real_camera:
+            return
         if 'win' in sys.platform:
             self.clib = ctypes.windll.sen_cam
         else:
@@ -434,7 +439,7 @@ class Sensicam(camera.Camera):
         self._update_coc()
 
         # Run COC
-        self._chk(self.clib.RUN_COC(self.filehandle, 0))
+        self._start()
 
     def close(self):
         """Close the camera safely. Anything necessary for doing so
@@ -443,7 +448,7 @@ class Sensicam(camera.Camera):
         """
         if not self.real_camera:
             return
-        self._chk(self.clib.STOP_COC(self.filehandle, 0))
+        self._stop()
         self._chk(self.clib.REMOVE_ALL_BUFFERS_FROM_LIST(self.filehandle))
         self._chk(self.clib.FREE_BUFFER(self.filehandle, self.buffer_number))
         self._chk(self.clib.CLOSEBOARD(ctypes.pointer(self.filehandle)))
@@ -531,7 +536,7 @@ class Sensicam(camera.Camera):
         super(Sensicam, self).set_exposure_time(t, units)
         if not self.real_camera:
             return
-        self._update_coc(t_exp=self.t_ms)
+        self._update_coc(t_exp=self.t_ms, stop=False)
 
     def get_gain(self):
         """Query the current gain settings."""

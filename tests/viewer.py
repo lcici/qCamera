@@ -27,6 +27,7 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self.cam = camera
         self.cam_thread = thread
         self.scale = [self.scaleMinBox.value(), self.scaleMaxBox.value()]
+        #self.cam.rbuffer.recording = not self.rbufferBox.checkState()
 
         # Add colormaps to the combo box
         self.colormapBox.addItems(get_colormap_list())
@@ -46,6 +47,7 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         # Viewing settings
         self.scaleMinBox.editingFinished.connect(self.set_lut_range)
         self.scaleMaxBox.editingFinished.connect(self.set_lut_range)
+        #self.rbufferBox.stateChanged.connect(self.set_rbuffer_recording)
 
         # Start the thread.
         self.cam_thread.start()
@@ -95,7 +97,6 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
 
     def set_t_exp(self):
         """Change the exposure time."""
-        self.cam_thread.queue.put('pause')
         t = self.exposureTimeBox.value()
         self.cam.set_exposure_time(t)
 
@@ -111,7 +112,7 @@ if __name__ == "__main__":
     import logging
     logging.basicConfig(level=logging.DEBUG)
     app = QtGui.QApplication(sys.argv)
-    with Sensicam(real=True) as cam:
+    with Sensicam(real=True, recording=False) as cam:
         thread = CameraThread(cam)
         win = Viewer(cam, thread)
         win.show()
