@@ -267,8 +267,8 @@ class Sensicam(camera.Camera):
         if xbins.value != bins or ybins.value != bins:
             self.logger.debug(
                 "Invalid bin argument in TEST_COC. Changing %i -> %i" \
-                % (bins, xbins.value))
-            bins = xbins
+                % (bins, int(xbins.value)))
+            bins = xbins.value
         # TODO: add timing check
 
         # Return new parameters
@@ -297,8 +297,18 @@ class Sensicam(camera.Camera):
         delay : int
         t_exp : int
             Exposure time in ms.
+        start : bool
+            If True, execute RUN_COC after updating all
+            settings. Defaults to True.
 
         """
+
+        # Free existing buffers.
+        #self._chk(self.clib.REMOVE_ALL_BUFFERS_FROM_LIST(self.filehandle))
+        #self._chk(self.clib.FREE_BUFFER(self.filehandle, self.buffer_number))
+
+        # If previously running, stop.
+        self._chk(self.clib.STOP_COC(self.filehandle, 0))
         
         # Update mode.
         mode = kwargs.get('mode', (0, 0))
@@ -362,6 +372,10 @@ class Sensicam(camera.Camera):
 
         # (Re)allocate buffers
         self._allocate_buffers()
+
+        # Restart acquisition.
+        if kwargs.get('start', True):
+            self._chk(self.clib.RUN_COC(self.filehandle, 0))
 
     def _get_actual(self):
         """Return the 'actual' sizes. Whatever that means."""
@@ -467,12 +481,13 @@ class Sensicam(camera.Camera):
         #shape = (self.crop[1]/self.bins, self.crop[3]/self.bins)[::-1]
         try:
             img.shape = shape
-        except:
+        except e:
             self.logger.debug('bytes_to_read = %i' % bytes_to_read)
             self.logger.debug('self.crop = ' + ', '.join([str(i) for i in self.crop]))
             self.logger.debug("img.shape = %i" % (img.shape[0]))
             self.logger.debug("shape = (%i, %i)" % (shape[0], shape[1]))
             tb.print_stack()
+            img = self.acquire_image_data() # Try again
         return img
         
     # Triggering
@@ -545,9 +560,7 @@ class Sensicam(camera.Camera):
         """
         super(Sensicam, self).set_crop(crop)
         self.logger.info("Setting crop to: %s" % repr(self.crop))
-        self._chk(self.clib.STOP_COC(self.filehandle, 0))
         self._update_coc(crop=crop)
-        self._chk(self.clib.RUN_COC(self.filehandle, 0))
         
     def get_bins(self):
         """Query the current binning."""
@@ -557,9 +570,7 @@ class Sensicam(camera.Camera):
         """Set binning to bins x bins."""
         super(Sensicam, self).set_bins(bins)
         self.logger.info("Setting bins to: %i" % self.bins)
-        self._chk(self.clib.STOP_COC(self.filehandle, 0))
         self._update_coc(bins=bins)
-        self._chk(self.clib.RUN_COC(self.filehandle, 0))
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
