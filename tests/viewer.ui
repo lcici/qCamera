@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>754</width>
-    <height>850</height>
+    <height>869</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -210,7 +210,7 @@
       <x>220</x>
       <y>410</y>
       <width>221</width>
-      <height>161</height>
+      <height>221</height>
      </rect>
     </property>
     <property name="title">
@@ -222,7 +222,7 @@
        <x>10</x>
        <y>20</y>
        <width>201</width>
-       <height>126</height>
+       <height>184</height>
       </rect>
      </property>
      <layout class="QGridLayout" name="gridLayout">
@@ -300,49 +300,18 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="2">
-       <widget class="QSpinBox" name="xCropMinBox">
-        <property name="minimum">
-         <number>1</number>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="QSpinBox" name="xCropMaxBox">
-        <property name="minimum">
-         <number>2</number>
-        </property>
-        <property name="value">
-         <number>99</number>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2">
-       <widget class="QSpinBox" name="yCropMinBox">
-        <property name="minimum">
-         <number>1</number>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="2">
-       <widget class="QSpinBox" name="yCropMaxBox">
-        <property name="minimum">
-         <number>2</number>
-        </property>
-        <property name="value">
-         <number>99</number>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
+      <item row="6" column="0">
        <widget class="QLabel" name="label_10">
         <property name="text">
          <string>Bins</string>
         </property>
        </widget>
       </item>
-      <item row="4" column="1">
+      <item row="6" column="1">
        <widget class="QComboBox" name="binsBox">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <item>
          <property name="text">
           <string>1</string>
@@ -370,6 +339,48 @@
         </item>
        </widget>
       </item>
+      <item row="5" column="1">
+       <widget class="QPushButton" name="resetCropButton">
+        <property name="text">
+         <string>Reset Crop</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QPushButton" name="applyCropButton">
+        <property name="text">
+         <string>Apply Crop</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLabel" name="xCropMinLbl">
+        <property name="text">
+         <string>1</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QLabel" name="xCropMaxLbl">
+        <property name="text">
+         <string>9999</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QLabel" name="yCropMinLbl">
+        <property name="text">
+         <string>1</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QLabel" name="yCropMaxLbl">
+        <property name="text">
+         <string>9999</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </widget>
@@ -377,7 +388,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>580</y>
+      <y>630</y>
       <width>221</width>
       <height>181</height>
      </rect>
@@ -560,7 +571,7 @@
       <string>Show</string>
      </property>
      <property name="checked">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
     </widget>
    </widget>
@@ -568,7 +579,7 @@
     <property name="geometry">
      <rect>
       <x>250</x>
-      <y>600</y>
+      <y>650</y>
       <width>141</width>
       <height>111</height>
      </rect>
@@ -663,8 +674,8 @@
    <widget class="QGroupBox" name="groupBox_5">
     <property name="geometry">
      <rect>
-      <x>410</x>
-      <y>590</y>
+      <x>440</x>
+      <y>610</y>
       <width>291</width>
       <height>231</height>
      </rect>
@@ -819,134 +830,6 @@
  <resources/>
  <connections>
   <connection>
-   <sender>xCropMaxSlider</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>xCropMaxBox</receiver>
-   <slot>setValue(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>381</x>
-     <y>478</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>429</x>
-     <y>478</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>xCropMinSlider</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>xCropMinBox</receiver>
-   <slot>setValue(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>381</x>
-     <y>452</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>429</x>
-     <y>452</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>yCropMinSlider</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>yCropMinBox</receiver>
-   <slot>setValue(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>381</x>
-     <y>507</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>429</x>
-     <y>511</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>yCropMaxSlider</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>yCropMaxBox</receiver>
-   <slot>setValue(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>381</x>
-     <y>548</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>429</x>
-     <y>549</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>xCropMinBox</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>xCropMinSlider</receiver>
-   <slot>setValue(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>429</x>
-     <y>452</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>381</x>
-     <y>452</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>xCropMaxBox</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>xCropMaxSlider</receiver>
-   <slot>setValue(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>429</x>
-     <y>478</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>381</x>
-     <y>478</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>yCropMinBox</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>yCropMinSlider</receiver>
-   <slot>setValue(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>429</x>
-     <y>504</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>381</x>
-     <y>504</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>yCropMaxBox</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>yCropMaxSlider</receiver>
-   <slot>setValue(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>429</x>
-     <y>549</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>381</x>
-     <y>548</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>xROIMinSlider</sender>
    <signal>valueChanged(int)</signal>
    <receiver>xROIMinBox</receiver>
@@ -954,11 +837,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>97</x>
-     <y>637</y>
+     <y>687</y>
     </hint>
     <hint type="destinationlabel">
      <x>192</x>
-     <y>639</y>
+     <y>689</y>
     </hint>
    </hints>
   </connection>
@@ -970,11 +853,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>143</x>
-     <y>668</y>
+     <y>718</y>
     </hint>
     <hint type="destinationlabel">
      <x>188</x>
-     <y>666</y>
+     <y>716</y>
     </hint>
    </hints>
   </connection>
@@ -986,11 +869,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>150</x>
-     <y>696</y>
+     <y>746</y>
     </hint>
     <hint type="destinationlabel">
      <x>199</x>
-     <y>698</y>
+     <y>748</y>
     </hint>
    </hints>
   </connection>
@@ -1002,11 +885,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>134</x>
-     <y>730</y>
+     <y>780</y>
     </hint>
     <hint type="destinationlabel">
      <x>203</x>
-     <y>730</y>
+     <y>780</y>
     </hint>
    </hints>
   </connection>
@@ -1018,11 +901,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>199</x>
-     <y>629</y>
+     <y>679</y>
     </hint>
     <hint type="destinationlabel">
      <x>151</x>
-     <y>633</y>
+     <y>683</y>
     </hint>
    </hints>
   </connection>
@@ -1034,11 +917,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>198</x>
-     <y>676</y>
+     <y>726</y>
     </hint>
     <hint type="destinationlabel">
      <x>153</x>
-     <y>672</y>
+     <y>722</y>
     </hint>
    </hints>
   </connection>
@@ -1050,11 +933,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>181</x>
-     <y>705</y>
+     <y>755</y>
     </hint>
     <hint type="destinationlabel">
      <x>156</x>
-     <y>704</y>
+     <y>754</y>
     </hint>
    </hints>
   </connection>
@@ -1066,11 +949,75 @@
    <hints>
     <hint type="sourcelabel">
      <x>195</x>
-     <y>737</y>
+     <y>787</y>
     </hint>
     <hint type="destinationlabel">
      <x>146</x>
-     <y>733</y>
+     <y>783</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>xCropMinSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>xCropMinLbl</receiver>
+   <slot>setNum(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>308</x>
+     <y>462</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>416</x>
+     <y>460</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>xCropMaxSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>xCropMaxLbl</receiver>
+   <slot>setNum(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>364</x>
+     <y>484</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>420</x>
+     <y>486</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>yCropMinSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>yCropMinLbl</receiver>
+   <slot>setNum(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>352</x>
+     <y>510</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>421</x>
+     <y>510</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>yCropMaxSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>yCropMaxLbl</receiver>
+   <slot>setNum(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>352</x>
+     <y>535</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>421</x>
+     <y>538</y>
     </hint>
    </hints>
   </connection>

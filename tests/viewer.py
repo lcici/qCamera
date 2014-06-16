@@ -15,7 +15,7 @@ from camera_thread import CameraThread
 
 from guiqwt.image import ImageItem
 from guiqwt.plot import ImageDialog
-from guiqwt.annotations import AnnotatedRectangle
+from guiqwt.annotations import AnnotatedRectangle, AnnotatedSegment
 from guiqwt.builder import make
 from guiqwt.colormap import get_colormap_list
 
@@ -43,10 +43,24 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self.triggerModeBox.currentIndexChanged.connect(self.set_trigger_mode)
 
         # Crop and bin settings.
-        self.xCropMinBox.valueChanged.connect(self.set_crop)
-        self.xCropMaxBox.valueChanged.connect(self.set_crop)
-        self.yCropMinBox.valueChanged.connect(self.set_crop)
-        self.yCropMaxBox.valueChanged.connect(self.set_crop)
+        cropSliders = [self.xCropMinSlider, self.xCropMaxSlider,
+                       self.yCropMinSlider, self.yCropMaxSlider]
+        for slider in cropSliders:
+            slider.sliderReleased.connect(self.show_crop)
+
+        self.xCropMinSlider.setMaximum(self.cam.shape[0] - 1)
+        self.xCropMaxSlider.setMaximum(self.cam.shape[0])
+        self.yCropMinSlider.setMaximum(self.cam.shape[1] - 1)
+        self.yCropMaxSlider.setMaximum(self.cam.shape[1])
+
+        self.xCropMaxSlider.setValue(self.cam.shape[0])        
+        self.yCropMaxSlider.setValue(self.cam.shape[1])
+        self.xCropMaxLbl.setNum(self.cam.shape[0])
+        self.yCropMaxLbl.setNum(self.cam.shape[1])
+
+        self.applyCropButton.clicked.connect(self.set_crop)
+        self.resetCropButton.clicked.connect(self.reset_crop)
+            
         self.binsBox.currentIndexChanged.connect(self.set_bins)
 
         # ROI settings
@@ -158,8 +172,45 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         t = self.exposureTimeBox.value()
         self.cam.set_exposure_time(t)
 
+    def show_crop(self):
+        """Show lines for helping set up the crop."""
+        return
+        plot = self.imageWidget.get_plot()
+        lims = 9999
+        guides = plot.get_items(z_sorted=True)
+        x0, x1 = self.xCropMinSlider.value(), self.xCropMaxSlider.value()
+        y0, y1 = self.yCropMinSlider.value(), self.yCropMaxSlider.value()
+        plot.add_item(make.annotated_segment(x0, -lims, x0, lims))
+        plot.add_item(make.annotated_segment(x1, -lims, x1, lims))
+        plot.add_item(make.annotated_segment(-lims, y0, lims, y1))
+        plot.add_item(make.annotated_segment(-lims, y1, lims, y1))
+        plot.show()
+        #else:
+        #    guides[0].x0 = x0
+
     def set_crop(self):
         """Set the camera hardware cropping."""
+        # Get desired crop settings.
+        x1, x2 = self.xCropMinSlider.value(), self.xCropMaxSlider.value()
+        y1, y2 = self.yCropMinSlider.value(), self.yCropMaxSlider.value()
+
+        # Set the crop.
+        self.cam.set_crop([x1, x2, y1, y2])
+
+        # Get new values and update min/max values for the ROI.
+        crop = self.cam.get_crop()
+        self.xROIMinBox.setMaximum(crop[0])
+        self.xROIMaxBox.setMaximum(crop[1])
+        self.yROIMinBox.setMaximum(crop[2])
+        self.yROIMaxBox.setMaximum(crop[3])
+
+    def reset_crop(self):
+        """Reset the camera crop to use the full sensor."""
+        self.xCropMinSlider.setValue(1)
+        self.xCropMaxSlider.setValue(self.cam.shape[0]/self.cam.bins)
+        self.yCropMinSlider.setValue(1)
+        self.yCropMaxSlider.setValue(self.cam.shape[1]/self.cam.bins)
+        self.cam.reset_crop()
 
     def set_roi(self):
         """Update the region of interest."""

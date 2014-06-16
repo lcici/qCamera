@@ -276,13 +276,13 @@ class Camera:
         if roi[0] < self.crop[0] or roi[1] > self.crop[1]:
             roi[0] = self.crop[0]
             roi[1] = self.crop[1]
-            self.logger.wran(
+            self.logger.warn(
                 'Requested horizontal ROI is outside of the crop! ' + \
                 'Coercing to crop edge.')
         if roi[2] < self.crop[2] or roi[3] > self.crop[3]:
             roi[2] = self.crop[2]
             roi[3] = self.crop[3]
-            self.logger.wran(
+            self.logger.warn(
                 'Requested vertical ROI is outside of the crop! ' + \
                 'Coercing to crop edge.')
         self.roi = roi
@@ -295,11 +295,11 @@ class Camera:
         """
         return self.crop
 
-    @abstractmethod
     def set_crop(self, crop):
         """Define the portion of the CCD to actually collect data
         from. Using a reduced sensor area typically allows for faster
-        readout.
+        readout. Derived classes should define :func:`update_crop`
+        instead of overriding this one.
 
         """
         assert crop[1] > crop[0]
@@ -307,10 +307,18 @@ class Camera:
         if len(crop) != 4:
             raise CameraError("crop must be a length 4 array.")
         self.crop = crop
+        self.update_crop(self.crop)
 
     def reset_crop(self):
         """Reset the crop to the maximum size."""
         self.crop = [1, self.shape[0], 1, self.shape[1]]
+
+    def update_crop(self, crop):
+        """Camera-specific code for setting the crop should go
+        here.
+
+        """
+        raise NotImplementedError("This function needs to be defined.")
         
     def get_bins(self):
         """Query the current binning. If this function is not

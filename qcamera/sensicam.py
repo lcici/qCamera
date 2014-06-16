@@ -155,7 +155,6 @@ class Sensicam(camera.Camera):
         self.y_actual = y_actual.value
         bit_pix = bit_pix.value
         shape = (x.value, y.value)
-        self.crop = (1, x.value, 1, y.value)
         self.logger.debug(
             "Result of GETSIZES:\n" + \
             "\tx pixels: %i, y pixels: %i\n" % (shape[0], shape[1]) + \
@@ -205,6 +204,16 @@ class Sensicam(camera.Camera):
         if sensi_crop[3] == 1:
             sensi_crop[3] = 2
         return sensi_crop
+
+    def _from_sensi_crop(self, sensi_crop):
+        """Convert from the Sensicam's crop units to physical pixel
+        units.
+
+        """
+        crop = [int(math.floor(x*32)) for x in sensi_crop]
+        crop = [1 if x == 32 else x for x in crop]
+        print(sensi_crop, '->', crop)
+        return crop
 
     def _start(self):
         self._chk(self.clib.RUN_COC(self.filehandle, 0))
@@ -357,6 +366,7 @@ class Sensicam(camera.Camera):
             self._test_coc(mode, trigger, crop, bins, delay, t_exp)
         self.bins = bins
         self.t_ms = t_exp
+        self.crop = self._from_sensi_crop(crop)
 
         # Log and update settings.
         self.logger.debug(
@@ -434,6 +444,7 @@ class Sensicam(camera.Camera):
         # Get the shape and bits per pixel (as well as the other stuff
         # that this horrendous function does).
         self.shape, self.bit_pix = self._get_sizes()
+        self.crop = [1, self.shape[0], 1, self.shape[1]]
 
         # Write camera settings to the hardware
         self._update_coc()
@@ -486,13 +497,16 @@ class Sensicam(camera.Camera):
         #shape = (self.crop[1]/self.bins, self.crop[3]/self.bins)[::-1]
         try:
             img.shape = shape
-        except e:
+        except:
+            # e = sys.exc_info()
+            # print(e)
             self.logger.debug('bytes_to_read = %i' % bytes_to_read)
             self.logger.debug('self.crop = ' + ', '.join([str(i) for i in self.crop]))
+            self.logger.debug('sensi_crop = ' + ', '.join([str(i) for i in crop]))
             self.logger.debug("img.shape = %i" % (img.shape[0]))
             self.logger.debug("shape = (%i, %i)" % (shape[0], shape[1]))
             tb.print_stack()
-            img = self.acquire_image_data() # Try again
+            #img = self.acquire_image_data() # Try again
         return img
         
     # Triggering
@@ -552,18 +566,13 @@ class Sensicam(camera.Camera):
 
     # ROI, cropping, and binning
     # --------------------------
-        
-    def get_crop(self):
-        """Get the current CCD crop settings."""
-        return self.crop
 
-    def set_crop(self, crop):
+    def update_crop(self, crop):
         """Define the portion of the CCD to actually collect data
         from. Using a reduced sensor area typically allows for faster
         readout.
 
         """
-        super(Sensicam, self).set_crop(crop)
         self.logger.info("Setting crop to: %s" % repr(self.crop))
         self._update_coc(crop=crop)
         
