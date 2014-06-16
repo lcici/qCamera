@@ -51,7 +51,6 @@ class CameraThread(QtCore.QThread):
             # (e.g., if a hardware update is happening).
             if not self.queue.empty():
                 msg = self.queue.get()
-                print(msg)
                 if msg == 'pause':
                     self.paused = True
                     self.cam._stop()
