@@ -43,6 +43,20 @@ class CameraThread(QtCore.QThread):
         self.cam.set_trigger_mode(self.mode)
         self.paused = False
 
+    def pause(self):
+        if not self.paused:
+            self.queue.put('pause')
+
+    def unpause(self):
+        if self.paused:
+            self.queue.put('unpause')
+
+    def get_single_image(self):
+        if self.paused:
+            self.queue.put('single')
+        else:
+            print(':::::::: Not getting a single image while unpaused!')
+
     def run(self):
         """Run the thread until receiving a stop request."""
         self.paused = True
@@ -57,6 +71,13 @@ class CameraThread(QtCore.QThread):
                 elif msg == 'unpause':
                     self.paused = False
                     self.cam._start()
+                elif msg == 'single':
+                    mode = self.cam.get_trigger_mode()
+                    self.cam.set_trigger_mode('software')
+                    img_data = self.cam.get_image()
+                    self.image_signal.emit(img_data)
+                    self.cam._stop()
+                    self.cam.set_trigger_mode(mode)
 
             # Acquire data.
             if not self.paused:

@@ -6,18 +6,29 @@ it in a Qt GUI.
 from __future__ import print_function
 
 import sys
-import numpy as np
 sys.path[0:0] = ['..']
+
+import time
+import numpy as np
+
 from PyQt4 import QtGui, QtCore
+from guiqwt.plot import ImageDialog
+from guiqwt.tools import SelectTool, AnnotatedRectangleTool
+from guiqwt.shapes import RectangleShape
+from guiqwt.image import ImageItem
+from guiqwt.annotations import AnnotatedRectangle
+from guiqwt.builder import make
+from guiqwt.colormap import get_colormap_list
+
 from qcamera import Sensicam
 from ui_viewer import Ui_MainWindow
 from camera_thread import CameraThread
 
-from guiqwt.image import ImageItem
-from guiqwt.plot import ImageDialog
-from guiqwt.annotations import AnnotatedRectangle, AnnotatedSegment
-from guiqwt.builder import make
-from guiqwt.colormap import get_colormap_list
+def _get_image_item(imageWidget):
+    items = imageWidget.get_plot().get_items()
+    for item in items:
+        image = item if isinstance(item, ImageItem) else None
+    return image
 
 class Viewer(QtGui.QMainWindow, Ui_MainWindow):
     """Simple GUI testbed for qCamera."""
@@ -33,8 +44,9 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         # Add colormaps to the combo box
         self.colormapBox.addItems(get_colormap_list())
         self.colormapBox.setCurrentIndex(51) # jet
+        self.colormapBox.currentIndexChanged.connect(self.update_colormap)
 
-        # Image widget signals
+        # Connect image signals
         self.cam_thread.image_signal.connect(self.update_image)
 
         # Exposure and trigger settings signals
@@ -42,46 +54,9 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self.acquisitionButton.clicked.connect(self.toggle_acquisition)
         self.triggerModeBox.currentIndexChanged.connect(self.set_trigger_mode)
 
-        # Crop and bin settings.
-        cropSliders = [self.xCropMinSlider, self.xCropMaxSlider,
-                       self.yCropMinSlider, self.yCropMaxSlider]
-        for slider in cropSliders:
-            slider.sliderReleased.connect(self.show_crop)
-
-        self.xCropMinSlider.setMaximum(self.cam.shape[0] - 1)
-        self.xCropMaxSlider.setMaximum(self.cam.shape[0])
-        self.yCropMinSlider.setMaximum(self.cam.shape[1] - 1)
-        self.yCropMaxSlider.setMaximum(self.cam.shape[1])
-
-        self.xCropMaxSlider.setValue(self.cam.shape[0])        
-        self.yCropMaxSlider.setValue(self.cam.shape[1])
-        self.xCropMaxLbl.setNum(self.cam.shape[0])
-        self.yCropMaxLbl.setNum(self.cam.shape[1])
-
-        self.applyCropButton.clicked.connect(self.set_crop)
-        self.resetCropButton.clicked.connect(self.reset_crop)
-            
-        self.binsBox.currentIndexChanged.connect(self.set_bins)
-
-        # ROI settings
-        # TODO: change limits when changing binning!
-        roi = [self.xROIMinBox.value(), self.xROIMaxBox.value(),
-               self.yROIMinBox.value(), self.yROIMaxBox.value()]
-        self.cam.set_roi(roi)
-        
-        self.xROIMinBox.setMaximum(self.cam.shape[0])
-        self.yROIMinBox.setMaximum(self.cam.shape[1])
-        self.xROIMinSlider.setMaximum(self.cam.shape[0])
-        self.yROIMinSlider.setMaximum(self.cam.shape[1])
-        self.xROIMaxBox.setMaximum(self.cam.shape[0])
-        self.yROIMaxBox.setMaximum(self.cam.shape[1])
-        self.xROIMaxSlider.setMaximum(self.cam.shape[0])
-        self.yROIMaxSlider.setMaximum(self.cam.shape[1])
-        
-        self.xROIMinBox.valueChanged.connect(self.set_roi)
-        self.xROIMaxBox.valueChanged.connect(self.set_roi)
-        self.yROIMinBox.valueChanged.connect(self.set_roi)
-        self.yROIMaxBox.valueChanged.connect(self.set_roi)
+        # Crop/binning/ROI dialogs
+        self.adjustCropButton.clicked.connect(self.crop_setup)
+        self.adjustROIButton.clicked.connect(self.roi_setup)
 
         # Viewing settings
         self.scaleMinBox.valueChanged.connect(self.set_lut_range)
@@ -90,62 +65,122 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
 
         # Start the thread.
         self.cam_thread.start()
+        self.toggle_acquisition()
 
-    @QtCore.pyqtSlot(np.ndarray)
-    def update_image(self, img_data):
-        """Update the image plot."""
-        # Get and display the next image.
-        plot = self.imageWidget.get_plot()
-        plot.del_all_items(except_grid=True)
-        img = make.image(img_data, colormap=str(self.colormapBox.currentText()))
-        img.set_lut_range(self.scale)
-        plot.add_item(img)
-        plot.set_plot_limits(0, img_data.shape[1], 0, img_data.shape[0])
+    # Utility functions
+    # -------------------------------------------------------------------------
 
-        # Draw ROI rectangle if requested.
-        if self.roiShowBox.isChecked():
-            roi_x1 = self.xROIMinBox.value()
-            roi_x2 = self.xROIMaxBox.value()
-            roi_y1 = self.yROIMinBox.value()
-            roi_y2 = self.yROIMaxBox.value()
-            roi_rect = make.annotated_rectangle(
-                roi_x1, roi_y1, roi_x2, roi_y2,
-                title='ROI')
-            plot.add_item(roi_rect)
+    def _get_rect(self, rect_tool):
+        """Convert the guiqwt AnnotatedRectangleTool shape format to
+        what qCamera wants.
 
-        # Calculate and update ROI statistics.
-        roi = img_data[self.cam.roi[2]:self.cam.roi[3],
-                       self.cam.roi[0]:self.cam.roi[1]]
-        #np.save('roi.npy', roi) # for debugging
-        counts = np.sum(roi)
-        mean = np.mean(roi)
-        max_ = np.max(roi)
-        min_ = np.min(roi)
-        self.roiTotalLbl.setText('%.0f' % counts)
-        self.roiMeanLbl.setText('%.2f' % mean)
-        self.roiMaxLbl.setText('%.0f' % max_)
-        self.roiMinLbl.setText('%.0f' % min_)
-        h_plot = self.roiHistWidget.get_plot()
-        h_plot.del_all_items(except_grid=True)
-        #hist = make.histogram(roi.flatten()/max_, 100)
-        hist = make.histogram(roi.flatten(), 50)
-        h_plot.add_item(hist)
-        #print(hist.get_data())
-        h_plot.set_plot_limits(0, self.xHistLimBox.value(), 0, self.yHistLimBox.value())
-        h_plot.set_item_visible(hist, True)
+        For some ridiculous reason, the rect shape the get_rect
+        function returns depends on which corner you drag from. In
+        other words, it always returns [x1, y1, x2, y2] where [x1, y1]
+        is the first corner you started from and [x2, y2] is the last
+        corner.
 
-    def get_image_plot(self):
+        """
+        rect = rect_tool.get_last_final_shape().get_rect()
+        rect = [int(x) for x in rect]
+        rect[1], rect[2] = rect[2], rect[1]
+        if rect[0] > rect[1]:
+            rect[0], rect[1] = rect[1], rect[0]
+        if rect[2] > rect[3]:
+            rect[2], rect[3] = rect[3], rect[2]
+        return rect
+
+    def _make_image_item(self, data):
+        return make.image(data, colormap=str(self.colormapBox.currentText()))
+
+    def _get_image_plot(self):
         """Extract the image plot from the image widget."""
         for item in self.imageWidget.get_plot().get_items():
             img = item
             if isinstance(item, ImageItem):
                 break
         return img
+
+    # Slots
+    # -------------------------------------------------------------------------
+
+    @QtCore.pyqtSlot(np.ndarray)
+    def update_image(self, img_data):
+        """Update the image plot and other information.
+
+        TODO: Rename this function simply 'update'.
+
+        """
+        # Get and display the next image.
+        plot = self.imageWidget.get_plot()
+        #plot.del_all_items(except_grid=True)
+        items = plot.get_items()
+        for item in items:
+            img = item if isinstance(item, ImageItem) else None
+            roi_rect = item if isinstance(item, AnnotatedRectangle) else None
+        if img is None:
+            img = self._make_image_item(img_data)
+            plot.add_item(img)
+        else:
+            img.set_data(img_data)
+        #img.select()
+        #plot.replot()
+            
+        # Display ROI if requested.
+        # TODO
+        roi_x1, roi_x2, roi_y1, roi_y2 = self.cam.roi
+        if self.showROIBox.isChecked():
+            if roi_rect is None:
+                roi_rect = make.annotated_rectangle(
+                    roi_x1, roi_x2, roi_y1, roi_y2)
+                roi_rect.set_resizable(False)
+                roi_rect.set_selectable(False)
+                plot.add_item(roi_rect)
+        else:
+            if roi_rect is not None:
+                plot.del_item(roi_rect)
+
+        # Update plot
+        img.set_lut_range(self.scale)
+        plot.set_plot_limits(0, img_data.shape[1], 0, img_data.shape[0])
+        plot.replot()
+
+        # Calculate and update ROI statistics.
+        roi = img_data[self.cam.roi[2]:self.cam.roi[3],
+                       self.cam.roi[0]:self.cam.roi[1]]
+        #np.save('roi.npy', roi) # for debugging
+        try:
+            self.roiTotalLbl.setText('%.0f' % np.sum(roi))
+            self.roiMeanLbl.setText('%.2f' % np.mean(roi))
+            self.roiMaxLbl.setText('%.0f' % np.max(roi))
+            self.roiMinLbl.setText('%.0f' % np.min(roi))
+        except:
+            print("self.cam.roi:", self.cam.roi)
+            print("roi:", roi)
+            print("img_data:", img_data)
+
+        self.roiX1Lbl.setNum(roi_x1)
+        self.roiX2Lbl.setNum(roi_x2)
+        self.roiY1Lbl.setNum(roi_y1)
+        self.roiY2Lbl.setNum(roi_y2)
+
+        # ROI histogram plot
+        h_plot = self.roiHistWidget.get_plot()
+        h_plot.del_all_items(except_grid=True)
+        hist = make.histogram(roi.flatten(), 50)
+        h_plot.add_item(hist)
+        #print(hist.get_data())
+        h_plot.set_plot_limits(0, self.xHistLimBox.value(), 0, self.yHistLimBox.value())
+        h_plot.set_item_visible(hist, True)
+                    
+    def update_colormap(self):
+        image = _get_image_item(self.imageWidget)
+        image.set_color_map(str(self.colormapBox.currentText()))
         
     def set_lut_range(self):
         """Change the LUT range."""
         self.scale = [self.scaleMinBox.value(), self.scaleMaxBox.value()]
-        img = self.get_image_plot()
+        img = self._get_image_plot()
         img.set_lut_range(self.scale)
 
     def toggle_acquisition(self):
@@ -153,13 +188,13 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         start_text = "Begin Acquisition"
         stop_text = "Stop Acquisition"
         if self.acquisitionButton.text() == start_text:
-            self.cam_thread.queue.put('unpause')
+            #self.cam_thread.queue.put('unpause')
+            self.cam_thread.unpause()
             self.acquisitionButton.setText(stop_text)
-            self.cropGroupBox.setEnabled(False)
         else:
-            self.cam_thread.queue.put('pause')
+            #self.cam_thread.queue.put('pause')
+            self.cam_thread.pause()
             self.acquisitionButton.setText(start_text)
-            self.cropGroupBox.setEnabled(True)
 
     def set_trigger_mode(self):
         """Change the camera's triggering mode."""
@@ -172,65 +207,83 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         t = self.exposureTimeBox.value()
         self.cam.set_exposure_time(t)
 
-    def show_crop(self):
-        """Show lines for helping set up the crop."""
-        return
-        plot = self.imageWidget.get_plot()
-        lims = 9999
-        guides = plot.get_items(z_sorted=True)
-        x0, x1 = self.xCropMinSlider.value(), self.xCropMaxSlider.value()
-        y0, y1 = self.yCropMinSlider.value(), self.yCropMaxSlider.value()
-        plot.add_item(make.annotated_segment(x0, -lims, x0, lims))
-        plot.add_item(make.annotated_segment(x1, -lims, x1, lims))
-        plot.add_item(make.annotated_segment(-lims, y0, lims, y1))
-        plot.add_item(make.annotated_segment(-lims, y1, lims, y1))
-        plot.show()
-        #else:
-        #    guides[0].x0 = x0
+    # Setup dialogs
+    # -------------------------------------------------------------------------
 
-    def set_crop(self):
-        """Set the camera hardware cropping."""
-        # Get desired crop settings.
-        x1, x2 = self.xCropMinSlider.value(), self.xCropMaxSlider.value()
-        y1, y2 = self.yCropMinSlider.value(), self.yCropMaxSlider.value()
-
-        # Set the crop.
-        self.cam.set_crop([x1, x2, y1, y2])
-
-        # Get new values and update min/max values for the ROI.
-        crop = self.cam.get_crop()
-        self.xROIMinBox.setMaximum(crop[0])
-        self.xROIMaxBox.setMaximum(crop[1])
-        self.yROIMinBox.setMaximum(crop[2])
-        self.yROIMaxBox.setMaximum(crop[3])
-
-    def reset_crop(self):
-        """Reset the camera crop to use the full sensor."""
-        self.xCropMinSlider.setValue(1)
-        self.xCropMaxSlider.setValue(self.cam.shape[0]/self.cam.bins)
-        self.yCropMinSlider.setValue(1)
-        self.yCropMaxSlider.setValue(self.cam.shape[1]/self.cam.bins)
+    def crop_setup(self):
+        """Show the crop setup dialog."""
+        # Reset the crop and take an image
+        if not self.cam_thread.paused:
+            self.toggle_acquisition()
+        while not self.cam_thread.paused:
+            time.sleep(0.01)
+        old_crop = self.cam.get_crop()
         self.cam.reset_crop()
+        time.sleep(0.05)
+        self.cam_thread.get_single_image()
+        
+        # Setup the dialog with rectangle selection tool
+        dialog = ImageDialog("Crop Setup", edit=True)
+        default = dialog.add_tool(SelectTool)
+        dialog.set_default_tool(default)
+        crop_tool = dialog.add_tool(AnnotatedRectangleTool, title='Crop',
+                                    switch_to_default_tool=True)
+        crop_tool.activate()
 
-    def set_roi(self):
-        """Update the region of interest."""
-        # TODO: Make this work correctly with binning!
-        # Make sure min < max.
-        x1, x2 = self.xROIMinBox.value(), self.xROIMaxBox.value()
-        y1, y2 = self.yROIMinBox.value(), self.yROIMaxBox.value()
-        if x1 >= x2:
-            self.xROIMinBox.setValue(x2 - 1)
-        if y1 >= y2:
-            self.yROIMinBox.setValue(y2 - 1)
+        # Add last acquired image
+        plot = dialog.get_plot()
+        img_data = _get_image_item(self.imageWidget).data
+        img = self._make_image_item(img_data)
+        plot.add_item(img)
+        plot.set_active_item(img)
 
-        # Update camera ROI.
-        self.cam.set_roi([self.xROIMinBox.value(), self.xROIMaxBox.value(),
-                          self.yROIMinBox.value(), self.yROIMaxBox.value()])
+        # Wait for user input
+        dialog.show()
+        if dialog.exec_():
+            try:
+                # Set the new crop
+                crop = self._get_rect(crop_tool)
+                self.cam.set_crop(crop)
 
-    def set_bins(self):
-        """Change the camera's binning."""
-        self.cam_thread.queue.put('pause')
-        self.cam.set_bins(2**self.binsBox.currentIndex())
+                # Reset the ROI to something that won't cause problems.
+                self.cam.set_roi([1, 2, 1, 2])
+            except:
+               # Retain old crop
+               e = sys.exc_info()
+               print(e)
+               self.cam.set_crop(old_crop)
+
+    def roi_setup(self):
+        """Show a dialog to setup the region of interest."""
+        dialog = ImageDialog("ROI Setup", edit=True)
+        default = dialog.add_tool(SelectTool)
+        dialog.set_default_tool(default)
+        roi_tool = dialog.add_tool(AnnotatedRectangleTool, title='ROI',
+                                   switch_to_default_tool=True)
+        roi = self.cam.roi
+        old_roi = roi
+        roi_tool.activate()
+        # TODO: Figure out how to show initial ROI
+        #roi_tool.set_shape_style(AnnotatedRectangle(roi[0], roi[2], roi[1], roi[3]))
+
+        # Connect the plot to the camera image.
+        # TODO: Make this a live view if possible.
+        plot = dialog.get_plot()
+        img_data = _get_image_item(self.imageWidget).data
+        img = self._make_image_item(img_data)
+        plot.add_item(img)
+        plot.set_active_item(img)
+
+        # Wait for user input
+        dialog.show()
+        if dialog.exec_():
+            try:
+                roi = self._get_rect(roi_tool)
+                self.cam.set_roi(roi)
+            except:
+                e = sys.exc_info()
+                print(e)
+                self.cam.set_roi(old_roi)
 
 if __name__ == "__main__":
     # TODO: Allow for using this with other cameras (either

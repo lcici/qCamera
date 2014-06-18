@@ -23,8 +23,8 @@ class Camera:
 
     Attributes
     ----------
-    roi : tuple
-        The defined region of interest in the form (x, y, width, height).
+    roi : list
+        The defined region of interest in the form [x1, x2, y1, y2].
     t_ms : float
         Exposure time in ms.
     gain : int or float
@@ -58,7 +58,7 @@ class Camera:
     # Attributes
     # ----------
     
-    roi = (1, 1, 10, 10)
+    roi = [1, 10, 1, 10]
     t_ms = 100.
     gain = 0
     shape = (512, 512)
@@ -273,18 +273,7 @@ class Camera:
             raise CameraError("roi must be a length 4 list.")
         assert roi[1] > roi[0]
         assert roi[3] > roi[2]
-        if roi[0] < self.crop[0] or roi[1] > self.crop[1]:
-            roi[0] = self.crop[0]
-            roi[1] = self.crop[1]
-            self.logger.warn(
-                'Requested horizontal ROI is outside of the crop! ' + \
-                'Coercing to crop edge.')
-        if roi[2] < self.crop[2] or roi[3] > self.crop[3]:
-            roi[2] = self.crop[2]
-            roi[3] = self.crop[3]
-            self.logger.warn(
-                'Requested vertical ROI is outside of the crop! ' + \
-                'Coercing to crop edge.')
+        # TODO: implement proper bounds checks
         self.roi = roi
         
     def get_crop(self):
@@ -312,6 +301,7 @@ class Camera:
     def reset_crop(self):
         """Reset the crop to the maximum size."""
         self.crop = [1, self.shape[0], 1, self.shape[1]]
+        self.update_crop(self.crop)
 
     def update_crop(self, crop):
         """Camera-specific code for setting the crop should go

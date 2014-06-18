@@ -17,19 +17,6 @@
    <string>qCamera Viewer</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="ImageWidget" name="imageWidget">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>10</y>
-      <width>481</width>
-      <height>371</height>
-     </rect>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Vertical</enum>
-    </property>
-   </widget>
    <widget class="QGroupBox" name="groupBox">
     <property name="geometry">
      <rect>
@@ -175,7 +162,7 @@
            <number>10</number>
           </property>
           <property name="value">
-           <number>500</number>
+           <number>2000</number>
           </property>
          </widget>
         </item>
@@ -204,478 +191,189 @@
      </layout>
     </widget>
    </widget>
-   <widget class="QGroupBox" name="cropGroupBox">
-    <property name="geometry">
-     <rect>
-      <x>220</x>
-      <y>410</y>
-      <width>221</width>
-      <height>221</height>
-     </rect>
-    </property>
-    <property name="title">
-     <string>Crop and Bin Settings</string>
-    </property>
-    <widget class="QWidget" name="gridLayoutWidget">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>20</y>
-       <width>201</width>
-       <height>184</height>
-      </rect>
-     </property>
-     <layout class="QGridLayout" name="gridLayout">
-      <item row="2" column="1">
-       <widget class="QSlider" name="yCropMinSlider">
-        <property name="minimum">
-         <number>1</number>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_8">
-        <property name="text">
-         <string>y min</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_7">
-        <property name="text">
-         <string>x max</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_6">
-        <property name="text">
-         <string>x min</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QSlider" name="xCropMaxSlider">
-        <property name="minimum">
-         <number>2</number>
-        </property>
-        <property name="sliderPosition">
-         <number>99</number>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QSlider" name="yCropMaxSlider">
-        <property name="minimum">
-         <number>2</number>
-        </property>
-        <property name="sliderPosition">
-         <number>99</number>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_9">
-        <property name="text">
-         <string>y max</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QSlider" name="xCropMinSlider">
-        <property name="minimum">
-         <number>1</number>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="0">
-       <widget class="QLabel" name="label_10">
-        <property name="text">
-         <string>Bins</string>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="1">
-       <widget class="QComboBox" name="binsBox">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <item>
-         <property name="text">
-          <string>1</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>2</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>4</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>8</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>16</string>
-         </property>
-        </item>
-       </widget>
-      </item>
-      <item row="5" column="1">
-       <widget class="QPushButton" name="resetCropButton">
-        <property name="text">
-         <string>Reset Crop</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="1">
-       <widget class="QPushButton" name="applyCropButton">
-        <property name="text">
-         <string>Apply Crop</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <widget class="QLabel" name="xCropMinLbl">
-        <property name="text">
-         <string>1</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="QLabel" name="xCropMaxLbl">
-        <property name="text">
-         <string>9999</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2">
-       <widget class="QLabel" name="yCropMinLbl">
-        <property name="text">
-         <string>1</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="2">
-       <widget class="QLabel" name="yCropMaxLbl">
-        <property name="text">
-         <string>9999</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </widget>
-   <widget class="QGroupBox" name="groupBox_3">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>630</y>
-      <width>221</width>
-      <height>181</height>
-     </rect>
-    </property>
-    <property name="title">
-     <string>ROI Settings</string>
-    </property>
-    <widget class="QWidget" name="gridLayoutWidget_2">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>20</y>
-       <width>201</width>
-       <height>126</height>
-      </rect>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_2">
-      <item row="2" column="1">
-       <widget class="QSlider" name="yROIMinSlider">
-        <property name="minimum">
-         <number>1</number>
-        </property>
-        <property name="maximum">
-         <number>500</number>
-        </property>
-        <property name="value">
-         <number>68</number>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_11">
-        <property name="text">
-         <string>y min</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_12">
-        <property name="text">
-         <string>x max</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_13">
-        <property name="text">
-         <string>x min</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QSlider" name="xROIMaxSlider">
-        <property name="minimum">
-         <number>2</number>
-        </property>
-        <property name="maximum">
-         <number>500</number>
-        </property>
-        <property name="value">
-         <number>354</number>
-        </property>
-        <property name="sliderPosition">
-         <number>354</number>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QSlider" name="yROIMaxSlider">
-        <property name="minimum">
-         <number>2</number>
-        </property>
-        <property name="maximum">
-         <number>500</number>
-        </property>
-        <property name="value">
-         <number>136</number>
-        </property>
-        <property name="sliderPosition">
-         <number>136</number>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_14">
-        <property name="text">
-         <string>y max</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QSlider" name="xROIMinSlider">
-        <property name="minimum">
-         <number>1</number>
-        </property>
-        <property name="maximum">
-         <number>500</number>
-        </property>
-        <property name="value">
-         <number>204</number>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <widget class="QSpinBox" name="xROIMinBox">
-        <property name="minimum">
-         <number>1</number>
-        </property>
-        <property name="maximum">
-         <number>500</number>
-        </property>
-        <property name="value">
-         <number>204</number>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="QSpinBox" name="xROIMaxBox">
-        <property name="minimum">
-         <number>2</number>
-        </property>
-        <property name="maximum">
-         <number>500</number>
-        </property>
-        <property name="value">
-         <number>354</number>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2">
-       <widget class="QSpinBox" name="yROIMinBox">
-        <property name="minimum">
-         <number>1</number>
-        </property>
-        <property name="maximum">
-         <number>500</number>
-        </property>
-        <property name="value">
-         <number>68</number>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="2">
-       <widget class="QSpinBox" name="yROIMaxBox">
-        <property name="minimum">
-         <number>2</number>
-        </property>
-        <property name="maximum">
-         <number>500</number>
-        </property>
-        <property name="value">
-         <number>136</number>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-    <widget class="QCheckBox" name="roiShowBox">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>150</y>
-       <width>70</width>
-       <height>17</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Show</string>
-     </property>
-     <property name="checked">
-      <bool>false</bool>
-     </property>
-    </widget>
-   </widget>
    <widget class="QGroupBox" name="groupBox_4">
     <property name="geometry">
      <rect>
-      <x>250</x>
-      <y>650</y>
-      <width>141</width>
-      <height>111</height>
+      <x>60</x>
+      <y>590</y>
+      <width>161</width>
+      <height>128</height>
      </rect>
     </property>
     <property name="title">
      <string>ROI Statistics</string>
     </property>
-    <widget class="QWidget" name="formLayoutWidget">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>20</y>
-       <width>121</width>
-       <height>72</height>
-      </rect>
+    <layout class="QGridLayout" name="gridLayout">
+     <property name="horizontalSpacing">
+      <number>12</number>
      </property>
-     <layout class="QFormLayout" name="formLayout">
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_15">
-        <property name="text">
-         <string>Total</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLabel" name="roiTotalLbl">
-        <property name="text">
-         <string>0</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_16">
-        <property name="text">
-         <string>Mean</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QLabel" name="roiMeanLbl">
-        <property name="text">
-         <string>0</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_17">
-        <property name="text">
-         <string>Min</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_18">
-        <property name="text">
-         <string>Max</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="QLabel" name="roiMinLbl">
-        <property name="text">
-         <string>0</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QLabel" name="roiMaxLbl">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string>0</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
+     <item row="1" column="0">
+      <widget class="QCheckBox" name="showROIBox">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Show ROI</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <layout class="QFormLayout" name="formLayout">
+       <property name="fieldGrowthPolicy">
+        <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+       </property>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_15">
+         <property name="text">
+          <string>Total</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLabel" name="roiTotalLbl">
+         <property name="text">
+          <string>0</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_16">
+         <property name="text">
+          <string>Mean</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLabel" name="roiMeanLbl">
+         <property name="text">
+          <string>0</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_17">
+         <property name="text">
+          <string>Min</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLabel" name="roiMinLbl">
+         <property name="text">
+          <string>0</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_18">
+         <property name="text">
+          <string>Max</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QLabel" name="roiMaxLbl">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="text">
+          <string>0</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item row="0" column="1">
+      <layout class="QFormLayout" name="formLayout_4">
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_6">
+         <property name="text">
+          <string>x1</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_7">
+         <property name="text">
+          <string>x2</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_8">
+         <property name="text">
+          <string>y1</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_9">
+         <property name="text">
+          <string>y2</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLabel" name="roiX1Lbl">
+         <property name="text">
+          <string>1</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLabel" name="roiX2Lbl">
+         <property name="text">
+          <string>2</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLabel" name="roiY1Lbl">
+         <property name="text">
+          <string>1</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QLabel" name="roiY2Lbl">
+         <property name="text">
+          <string>2</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
    </widget>
    <widget class="QGroupBox" name="groupBox_5">
     <property name="geometry">
      <rect>
-      <x>440</x>
-      <y>610</y>
+      <x>280</x>
+      <y>580</y>
       <width>291</width>
       <height>231</height>
      </rect>
@@ -728,7 +426,7 @@
          <number>10</number>
         </property>
         <property name="value">
-         <number>50</number>
+         <number>2000</number>
         </property>
        </widget>
       </item>
@@ -748,6 +446,45 @@
       </item>
      </layout>
     </widget>
+   </widget>
+   <widget class="ImageWidget" name="imageWidget">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>10</y>
+      <width>511</width>
+      <height>381</height>
+     </rect>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Vertical</enum>
+    </property>
+   </widget>
+   <widget class="QToolButton" name="adjustCropButton">
+    <property name="geometry">
+     <rect>
+      <x>270</x>
+      <y>440</y>
+      <width>111</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Adjust Crop</string>
+    </property>
+   </widget>
+   <widget class="QToolButton" name="adjustROIButton">
+    <property name="geometry">
+     <rect>
+      <x>270</x>
+      <y>480</y>
+      <width>111</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Adjust ROI</string>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -827,199 +564,18 @@
    <header>guiqwt.plot</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>scaleMinBox</tabstop>
+  <tabstop>scaleMaxBox</tabstop>
+  <tabstop>xHistLimBox</tabstop>
+  <tabstop>yHistLimBox</tabstop>
+  <tabstop>triggerModeBox</tabstop>
+  <tabstop>colormapBox</tabstop>
+  <tabstop>rbufferBox</tabstop>
+  <tabstop>acquisitionButton</tabstop>
+  <tabstop>exposureTimeBox</tabstop>
+  <tabstop>adjustCropButton</tabstop>
+ </tabstops>
  <resources/>
- <connections>
-  <connection>
-   <sender>xROIMinSlider</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>xROIMinBox</receiver>
-   <slot>setValue(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>97</x>
-     <y>687</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>192</x>
-     <y>689</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>xROIMaxSlider</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>xROIMaxBox</receiver>
-   <slot>setValue(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>143</x>
-     <y>718</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>188</x>
-     <y>716</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>yROIMinSlider</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>yROIMinBox</receiver>
-   <slot>setValue(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>150</x>
-     <y>746</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>199</x>
-     <y>748</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>yROIMaxSlider</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>yROIMaxBox</receiver>
-   <slot>setValue(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>134</x>
-     <y>780</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>203</x>
-     <y>780</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>xROIMinBox</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>xROIMinSlider</receiver>
-   <slot>setValue(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>199</x>
-     <y>679</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>151</x>
-     <y>683</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>xROIMaxBox</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>xROIMaxSlider</receiver>
-   <slot>setValue(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>198</x>
-     <y>726</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>153</x>
-     <y>722</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>yROIMinBox</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>yROIMinSlider</receiver>
-   <slot>setValue(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>181</x>
-     <y>755</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>156</x>
-     <y>754</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>yROIMaxBox</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>yROIMaxSlider</receiver>
-   <slot>setValue(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>195</x>
-     <y>787</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>146</x>
-     <y>783</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>xCropMinSlider</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>xCropMinLbl</receiver>
-   <slot>setNum(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>308</x>
-     <y>462</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>416</x>
-     <y>460</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>xCropMaxSlider</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>xCropMaxLbl</receiver>
-   <slot>setNum(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>364</x>
-     <y>484</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>420</x>
-     <y>486</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>yCropMinSlider</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>yCropMinLbl</receiver>
-   <slot>setNum(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>352</x>
-     <y>510</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>421</x>
-     <y>510</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>yCropMaxSlider</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>yCropMaxLbl</receiver>
-   <slot>setNum(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>352</x>
-     <y>535</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>421</x>
-     <y>538</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

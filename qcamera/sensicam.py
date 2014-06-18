@@ -212,7 +212,6 @@ class Sensicam(camera.Camera):
         """
         crop = [int(math.floor(x*32)) for x in sensi_crop]
         crop = [1 if x == 32 else x for x in crop]
-        print(sensi_crop, '->', crop)
         return crop
 
     def _start(self):
