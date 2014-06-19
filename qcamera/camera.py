@@ -56,7 +56,7 @@ class Camera:
     __metaclass__ = ABCMeta
 
     # Attributes
-    # ----------
+    # -------------------------------------------------------------------------
     
     roi = [1, 10, 1, 10]
     t_ms = 100.
@@ -71,7 +71,7 @@ class Camera:
     real_camera = True
 
     # Setup and shutdown
-    # ------------------
+    # -------------------------------------------------------------------------
 
     def __init__(self, **kwargs):
         """Initialize a camera. Additional keyword arguments may also
@@ -136,7 +136,7 @@ class Camera:
         """
         
     # Image acquisition
-    # -----------------
+    # -------------------------------------------------------------------------
 
     @abstractmethod
     def set_acquisition_mode(self, mode):
@@ -183,7 +183,7 @@ class Camera:
         return img
         
     # Triggering
-    # ----------
+    # -------------------------------------------------------------------------
 
     @abstractmethod
     def get_trigger_mode(self):
@@ -192,19 +192,45 @@ class Camera:
     @abstractmethod
     def set_trigger_mode(self, mode):
         """Setup trigger mode."""
-        
-    # Shutter control
-    # ---------------
 
     @abstractmethod
+    def start(self):
+        """Code needed for getting the camera to begin triggering
+        should be placed here.
+
+        """
+
+    @abstractmethod
+    def stop(self):
+        """Code needed to stop accepting triggering should be placed
+        here.
+
+        """
+        
+    # Shutter control
+    # -------------------------------------------------------------------------
+
+    # Not all cameras have builtin shutters, so these functions should
+    # have no actual effect in that case. Child classes should
+    # override the set_shutter function to set the shutter state.
+
     def open_shutter(self):
         """Open the shutter."""
         self.shutter_open = True
+        self.set_shutter(state='open')
         
-    @abstractmethod
     def close_shutter(self):
         """Close the shutter."""
         self.shutter_open = False
+        self.set_shutter(state='closed')
+
+    def set_shutter(state):
+        """This will set the shutter to the given state ('open' or
+        'closed'). Since not all cameras have a built in shutter, this
+        will simply do nothing if not overridden.
+
+        """
+        pass        
         
     def toggle_shutter(self):
         """Toggle the shutter state from open to closed and vice versa."""
@@ -214,7 +240,7 @@ class Camera:
             self.open_shutter()
 
     # Gain and exposure time
-    # ----------------------
+    # -------------------------------------------------------------------------
 
     @abstractmethod
     def get_exposure_time(self):
@@ -238,7 +264,7 @@ class Camera:
         """Set the camera gain."""
 
     # Cooling
-    # -------
+    # -------------------------------------------------------------------------
     
     # Not all cameras have this capability, so these are not abstract
     # methods but instead raise a NotImplementedError if you try to
@@ -261,7 +287,7 @@ class Camera:
         raise NotImplementedError("No cooler?")
 
     # ROI, cropping, and binning
-    # --------------------------
+    # -------------------------------------------------------------------------
 
     def set_roi(self, roi):
         """Define the region of interest. Since ROI stuff is generally
@@ -323,7 +349,7 @@ class Camera:
         """Set binning to bins x bins."""
 
     # Standard tests
-    # --------------
+    # -------------------------------------------------------------------------
 
     def test_real_time_acquisition(self, max_exposures=1000):
         """Test real time acquisition.

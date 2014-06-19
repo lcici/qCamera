@@ -1,3 +1,4 @@
+from .camera import Camera
 from .sensicam import Sensicam
 from .andor import AndorCamera
 

@@ -112,7 +112,7 @@ class Sensicam(camera.Camera):
                     ''.join(tb.format_list(stack)))
 
     # Low level utility functions
-    # ---------------------------
+    # -------------------------------------------------------------------------
 
     # The PCO SDK is EXTREMELY low level, so here are some of their
     # functions implemented in a slightly more convenient way.
@@ -214,12 +214,6 @@ class Sensicam(camera.Camera):
         crop = [1 if x == 32 else x for x in crop]
         return crop
 
-    def _start(self):
-        self._chk(self.clib.RUN_COC(self.filehandle, 0))
-
-    def _stop(self):
-        self._chk(self.clib.STOP_COC(self.filehandle, 0))
-
     def _test_coc(self, mode, trigger, crop, bins, delay, t_exp):
         """Test the parameters to give to the SDK SET_COC
         function. This will modify the values using the SDK TEST_COC
@@ -319,7 +313,7 @@ class Sensicam(camera.Camera):
 
         # If previously running, stop.
         if(kwargs.get('stop', True)):
-            self._stop()
+            self.stop()
         
         # Update mode.
         mode = kwargs.get('mode', (0, 0))
@@ -387,7 +381,7 @@ class Sensicam(camera.Camera):
 
         # Restart acquisition.
         if kwargs.get('start', True):
-            self._start()
+            self.start()
 
     def _get_actual(self):
         """Return the 'actual' sizes. Whatever that means."""
@@ -401,7 +395,7 @@ class Sensicam(camera.Camera):
         return x_actual.value, y_actual.value
     
     # Setup and shutdown
-    # ------------------
+    # -------------------------------------------------------------------------
 
     def initialize(self, **kwargs):
         """Initialize a PCO Sensicam.
@@ -449,7 +443,7 @@ class Sensicam(camera.Camera):
         self._update_coc()
 
         # Run COC
-        self._start()
+        self.start()
 
     def close(self):
         """Close the camera safely. Anything necessary for doing so
@@ -458,13 +452,13 @@ class Sensicam(camera.Camera):
         """
         if not self.real_camera:
             return
-        self._stop()
+        self.stop()
         self._chk(self.clib.REMOVE_ALL_BUFFERS_FROM_LIST(self.filehandle))
         self._chk(self.clib.FREE_BUFFER(self.filehandle, self.buffer_number))
         self._chk(self.clib.CLOSEBOARD(ctypes.pointer(self.filehandle)))
         
     # Image acquisition
-    # -----------------
+    # -------------------------------------------------------------------------
 
     def set_acquisition_mode(self, mode):
         """Set the image acquisition mode."""
@@ -509,7 +503,7 @@ class Sensicam(camera.Camera):
         return img
         
     # Triggering
-    # ----------
+    # -------------------------------------------------------------------------
 
     def get_trigger_mode(self):
         """Query the current trigger mode."""
@@ -524,21 +518,18 @@ class Sensicam(camera.Camera):
             self.trigger_mode = self._trigger_modes[mode]
         else:
             self.trigger_mode = mode
-        self._update_coc() 
-        
-    # Shutter control
-    # ---------------
+        self._update_coc()
 
-    def open_shutter(self):
-        """Open the shutter."""
-        super(Sensicam, self).open_shutter()
-        
-    def close_shutter(self):
-        """Close the shutter."""
-        super(Sensicam, self).close_shutter()
+    def start(self):
+        """Begin accepting triggers."""
+        self._chk(self.clib.RUN_COC(self.filehandle, 0))
+
+    def stop(self):
+        """Stop image acquisition."""
+        self._chk(self.clib.STOP_COC(self.filehandle, 0))
 
     # Gain and exposure time
-    # ----------------------
+    # -------------------------------------------------------------------------
 
     def get_exposure_time(self):
         """Query for the current exposure time."""
@@ -564,7 +555,7 @@ class Sensicam(camera.Camera):
         #self._update_coc()
 
     # ROI, cropping, and binning
-    # --------------------------
+    # -------------------------------------------------------------------------
 
     def update_crop(self, crop):
         """Define the portion of the CCD to actually collect data

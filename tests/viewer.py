@@ -22,7 +22,7 @@ from guiqwt.colormap import get_colormap_list
 
 from qcamera import Sensicam
 from ui_viewer import Ui_MainWindow
-from camera_thread import CameraThread
+from qcamera.camera_thread import CameraThread
 
 def _get_image_item(imageWidget):
     items = imageWidget.get_plot().get_items()
