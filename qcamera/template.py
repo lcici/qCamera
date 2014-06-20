@@ -71,7 +71,7 @@ class Template(camera.Camera):
     # Gain and exposure time
     # -------------------------------------------------------------------------
 
-    def update_exposure_time(self, t):
+    def set_exposure_time(self, t):
         """Code required to change the camera exposure time should go
         here.
 

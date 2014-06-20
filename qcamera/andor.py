@@ -8,8 +8,7 @@ import numpy as np
 import camera
 from camera_errors import AndorError, AndorWarning
 from andor_status_codes import *
-
-# TODO: make gain a class member
+from andor_capabilities import *
 
 def _int_ptr(val=0):
     """Utility function to create integer pointers."""
@@ -22,6 +21,9 @@ class AndorCamera(camera.Camera):
     cameras.
 
     """
+
+    # Utilities
+    # -------------------------------------------------------------------------
 
     # Valid acquisition modes.
     _acq_modes = {
@@ -78,7 +80,7 @@ class AndorCamera(camera.Camera):
 
     # Setup and shutdown
     # -------------------------------------------------------------------------
-
+    
     def initialize(self, **kwargs):
         """Initialize the Andor camera.
 
@@ -92,6 +94,7 @@ class AndorCamera(camera.Camera):
         temperature = int(kwargs.get('temperature', -50))
         
         # Try to load the Andor DLL
+        # TODO: library name in Linux?
         self.clib = ctypes.windll.atmcd32d
 
         # Initialize the camera and get the detector size
@@ -102,8 +105,6 @@ class AndorCamera(camera.Camera):
         self.shape = [xpx.contents.value, ypx.contents.value]
         self.set_crop([1, self.shape[0], 1, self.shape[1]])
         self.set_bins(1)
-
-        # TODO: Get hardware and software information?
 
         # Set default acquisition and trigger modes
         self.set_acquisition_mode('continuous')
@@ -116,6 +117,26 @@ class AndorCamera(camera.Camera):
         self.T_max = T_max.contents.value
         self.set_cooler_temperature(temperature)
         self.cooler_on()
+
+    def get_camera_properties(self):
+        """Code for getting camera properties should go here."""
+        # Get generic Andor properties
+        self.props.load('props/andor.json')
+
+        # Get camera-specific properties.
+        caps = AndorCapabilities()
+        caps.ulSize = 12*32
+        self._chk(self.clib.GetCapabilities(ctypes.pointer(caps)))
+
+        # Update properties.
+        # TODO: actually set things based on the result of GetCapabilities
+        new_props = {
+            'pixels': self.shape,
+            'gain_adjust': True,
+            'temp_control': True,
+            'shutter': True,
+        }
+        self.props.update(new_props)
 
     def close(self):
         """Turn off temperature regulation and safely shutdown the
@@ -137,10 +158,10 @@ class AndorCamera(camera.Camera):
             else:
                 time.sleep(1)
         self._chk(self.clib.ShutDown())
-        
+
     # Image acquisition
     # -------------------------------------------------------------------------
-        
+
     def set_acquisition_mode(self, mode):
         """Set the image acquisition mode."""
         if mode not in self._acq_modes:
@@ -156,7 +177,7 @@ class AndorCamera(camera.Camera):
         # Have 0 kinetic cycle time for continuous acquisition mode
         if mode == 'continuous':
             self._chk(self.clib.SetKineticCycleTime(0))
-    
+
     def acquire_image_data(self):
         """Acquire the most recent image data from the camera. This
         will work best in single image acquisition mode.
@@ -186,7 +207,7 @@ class AndorCamera(camera.Camera):
         img_array = np.frombuffer(c_img, dtype=ctypes.c_long)
         img_array.shape = np.array(self.shape)/self.bins
         return img_array
-        
+
     # Triggering
     # -------------------------------------------------------------------------
 
@@ -219,7 +240,7 @@ class AndorCamera(camera.Camera):
         """Stop acquisition."""
         if self.real_camera:
             self._chk(self.clib.AbortAcquisition())
-        
+
     # Shutter control
     # -------------------------------------------------------------------------
 
@@ -234,9 +255,8 @@ class AndorCamera(camera.Camera):
     # Gain and exposure time
     # -------------------------------------------------------------------------
 
-    def set_exposure_time(self, t, units='ms'):
-        """Set the exposure time."""
-        super(AndorCamera, self).set_exposure_time(t, units)
+    def set_exposure_time(self, t):
+        """Set the exposure time in ms."""
         t_s = self.t_ms*1000
         self.logger.info('Setting exposure time to ' + str(self.t_ms) + ' ms.')
         self._chk(self.clib.SetExposureTime(t_s))
@@ -315,16 +335,8 @@ class AndorCamera(camera.Camera):
                 repr(self.T_min) + " and " + repr(self.T_max) + ".")
         self._chk(self.clib.SetTemperature(temp))
 
-    # ROI, cropping, and binning
+    # Cropping and binning
     # -------------------------------------------------------------------------
-
-    def set_roi(self, roi):
-        """Define the region of interest."""
-        super(AndorCamera, self).set_roi(roi)
-        
-    def get_crop(self):
-        """Get the current CCD crop settings."""
-        # TODO
 
     def update_crop(self, crop):
         """Define the portion of the CCD to actually collect data

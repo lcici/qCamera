@@ -13,7 +13,7 @@ import numpy as np
 import numpy.random as npr
 from ring_buffer import RingBuffer
 from camera_properties import CameraProperties
-from camera_errors import CameraError, UnitsError
+from camera_errors import CameraError
 
 _t_units = {'ms': 1, 's': 1e3} # Allowed units for exposure time
 
@@ -270,20 +270,9 @@ class Camera:
         """
         return self.t_ms
 
-    def set_exposure_time(self, t, units='ms'):
+    @abstractmethod
+    def set_exposure_time(self, t):
         """Set the exposure time."""
-        try:
-            self.t_ms = t*_t_units[units]
-        except KeyError:
-            raise UnitsError(
-                "Exposure time units must be one of: " + _t_units.keys())
-        self.update_exposure_time(t)
-
-    def update_exposure_time(self, t):
-        """Code required to change the camera exposure time should go
-        here.
-
-        """
 
     @abstractmethod
     def get_gain(self):

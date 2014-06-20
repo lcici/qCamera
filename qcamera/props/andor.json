@@ -6,7 +6,7 @@
 	"fast kinetics",
 	"continuous"
     ], 
-    "bins": [1, 2, 4, 8, 16], 
+    "bins": [1, 2, 4, 8, 16, 32], 
     "depth": 8, 
     "gain_adjust": true, 
     "hardware_crop": true, 
