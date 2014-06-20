@@ -12,4 +12,5 @@ files.txt
 .ipynb_checkpoints
 *.ipynb
 *.csv
+*.npy
 docs/_build

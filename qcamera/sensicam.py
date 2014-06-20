@@ -406,7 +406,7 @@ class Sensicam(camera.Camera):
             Specifies the number of binned pixels to use. Defaults to
             1.
         crop : list
-            A tuple of the form [x, y, width, height] specifying the
+            A tuple of the form [x1, y1, x2, y2] specifying the
             cropped portion of the sensor to use. If None, use the
             full sensor. Defaults to [1, 1, 640, 480].
 
