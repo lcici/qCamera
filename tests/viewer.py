@@ -20,7 +20,7 @@ from guiqwt.annotations import AnnotatedRectangle
 from guiqwt.builder import make
 from guiqwt.colormap import get_colormap_list
 
-from qcamera import Sensicam
+from qcamera import AndorCamera, Sensicam
 from ui_viewer import Ui_MainWindow
 from qcamera.camera_thread import CameraThread
 
@@ -286,13 +286,20 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
                 self.cam.set_roi(old_roi)
 
 if __name__ == "__main__":
-    # TODO: Allow for using this with other cameras (either
-    #       command-line option, display a dialog to select a camera
-    #       at startup, or select camera in a menu).
+    class CameraSelectDialog(QtGui.QDialog):
+        """For interactive selection of cameras at startup.
+
+        TODO
+
+        """
+        def __init__(self):
+            super(CameraSelectDialog, self).__init__()
+
     import logging
     logging.basicConfig(level=logging.DEBUG)
     app = QtGui.QApplication(sys.argv)
     with Sensicam(real=True, recording=False) as cam:
+        #with AndorCamera(real=True, recording=False) as cam:
         thread = CameraThread(cam)
         win = Viewer(cam, thread)
         win.show()
