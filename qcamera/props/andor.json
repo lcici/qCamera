@@ -1,0 +1,26 @@
+{
+    "acquisition_modes": [
+	"single",
+	"accumulate",
+	"kinetics",
+	"fast kinetics",
+	"continuous"
+    ], 
+    "bins": [1, 2, 4, 8, 16], 
+    "depth": 8, 
+    "gain_adjust": true, 
+    "hardware_crop": true, 
+    "pixel_mode": "mono", 
+    "pixels": [
+	0, 
+	0
+    ], 
+    "shutter": false, 
+    "temp_control": true, 
+    "trigger_modes": [
+	"internal",
+	"external",
+	"external start",
+	"software"
+    ]
+}

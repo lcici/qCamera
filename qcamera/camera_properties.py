@@ -1,6 +1,8 @@
 """Camera properties"""
 
 import json
+# TODO: don't allow updating of properties that don't exist in the
+# default self.props set in __init__
 from camera_errors import CameraPropertiesError
 
 class CameraProperties(object):
@@ -9,13 +11,19 @@ class CameraProperties(object):
 
     """
     
-    # Dunder functions
+    # Basic functions
     # -------------------------------------------------------------------------
     
-    def __init__(self, **kwargs):
+    def __init__(self, filename=None, **kwargs):
         """Without kwargs passed, populate the base properties
         dict. Otherwise, populate as appropriate. See self.props for
         valid keyword arguments.
+
+        Parameters
+        ----------
+        filename : str or None
+            If passed, the path to a JSON file that sets all the
+            camera properties.
 
         """
         self.props = {
@@ -32,13 +40,19 @@ class CameraProperties(object):
             'pixel_mode': 'mono',
 
             # Available trigger modes
-            'trigger_modes': ['software'],
+            'trigger_modes': ['internal'],
+
+            # Available acquisition modes
+            'acquisition_modes': ['continuous'],
+
+            # List of valid values for binning
+            'bins': [1],
 
             # Functionality flags
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
             # Can hardware cropping be set?
-            'crop': False,
+            'hardware_crop': False,
 
             # Can the gain be adjusted?
             'gain_adjust': False,
@@ -50,6 +64,10 @@ class CameraProperties(object):
             # Does the camera have a builtin shutter?
             'shutter': False,
         }
+
+        # Update parameters from a file if given.
+        if filename is not None:
+            self.load(filename)
 
     def __getitem__(self, key):
         return self.props[key]
@@ -63,13 +81,28 @@ class CameraProperties(object):
     def __iter__(self):
         pass # TODO
 
+    def update(self, props):
+        """Update the props dict."""
+        assert isinstance(props, dict)
+        self.props.update(props)
+
     # Loading and saving properties
     # -------------------------------------------------------------------------
+
+    # Definitions of basic camera properties can be stored in a JSON
+    # file so that we only need to determine at runtime a few
+    # differing parameters that change depending on the specific model
+    # of camera being used. For example, the Andor SDK supports
+    # several different specific cameras, but some functionality
+    # depends on the physical camera being used. Most of the
+    # capabilities for all models is the same, however, and so these
+    # generic values are stored in a file and only the few that are
+    # camera-specific are queried for.
 
     def save(self, filename):
         """Save the properties to a JSON file."""
         with open(filename, 'w') as outfile:
-            json.dump(self.props, outfile, indent=2, sort_keys=True)
+            json.dump(self.props, outfile, indent=4, sort_keys=True)
 
     def load(self, filename):
         """Load the properties from a JSON file."""
