@@ -51,6 +51,10 @@ class Camera:
     real_camera : bool
         When set to False, the camera hardware can be simulated for working in
         offline mode.
+    props : CameraProperties
+        A CameraProperties object defining several generic settings of
+        the camera as well as flags indicating if certain
+        functionality is available. TODO!
 
     """
     __metaclass__ = ABCMeta
@@ -80,6 +84,8 @@ class Camera:
 
         Keyword arguments
         -----------------
+        bins : int
+            Binning to use.
         real : bool
             If True, the camera is real; otherwise it is
             simulated. Default: True.
@@ -91,12 +97,14 @@ class Camera:
 
         """
         # Get kwargs and set defaults
+        bins = kwargs.get('bins', 1)
         real = kwargs.get('real', True)
         buffer_dir = kwargs.get('buffer_dir', '.')
         recording = kwargs.get('recording', True)
         logger = kwargs.get('logger', 'Camera')
         
         # Check kwarg types are correct
+        assert isinstance(bins, int)
         assert isinstance(real, (bool, int))
         assert isinstance(buffer_dir, str)
         assert isinstance(logger, str)
@@ -160,7 +168,7 @@ class Camera:
 
     def acquire_image_data(self):
         """Code for getting image data from the camera should be
-        placed here.
+        placed here. This must return a numpy array.
 
         """
         raise NotImplementedError("You must define this method.")
@@ -217,12 +225,16 @@ class Camera:
     def open_shutter(self):
         """Open the shutter."""
         self.shutter_open = True
-        self.set_shutter(state='open')
+        self.logger.info('Opening shutter.')
+        if self.real_camera:
+            self.set_shutter('open')
         
     def close_shutter(self):
         """Close the shutter."""
         self.shutter_open = False
-        self.set_shutter(state='closed')
+        self.logger.info('Closing shutter.')
+        if self.real_camera:
+            self.set_shutter('closed')
 
     def set_shutter(state):
         """This will set the shutter to the given state ('open' or
@@ -232,7 +244,7 @@ class Camera:
         """
         pass        
         
-    def toggle_shutter(self):
+    def toggle_shutter(self, state):
         """Toggle the shutter state from open to closed and vice versa."""
         if self.shutter_open:
             self.close_shutter()
@@ -242,9 +254,12 @@ class Camera:
     # Gain and exposure time
     # -------------------------------------------------------------------------
 
-    @abstractmethod
     def get_exposure_time(self):
-        """Query for the current exposure time."""
+        """Query for the current exposure time. Default is to just
+        return what is stored in the instantiation.
+
+        """
+        return self.t_ms
 
     @abstractmethod
     def set_exposure_time(self, t, units='ms'):

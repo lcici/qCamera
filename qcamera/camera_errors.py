@@ -27,8 +27,19 @@ class ThorlabsDCxError(CameraError):
     """Thorlabs DCx series errors."""
     pass
 
+class OpenCVError(CameraError):
+    """Errors for OpenCV cameras."""
+    pass
+
 class UnitsError(Exception):
     """Errors caused by using inappropriate units."""
+    pass
+
+class CameraPropertiesError(Exception):
+    """Error type for exceptions raised by CameraProperties
+    objects.
+
+    """
     pass
 
 # Warnings
@@ -48,4 +59,8 @@ class SensicamWarning(CameraWarning):
 
 class ThorlabsDCxWarning(CameraWarning):
     """Thorlabs DCx series warnings."""
+    pass
+
+class OpenCVWarning(CameraWarning):
+    """Warnings for OpenCV cameras."""
     pass
