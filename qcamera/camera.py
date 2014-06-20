@@ -121,6 +121,7 @@ class Camera:
         y0 = npr.randint(self.shape[1]/4, self.shape[1]/2)
         self.sim_img_center = (x0, y0)
         self.initialize(**kwargs)
+        self.get_camera_properties()
 
     def initialize(self, **kwargs):
         """Any extra initialization required should be placed in this
@@ -129,6 +130,12 @@ class Camera:
         """
         self.logger.warn(
             "Nothing done in initialize. Did you forget to override it?")
+
+    def get_camera_properties(self):
+        """Code for getting camera properties should go here."""
+        self.logger.warn(
+            "Properties not being set." + \
+            "Did you forget to override get_camera_properties?")
 
     def __enter__(self):
         return self
@@ -244,7 +251,7 @@ class Camera:
         will simply do nothing if not overridden.
 
         """
-        pass        
+        pass
         
     def toggle_shutter(self, state):
         """Toggle the shutter state from open to closed and vice versa."""
@@ -263,7 +270,6 @@ class Camera:
         """
         return self.t_ms
 
-    @abstractmethod
     def set_exposure_time(self, t, units='ms'):
         """Set the exposure time."""
         try:
@@ -271,13 +277,20 @@ class Camera:
         except KeyError:
             raise UnitsError(
                 "Exposure time units must be one of: " + _t_units.keys())
+        self.update_exposure_time(t)
+
+    def update_exposure_time(self, t):
+        """Code required to change the camera exposure time should go
+        here.
+
+        """
 
     @abstractmethod
     def get_gain(self):
         """Query the current gain settings."""
 
     @abstractmethod
-    def set_gain(self, gain, **kwargs):
+    def set_gain(self, **kwargs):
         """Set the camera gain."""
 
     # Cooling
