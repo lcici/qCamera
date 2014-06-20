@@ -1,5 +1,6 @@
 """Camera properties"""
 
+import json
 from camera_errors import CameraPropertiesError
 
 class CameraProperties(object):
@@ -22,11 +23,22 @@ class CameraProperties(object):
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             
             # Number of horizontal and vertical pixels
-            'width': None,
-            'height': None,
+            'pixels': [0, 0],
+
+            # Bits per pixel. This could conceivably be a tuple if a
+            # color camera. The pixel_mode attribute specifies if it
+            # is mono or some form of color.
+            'depth': 8,
+            'pixel_mode': 'mono',
+
+            # Available trigger modes
+            'trigger_modes': ['software'],
 
             # Functionality flags
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+            # Can hardware cropping be set?
+            'crop': False,
 
             # Can the gain be adjusted?
             'gain_adjust': False,
@@ -37,9 +49,6 @@ class CameraProperties(object):
 
             # Does the camera have a builtin shutter?
             'shutter': False,
-
-            # Color camera?
-            'color': False,
         }
 
     def __getitem__(self, key):
@@ -53,5 +62,24 @@ class CameraProperties(object):
 
     def __iter__(self):
         pass # TODO
+
+    # Loading and saving properties
+    # -------------------------------------------------------------------------
+
+    def save(self, filename):
+        """Save the properties to a JSON file."""
+        with open(filename, 'w') as outfile:
+            json.dump(self.props, outfile, indent=2, sort_keys=True)
+
+    def load(self, filename):
+        """Load the properties from a JSON file."""
+        with open(filename, 'r') as infile:
+            props = json.load(infile)
+            # TODO: this should check that keys are valid!
+            self.props = props
+
+if __name__ == "__main__":
+    props = CameraProperties()
+    props.save('test.json')
 
             
