@@ -12,6 +12,7 @@ import logging
 import numpy as np
 import numpy.random as npr
 from ring_buffer import RingBuffer
+from camera_properties import CameraProperties
 from camera_errors import CameraError, UnitsError
 
 _t_units = {'ms': 1, 's': 1e3} # Allowed units for exposure time
@@ -73,6 +74,7 @@ class Camera:
     trigger_mode = 0
     rbuffer = None
     real_camera = True
+    props = CameraProperties()
 
     # Setup and shutdown
     # -------------------------------------------------------------------------

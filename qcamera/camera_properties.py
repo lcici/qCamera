@@ -13,7 +13,8 @@ class CameraProperties(object):
     
     def __init__(self, **kwargs):
         """Without kwargs passed, populate the base properties
-        dict. Otherwise, populate as appropriate.
+        dict. Otherwise, populate as appropriate. See self.props for
+        valid keyword arguments.
 
         """
         self.props = {
@@ -33,6 +34,9 @@ class CameraProperties(object):
             # Is there a built-in tempurature controller for the
             # sensor?
             'temp_control': False,
+
+            # Does the camera have a builtin shutter?
+            'shutter': False,
 
             # Color camera?
             'color': False,
