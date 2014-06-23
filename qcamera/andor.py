@@ -88,16 +88,7 @@ class AndorCamera(camera.Camera):
     # -------------------------------------------------------------------------
     
     def initialize(self, **kwargs):
-        """Initialize the Andor camera.
-
-        Keyword arguments
-        -----------------
-        temperature : int
-            Temperature in Celsius to set the TEC to.
-
-        """
-        # Get and check keyword arguments.
-        self.temperature_set_point = int(kwargs.get('temperature', -50))
+        """Initialize the Andor camera."""
         
         # Try to load the Andor DLL
         # TODO: library name in Linux?
@@ -116,16 +107,6 @@ class AndorCamera(camera.Camera):
         self.set_acquisition_mode('continuous')
         self.set_trigger_mode('software')
 
-        # Enable temperature control
-        # TODO: update this with CameraProperties stuff
-        T_min, T_max = _int_ptr(), _int_ptr()
-        self._chk(self.clib.GetTemperatureRange(T_min, T_max))
-        self.T_min = T_min.contents.value
-        self.T_max = T_max.contents.value
-        self.set_cooler_temperature(self.temperature_set_point)
-        self.temp_stabilized = False
-        #self.cooler_on()
-
     def get_camera_properties(self):
         """Code for getting camera properties should go here."""
         # Get generic Andor properties
@@ -136,9 +117,12 @@ class AndorCamera(camera.Camera):
         caps.ulSize = 12*32
         self._chk(self.clib.GetCapabilities(ctypes.pointer(caps)))
 
-        # Get cooler temperature range.
+        # Get cooler temperature range and initial set point.
         min_, max_ = ctypes.c_int(), ctypes.c_int()
         self._chk(self.clib.GetTemperatureRange(ctypes.pointer(min_), ctypes.pointer(max_)))
+        self.temperature_set_point = self.props['set_point']
+        self.set_cooler_temperature(self.temperature_set_point)
+        self.temp_stabilized = False
 
         # Update properties.
         # TODO: actually set things based on the result of GetCapabilities
@@ -354,7 +338,6 @@ class AndorCamera(camera.Camera):
 
     def get_cooler_temperature(self):
         """Check the TEC temperature."""
-        # TODO: make this work better with simulated cameras
         if not self.real_camera:
             return 20
         temp = _int_ptr()
@@ -375,15 +358,14 @@ class AndorCamera(camera.Camera):
 
     def set_cooler_temperature(self, temp):
         """Set the cooler temperature to temp."""
-        # TODO: make this work better with simulated cameras
         self.temperature_set_point = temp
         self.logger.info("Temperature set point changed to %i" % temp)
         if not self.real_camera:
             pass
-        if temp > self.T_max or temp < self.T_min:
+        if temp > self.props['temp_range'][1] or temp < self.props['temp_range'][0]:
             raise ValueError(
-                "Set point temperature must be between " + \
-                repr(self.T_min) + " and " + repr(self.T_max) + ".")
+                "Invalid set point. Valid range is " + \
+                repr(self.props['temp_range']))
         self._chk(self.clib.SetTemperature(temp))
 
     # Cropping and binning

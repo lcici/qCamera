@@ -6,7 +6,10 @@
 	"fast kinetics",
 	"continuous"
     ], 
+    "auto_start": false,
+    "auto_temp_control": false,
     "bins": [1, 2, 4, 8, 16, 32], 
+    "contrast": [0, 256],
     "depth": 8, 
     "gain_adjust": true, 
     "hardware_crop": true, 
@@ -15,6 +18,7 @@
 	0, 
 	0
     ], 
+    "set_point": -10,
     "shutter": false, 
     "temp_control": true,
     "temp_range": [-90, 30],

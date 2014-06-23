@@ -73,9 +73,17 @@ class CameraProperties(object):
             # Default settings
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-            # TODO: Later, stuff will go here so that you can store
-            #       default settings that you want a camera to start
-            #       with.
+            # Minimum and maximum threshold values for contrast adjustment
+            'contrast': [0, 256],
+
+            # Start acquisition immediately if True
+            'auto_start': True,
+
+            # Initial temperature set point
+            'set_point': -10,
+
+            # Start temperature control immediately?
+            'auto_temp_control': False,
         }
 
         # Update parameters from a file if given.
