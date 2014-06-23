@@ -240,6 +240,8 @@ class AndorCamera(camera.Camera):
         self.logger.info("Setting trigger mode to " + mode)
         if self.real_camera:
             self._chk(self.clib.SetTriggerMode(self.trigger_mode))
+        if mode == 'external':
+            self.set_acquisition_mode('continuous')
 
     def start(self):
         """Start accepting triggers."""
@@ -387,13 +389,9 @@ if __name__ == "__main__":
     
     with AndorCamera(temperature=10) as cam:
         cam.set_exposure_time(10)
+        cam.set_trigger_mode('external')
         cam.open_shutter()
         cam.start()
         cam.test_real_time_acquisition()
-        # img = cam.get_image()
-        # plt.figure()
-        # plt.gray()
-        # plt.imshow(img, interpolation='none')
-        # time.sleep(.2)
         cam.stop()
         cam.close_shutter()
