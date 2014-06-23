@@ -51,6 +51,9 @@ class CameraProperties(object):
             # List of valid values for binning
             'bins': [1],
 
+            # Min and max temperatures for cameras with a cooler
+            'temp_range': [-90, 30],
+
             # Functionality flags
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -66,6 +69,13 @@ class CameraProperties(object):
 
             # Does the camera have a builtin shutter?
             'shutter': False,
+
+            # Default settings
+            # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+            # TODO: Later, stuff will go here so that you can store
+            #       default settings that you want a camera to start
+            #       with.
         }
 
         # Update parameters from a file if given.
@@ -83,6 +93,9 @@ class CameraProperties(object):
 
     def __iter__(self):
         pass # TODO
+
+    def __str__(self):
+        return json.dumps(self.props, indent=2)
 
     def update(self, props):
         """Update the props dict."""
@@ -104,12 +117,20 @@ class CameraProperties(object):
 
     def save(self, filename):
         """Save the properties to a JSON file."""
-        with open(os.path.join(PATH, 'props', filename), 'w') as outfile:
+        with open(filename, 'w') as outfile:
             json.dump(self.props, outfile, indent=4, sort_keys=True)
 
-    def load(self, filename):
-        """Load the properties from a JSON file."""
-        with open(os.path.join(PATH, 'props', filename), 'r') as infile:
+    def load(self, filename, abs_path=False):
+        """Load the properties from a JSON file. If abs_path is False,
+        load the file from the global properties directory (i.e.,
+        qcamera/props).
+
+        """
+        if not abs_path:
+            path = os.path.join(PATH, 'props', filename)
+        else:
+            path = filename
+        with open(path, 'r') as infile:
             props = json.load(infile)
             # TODO: this should check that keys are valid!
             self.props = props

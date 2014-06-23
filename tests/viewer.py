@@ -16,7 +16,6 @@ import numpy as np
 from PyQt4 import QtGui, QtCore
 from guiqwt.plot import ImageDialog
 from guiqwt.tools import SelectTool, AnnotatedRectangleTool
-from guiqwt.shapes import RectangleShape
 from guiqwt.image import ImageItem
 from guiqwt.annotations import AnnotatedRectangle
 from guiqwt.builder import make
@@ -34,6 +33,10 @@ def _get_image_item(imageWidget):
 
 class Viewer(QtGui.QMainWindow, Ui_MainWindow):
     """Simple GUI testbed for qCamera."""
+
+    # Setup
+    # -------------------------------------------------------------------------
+    
     def __init__(self, camera, thread):
         # Basic initialization.
         QtGui.QWidget.__init__(self)
@@ -56,6 +59,10 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self.acquisitionButton.clicked.connect(self.toggle_acquisition)
         self.triggerModeBox.currentIndexChanged.connect(self.set_trigger_mode)
 
+        # Shutter control
+        self.openShutterButton.clicked.connect(self.open_shutter)
+        self.closeShutterButton.clicked.connect(self.close_shutter)
+
         # Crop/binning/ROI dialogs
         self.adjustCropButton.clicked.connect(self.crop_setup)
         self.adjustROIButton.clicked.connect(self.roi_setup)
@@ -64,6 +71,26 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self.scaleMinBox.valueChanged.connect(self.set_lut_range)
         self.scaleMaxBox.valueChanged.connect(self.set_lut_range)
         #self.rbufferBox.stateChanged.connect(self.set_rbuffer_recording)
+
+        # Temperature control
+        self.coolerOnButton.clicked.connect(self.cam.cooler_on)
+        self.coolerOffButton.clicked.connect(self.cam.cooler_off)
+        self.tempSetPointBox.editingFinished.connect(self.set_temperature)
+        if not cam.props['temp_control']:
+            self.tempSetPointBox.setEnabled(False)
+            self.coolerStateBox.setEnabled(False)
+            self.tempLbl.setText('N/A')
+        else:
+            # Setup controls
+            min_, max_ = self.cam.props['temp_range']
+            self.tempSetPointBox.setRange(int(min_), int(max_))
+            self.tempSetPointBox.setValue(self.cam.temperature_set_point)
+
+            # Setup a timer to poll the temperature
+            self.temp_checker = QtCore.QTimer()
+            self.temp_checker.setInterval(5000)
+            self.temp_checker.timeout.connect(self.check_temperature)
+            self.temp_checker.start()
 
         # Start the thread.
         self.cam_thread.start()
@@ -190,11 +217,9 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         start_text = "Begin Acquisition"
         stop_text = "Stop Acquisition"
         if self.acquisitionButton.text() == start_text:
-            #self.cam_thread.queue.put('unpause')
             self.cam_thread.unpause()
             self.acquisitionButton.setText(stop_text)
         else:
-            #self.cam_thread.queue.put('pause')
             self.cam_thread.pause()
             self.acquisitionButton.setText(start_text)
 
@@ -203,6 +228,12 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self.cam_thread.queue.put('pause')
         mode = self.triggerModeBox.currentIndex()
         self.cam.set_trigger_mode(mode)
+
+    def open_shutter(self):
+        self.cam.open_shutter()
+
+    def close_shutter(self):
+        self.cam.close_shutter()
 
     def set_t_exp(self):
         """Change the exposure time."""
@@ -286,6 +317,20 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
                 e = sys.exc_info()
                 print(e)
                 self.cam.set_roi(old_roi)
+
+    # Temperature controls
+    # -------------------------------------------------------------------------
+
+    def check_temperature(self):
+        temp = cam.get_cooler_temperature()
+        self.tempLbl.setText('%i' % temp)
+
+    def set_temperature(self):
+        temp = self.tempSetPointBox.value()
+        self.cam.set_cooler_temperature(temp)
+
+# Main
+# =============================================================================
 
 if __name__ == "__main__":
     class CameraSelectDialog(QtGui.QDialog): # TODO

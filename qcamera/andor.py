@@ -97,7 +97,7 @@ class AndorCamera(camera.Camera):
 
         """
         # Get and check keyword arguments.
-        temperature = int(kwargs.get('temperature', -50))
+        self.temperature_set_point = int(kwargs.get('temperature', -50))
         
         # Try to load the Andor DLL
         # TODO: library name in Linux?
@@ -117,22 +117,28 @@ class AndorCamera(camera.Camera):
         self.set_trigger_mode('software')
 
         # Enable temperature control
+        # TODO: update this with CameraProperties stuff
         T_min, T_max = _int_ptr(), _int_ptr()
         self._chk(self.clib.GetTemperatureRange(T_min, T_max))
         self.T_min = T_min.contents.value
         self.T_max = T_max.contents.value
-        self.set_cooler_temperature(temperature)
-        self.cooler_on()
+        self.set_cooler_temperature(self.temperature_set_point)
+        self.temp_stabilized = False
+        #self.cooler_on()
 
     def get_camera_properties(self):
         """Code for getting camera properties should go here."""
         # Get generic Andor properties
         self.props.load('andor.json')
 
-        # Get camera-specific properties.
+        # Get generic camera-specific properties.
         caps = AndorCapabilities()
         caps.ulSize = 12*32
         self._chk(self.clib.GetCapabilities(ctypes.pointer(caps)))
+
+        # Get cooler temperature range.
+        min_, max_ = ctypes.c_int(), ctypes.c_int()
+        self._chk(self.clib.GetTemperatureRange(ctypes.pointer(min_), ctypes.pointer(max_)))
 
         # Update properties.
         # TODO: actually set things based on the result of GetCapabilities
@@ -140,6 +146,7 @@ class AndorCamera(camera.Camera):
             'pixels': self.shape,
             'gain_adjust': True,
             'temp_control': True,
+            'temp_range': [min_.value, max_.value],
             'shutter': True,
         }
         self.props.update(new_props)
@@ -252,7 +259,9 @@ class AndorCamera(camera.Camera):
     def stop(self):
         """Stop acquisition."""
         if self.real_camera:
-            self._chk(self.clib.AbortAcquisition())
+            status = self.clib.AbortAcquisition()
+            if status != ANDOR_STATUS['DRV_IDLE']:
+                self._chk(status)
 
     # Shutter control
     # -------------------------------------------------------------------------
@@ -333,11 +342,13 @@ class AndorCamera(camera.Camera):
 
     def cooler_on(self):
         """Turn on the TEC."""
+        self.logger.info("Turning cooler on.")
         if self.real_camera:
             self._chk(self.clib.CoolerON())
 
     def cooler_off(self):
         """Turn off the TEC."""
+        self.logger.info("Turning cooler off.")
         if self.real_camera:
             self._chk(self.clib.CoolerOFF())
 
@@ -347,13 +358,26 @@ class AndorCamera(camera.Camera):
         if not self.real_camera:
             return 20
         temp = _int_ptr()
-        self._chk(self.clib.GetTemperature(temp))
+        status = self.clib.GetTemperature(temp)
+        unstable_codes = (
+            ANDOR_STATUS['DRV_TEMPERATURE_OFF'],
+            ANDOR_STATUS['DRV_TEMPERATURE_NOT_REACHED'],
+            ANDOR_STATUS['DRV_TEMPERATURE_DRIFT'],
+            ANDOR_STATUS['DRV_TEMP_NOT_STABILIZED']
+        )
+        if status == ANDOR_STATUS['DRV_TEMPERATURE_STABILIZED']:
+            self.temp_stabilized = True
+        elif status in unstable_codes:
+            self.temp_stabilized = False
+        else:
+            self._chk(status)
         return temp.contents.value
 
     def set_cooler_temperature(self, temp):
         """Set the cooler temperature to temp."""
         # TODO: make this work better with simulated cameras
         self.temperature_set_point = temp
+        self.logger.info("Temperature set point changed to %i" % temp)
         if not self.real_camera:
             pass
         if temp > self.T_max or temp < self.T_min:

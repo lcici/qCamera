@@ -120,6 +120,7 @@ class Camera:
         self.sim_img_center = (x0, y0)
         self.initialize(**kwargs)
         self.get_camera_properties()
+        self.logger.debug(self.props)
 
     def initialize(self, **kwargs):
         """Any extra initialization required should be placed in this
@@ -243,7 +244,7 @@ class Camera:
         if self.real_camera:
             self.set_shutter('closed')
 
-    def set_shutter(state):
+    def set_shutter(self, state):
         """This will set the shutter to the given state ('open' or
         'closed'). Since not all cameras have a built in shutter, this
         will simply do nothing if not overridden.

@@ -16,7 +16,8 @@
 	0
     ], 
     "shutter": false, 
-    "temp_control": true, 
+    "temp_control": true,
+    "temp_range": [-90, 30],
     "trigger_modes": [
 	"internal",
 	"external",
