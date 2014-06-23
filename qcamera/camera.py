@@ -15,8 +15,6 @@ from ring_buffer import RingBuffer
 from camera_properties import CameraProperties
 from camera_errors import CameraError
 
-_t_units = {'ms': 1, 's': 1e3} # Allowed units for exposure time
-
 class Camera:
     """Abstract base class for all cameras.
 
@@ -134,7 +132,7 @@ class Camera:
     def get_camera_properties(self):
         """Code for getting camera properties should go here."""
         self.logger.warn(
-            "Properties not being set." + \
+            "Properties not being set. " + \
             "Did you forget to override get_camera_properties?")
 
     def __enter__(self):

@@ -11,6 +11,12 @@ class Template(camera.Camera):
 
     # Setup and shutdown
     # -------------------------------------------------------------------------
+
+    def _chk(self, status):
+        """Use this function to wrap around C calls in order to check
+        return codes.
+
+        """
     
     def initialize(self, **kwargs):
         """Initialization should take place here."""

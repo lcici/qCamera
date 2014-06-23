@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 import time
-import warnings
+import traceback as tb
 import ctypes
 import numpy as np
 import camera
@@ -40,7 +40,7 @@ class AndorCamera(camera.Camera):
         "internal": 0,
         "external": 1,
         "external start": 6,
-        "software": 0}#10}
+        "software": 10}
 
     def _chk(self, status):
         """Checks the error status of an Andor DLL function call. If
@@ -74,6 +74,11 @@ class AndorCamera(camera.Camera):
             self.logger.warn("Temperature set point reached but not yet stable.")
         elif status == ANDOR_STATUS['DRV_TEMPERATURE_STABILIZED']:
             pass
+        elif status == ANDOR_STATUS['DRV_IDLE']:
+            stack = tb.extract_stack()
+            self.logger.warn(
+                'Function call resulted in DRV_IDLE.\n' + \
+                ''.join(tb.format_list(stack)))
         elif status != ANDOR_STATUS['DRV_SUCCESS']:
             raise AndorError("Andor returned the status message " + \
                              ANDOR_CODES[status])
@@ -189,7 +194,7 @@ class AndorCamera(camera.Camera):
         #print('waiting')
         #self.clib.WaitForAcquisition()
         #print('done waiting')
-        while True:
+        while False:
             status = ctypes.c_int(0)
             self.clib.GetStatus(ctypes.pointer(status))
             if ANDOR_CODES[status.value] != 'DRV_SUCCESS':
@@ -198,12 +203,16 @@ class AndorCamera(camera.Camera):
                 break
             time.sleep(0.1)
 
-        # Get the image
+        # Allocate image storage
         img_size = self.shape[0]*self.shape[1]/self.bins**2
         c_array = ctypes.c_long*img_size
         c_img = c_array()
+
+        # Trigger or wait for a trigger then acquire data
+        if self.trigger_mode == self._trigger_modes['software']:
+            self._chk(self.clib.SendSoftwareTrigger())
+        self.clib.WaitForAcquisition()
         self._chk(self.clib.GetMostRecentImage(ctypes.pointer(c_img), ctypes.c_ulong(img_size)))
-        print('Acquired!')
         img_array = np.frombuffer(c_img, dtype=ctypes.c_long)
         img_array.shape = np.array(self.shape)/self.bins
         return img_array
@@ -227,9 +236,10 @@ class AndorCamera(camera.Camera):
         mode = mode.lower()
         if mode not in self._trigger_modes:
             raise AndorError("Invalid trigger mode: " + mode)
+        self.trigger_mode = self._trigger_modes[mode]
         self.logger.info("Setting trigger mode to " + mode)
         if self.real_camera:
-            self._chk(self.clib.SetTriggerMode(self._trigger_modes[mode]))
+            self._chk(self.clib.SetTriggerMode(self.trigger_mode))
 
     def start(self):
         """Start accepting triggers."""
@@ -257,9 +267,23 @@ class AndorCamera(camera.Camera):
 
     def set_exposure_time(self, t):
         """Set the exposure time in ms."""
-        t_s = self.t_ms*1000
-        self.logger.info('Setting exposure time to ' + str(self.t_ms) + ' ms.')
-        self._chk(self.clib.SetExposureTime(t_s))
+        self.t_ms = t
+        t_s = self.t_ms/1000.
+        self.logger.info('Setting exposure time to %.03f s.' % t_s)
+        self._chk(self.clib.SetExposureTime(ctypes.c_float(t_s)))
+
+        exposure = ctypes.c_float()
+        accumulate = ctypes.c_float()
+        kinetic = ctypes.c_float()
+        self.clib.GetAcquisitionTimings(
+            ctypes.pointer(exposure),
+            ctypes.pointer(accumulate),
+            ctypes.pointer(kinetic))
+        self.logger.debug(
+            'Results of GetAcquisitionTimings:\n' + \
+            '\texposure = %.03f\n' % exposure.value + \
+            '\taccumulate = %.03f\n' % accumulate.value + \
+            '\tkinetic = %.03f' % kinetic.value)
 
     def get_gain(self):
         """Query the current gain settings."""
@@ -358,20 +382,18 @@ class AndorCamera(camera.Camera):
         
 if __name__ == "__main__":
     import logging
-    import matplotlib.pyplot as plt
 
     logging.basicConfig(level=logging.DEBUG)
     
     with AndorCamera(temperature=10) as cam:
         cam.set_exposure_time(10)
         cam.open_shutter()
-        cam.close_shutter()
         cam.start()
-        img = cam.get_image()
-        plt.figure()
-        plt.gray()
-        plt.imshow(img, interpolation='none')
-        time.sleep(.2)
+        cam.test_real_time_acquisition()
+        # img = cam.get_image()
+        # plt.figure()
+        # plt.gray()
+        # plt.imshow(img, interpolation='none')
+        # time.sleep(.2)
         cam.stop()
-        plt.show()
         cam.close_shutter()
