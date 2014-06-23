@@ -4,8 +4,10 @@ it in a Qt GUI.
 """
 
 from __future__ import print_function
-
 import sys
+
+# Ensure we're loading the newest version of qcamera rather than
+# anything that was installed with distutils.
 sys.path[0:0] = ['..']
 
 import time
@@ -286,20 +288,63 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
                 self.cam.set_roi(old_roi)
 
 if __name__ == "__main__":
-    class CameraSelectDialog(QtGui.QDialog):
-        """For interactive selection of cameras at startup.
-
-        TODO
-
-        """
+    class CameraSelectDialog(QtGui.QDialog): # TODO
+        """For interactive selection of cameras at startup."""
         def __init__(self):
             super(CameraSelectDialog, self).__init__()
 
+    import os
+    import argparse
+    import json
     import logging
+    
     logging.basicConfig(level=logging.DEBUG)
+
+    cam_options = {
+        'andor': AndorCamera,
+        'sensicam': Sensicam
+    }
+    def cam_options_string():
+        out = ''
+        for cam in cam_options:
+            out = out + cam + ' '
+        return out
+
+    parser = argparse.ArgumentParser(description='qCamera Viewer')
+    parser.add_argument(
+        '-c', '--camera-type', metavar='<camera type>', type=str,
+        help='Specify the camera type to use. If not given, ' + \
+        'default to the last camera type used. Options include:\n' + \
+        cam_options_string())
+    args = parser.parse_args()
+
+    config_file = 'viewer.json'
+    if args.camera_type is None:
+        if os.path.exists(config_file):
+            with open(config_file, 'r') as f:
+                config = json.load(f)
+                camera_type = config['camera_type']
+                Camera = cam_options[camera_type]
+        else:
+            raise RuntimeError(
+                "If this is your first time running viewer.py, " + \
+                "you need to specify what camera to use. " + \
+                "Try viewer.py -h.")
+    else:
+        try:
+            camera_type = args.camera_type
+            Camera = cam_options[camera_type]
+        except KeyError:
+            print("Invalid selection. Valid camera options are:",
+                  cam_options_string())
+            sys.exit(1)
+
+    with open(config_file, 'w') as f:
+        last_cam = {'camera_type': camera_type}
+        json.dump(last_cam, f)
+    
     app = QtGui.QApplication(sys.argv)
-    with Sensicam(real=True, recording=False) as cam:
-        #with AndorCamera(real=True, recording=False) as cam:
+    with Camera(real=True, recording=False) as cam:
         thread = CameraThread(cam)
         win = Viewer(cam, thread)
         win.show()

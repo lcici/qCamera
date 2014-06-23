@@ -1,6 +1,7 @@
 """Andor camera interface"""
 
 from __future__ import print_function
+import os.path
 import time
 import traceback as tb
 import ctypes
@@ -126,7 +127,7 @@ class AndorCamera(camera.Camera):
     def get_camera_properties(self):
         """Code for getting camera properties should go here."""
         # Get generic Andor properties
-        self.props.load('props/andor.json')
+        self.props.load('andor.json')
 
         # Get camera-specific properties.
         caps = AndorCapabilities()

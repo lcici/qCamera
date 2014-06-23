@@ -1,9 +1,12 @@
 """Camera properties"""
 
+import os.path
 import json
 # TODO: don't allow updating of properties that don't exist in the
 # default self.props set in __init__
 from camera_errors import CameraPropertiesError
+
+PATH = os.path.split(os.path.abspath(__file__))[0]
 
 class CameraProperties(object):
     """Class used for storing properties of the camera in use and
@@ -101,12 +104,12 @@ class CameraProperties(object):
 
     def save(self, filename):
         """Save the properties to a JSON file."""
-        with open(filename, 'w') as outfile:
+        with open(os.path.join(PATH, 'props', filename), 'w') as outfile:
             json.dump(self.props, outfile, indent=4, sort_keys=True)
 
     def load(self, filename):
         """Load the properties from a JSON file."""
-        with open(filename, 'r') as infile:
+        with open(os.path.join(PATH, 'props', filename), 'r') as infile:
             props = json.load(infile)
             # TODO: this should check that keys are valid!
             self.props = props
