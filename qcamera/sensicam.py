@@ -456,6 +456,16 @@ class Sensicam(camera.Camera):
         self._chk(self.clib.REMOVE_ALL_BUFFERS_FROM_LIST(self.filehandle))
         self._chk(self.clib.FREE_BUFFER(self.filehandle, self.buffer_number))
         self._chk(self.clib.CLOSEBOARD(ctypes.pointer(self.filehandle)))
+
+    def get_camera_properties(self):
+        """Get basic properties and update the props dict."""
+        self.props.load('sensicam.json')
+
+        # Update properties.
+        new_props = {
+            'pixels': self.shape
+        }
+        self.props.update(new_props)
         
     # Image acquisition
     # -------------------------------------------------------------------------
@@ -535,9 +545,9 @@ class Sensicam(camera.Camera):
         """Query for the current exposure time."""
         return self.t_ms
 
-    def set_exposure_time(self, t, units='ms'):
+    def set_exposure_time(self, t):
         """Set the exposure time."""
-        super(Sensicam, self).set_exposure_time(t, units)
+        self.t_ms = t
         if not self.real_camera:
             return
         self._update_coc(t_exp=self.t_ms, stop=False)
@@ -547,7 +557,6 @@ class Sensicam(camera.Camera):
 
     def set_gain(self, gain, **kwargs):
         """Set the camera gain."""
-        super(Sensicam, self).set_gain(gain, kwargs)
         if not self.real_camera:
             return
         # TODO

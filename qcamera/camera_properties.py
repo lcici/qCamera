@@ -1,9 +1,12 @@
 """Camera properties"""
 
+import os.path
 import json
 # TODO: don't allow updating of properties that don't exist in the
 # default self.props set in __init__
 from camera_errors import CameraPropertiesError
+
+PATH = os.path.split(os.path.abspath(__file__))[0]
 
 class CameraProperties(object):
     """Class used for storing properties of the camera in use and
@@ -48,6 +51,14 @@ class CameraProperties(object):
             # List of valid values for binning
             'bins': [1],
 
+            # Min and max temperatures for cameras with a
+            # cooler. Meaningless otherwise.
+            'temp_range': [-90, 30],
+
+            # Min and max values for gain. Meaningless if the camera
+            # gain cannot be adjusted.
+            'gain_range': [0, 255],
+
             # Functionality flags
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -63,6 +74,27 @@ class CameraProperties(object):
 
             # Does the camera have a builtin shutter?
             'shutter': False,
+
+            # Default settings
+            # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+            # Minimum and maximum threshold values for contrast adjustment
+            'init_contrast': [0, 256],
+
+            # Start acquisition immediately if True
+            'auto_start': True,
+
+            # Initial temperature set point
+            'init_set_point': -10,
+
+            # Start temperature control immediately?
+            'auto_temp_control': False,
+
+            # Initial shutter state open?
+            'init_shutter': False,
+
+            # Initial gain
+            'init_gain': 0,
         }
 
         # Update parameters from a file if given.
@@ -80,6 +112,9 @@ class CameraProperties(object):
 
     def __iter__(self):
         pass # TODO
+
+    def __str__(self):
+        return json.dumps(self.props, indent=2)
 
     def update(self, props):
         """Update the props dict."""
@@ -104,9 +139,17 @@ class CameraProperties(object):
         with open(filename, 'w') as outfile:
             json.dump(self.props, outfile, indent=4, sort_keys=True)
 
-    def load(self, filename):
-        """Load the properties from a JSON file."""
-        with open(filename, 'r') as infile:
+    def load(self, filename, abs_path=False):
+        """Load the properties from a JSON file. If abs_path is False,
+        load the file from the global properties directory (i.e.,
+        qcamera/props).
+
+        """
+        if not abs_path:
+            path = os.path.join(PATH, 'props', filename)
+        else:
+            path = filename
+        with open(path, 'r') as infile:
             props = json.load(infile)
             # TODO: this should check that keys are valid!
             self.props = props
@@ -114,5 +157,3 @@ class CameraProperties(object):
 if __name__ == "__main__":
     props = CameraProperties()
     props.save('test.json')
-
-            

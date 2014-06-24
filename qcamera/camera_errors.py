@@ -31,10 +31,6 @@ class OpenCVError(CameraError):
     """Errors for OpenCV cameras."""
     pass
 
-class UnitsError(Exception):
-    """Errors caused by using inappropriate units."""
-    pass
-
 class CameraPropertiesError(Exception):
     """Error type for exceptions raised by CameraProperties
     objects.
