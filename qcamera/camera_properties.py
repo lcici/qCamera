@@ -146,5 +146,3 @@ class CameraProperties(object):
 if __name__ == "__main__":
     props = CameraProperties()
     props.save('test.json')
-
-            

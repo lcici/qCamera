@@ -66,10 +66,12 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         # Crop/binning/ROI dialogs
         self.adjustCropButton.clicked.connect(self.crop_setup)
         self.adjustROIButton.clicked.connect(self.roi_setup)
+        self.setBinsButton.clicked.connect(self.bins_setup)
 
         # Viewing settings
         self.scaleMinBox.valueChanged.connect(self.set_lut_range)
         self.scaleMaxBox.valueChanged.connect(self.set_lut_range)
+        self.autoscaleButton.clicked.connect(self.autoscale)
         #self.rbufferBox.stateChanged.connect(self.set_rbuffer_recording)
 
         # Temperature control
@@ -212,6 +214,16 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         img = self._get_image_plot()
         img.set_lut_range(self.scale)
 
+    def autoscale(self):
+        """Change the LUT range to the have min and max values the
+        same as the image data.
+
+        """
+        img = self._get_image_plot()
+        self.scaleMinBox.setValue(int(np.min(img.data)))
+        self.scaleMaxBox.setValue(int(np.max(img.data)))
+        self.set_lut_range()
+
     def toggle_acquisition(self):
         """Toggle between acquisition states (on or off)."""
         start_text = "Begin Acquisition"
@@ -317,6 +329,29 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
                 e = sys.exc_info()
                 print(e)
                 self.cam.set_roi(old_roi)
+
+    def bins_setup(self):
+        """Show a dialog for setting binning."""
+        # Pause acquisition.
+        if not self.cam_thread.paused:
+            self.toggle_acquisition()
+        while not self.cam_thread.paused:
+            time.sleep(0.01)
+
+        # Query for new binning.
+        bin_options = [str(x) for x in self.cam.props['bins']]
+        bin_index = 0
+        for i, bin in enumerate(bin_options):
+            if int(bin) == self.cam.bins:
+                bin_index = i
+        bins, ok = QtGui.QInputDialog.getItem(
+            self, 'Camera binning setup',
+            'Bins:', bin_options, bin_index, False)
+
+        # Set bins
+        if ok:
+            self.cam.set_bins(int(bins))
+            
 
     # Temperature controls
     # -------------------------------------------------------------------------

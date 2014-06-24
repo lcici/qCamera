@@ -456,6 +456,16 @@ class Sensicam(camera.Camera):
         self._chk(self.clib.REMOVE_ALL_BUFFERS_FROM_LIST(self.filehandle))
         self._chk(self.clib.FREE_BUFFER(self.filehandle, self.buffer_number))
         self._chk(self.clib.CLOSEBOARD(ctypes.pointer(self.filehandle)))
+
+    def get_camera_properties(self):
+        """Get basic properties and update the props dict."""
+        self.props.load('sensicam.json')
+
+        # Update properties.
+        new_props = {
+            'pixels': self.shape
+        }
+        self.props.update(new_props)
         
     # Image acquisition
     # -------------------------------------------------------------------------
