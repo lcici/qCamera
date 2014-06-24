@@ -4,8 +4,10 @@ it in a Qt GUI.
 """
 
 from __future__ import print_function
-
 import sys
+
+# Ensure we're loading the newest version of qcamera rather than
+# anything that was installed with distutils.
 sys.path[0:0] = ['..']
 
 import time
@@ -14,7 +16,6 @@ import numpy as np
 from PyQt4 import QtGui, QtCore
 from guiqwt.plot import ImageDialog
 from guiqwt.tools import SelectTool, AnnotatedRectangleTool
-from guiqwt.shapes import RectangleShape
 from guiqwt.image import ImageItem
 from guiqwt.annotations import AnnotatedRectangle
 from guiqwt.builder import make
@@ -32,6 +33,10 @@ def _get_image_item(imageWidget):
 
 class Viewer(QtGui.QMainWindow, Ui_MainWindow):
     """Simple GUI testbed for qCamera."""
+
+    # Setup
+    # -------------------------------------------------------------------------
+    
     def __init__(self, camera, thread):
         # Basic initialization.
         QtGui.QWidget.__init__(self)
@@ -54,14 +59,52 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self.acquisitionButton.clicked.connect(self.toggle_acquisition)
         self.triggerModeBox.currentIndexChanged.connect(self.set_trigger_mode)
 
+        # Shutter control
+        self.openShutterButton.clicked.connect(self.open_shutter)
+        self.closeShutterButton.clicked.connect(self.close_shutter)
+        if self.cam.props['shutter']:
+            if self.cam.props['init_shutter']:
+                self.openShutterButton.setChecked(True)
+                self.open_shutter()
+
         # Crop/binning/ROI dialogs
         self.adjustCropButton.clicked.connect(self.crop_setup)
         self.adjustROIButton.clicked.connect(self.roi_setup)
+        self.setBinsButton.clicked.connect(self.bins_setup)
 
         # Viewing settings
         self.scaleMinBox.valueChanged.connect(self.set_lut_range)
         self.scaleMaxBox.valueChanged.connect(self.set_lut_range)
+        self.autoscaleButton.clicked.connect(self.autoscale)
         #self.rbufferBox.stateChanged.connect(self.set_rbuffer_recording)
+
+        # Temperature control
+        self.coolerOnButton.clicked.connect(self.cam.cooler_on)
+        self.coolerOffButton.clicked.connect(self.cam.cooler_off)
+        self.tempSetPointBox.editingFinished.connect(self.set_temperature)
+        if not cam.props['temp_control']:
+            self.tempSetPointBox.setEnabled(False)
+            self.coolerStateBox.setEnabled(False)
+            self.tempLbl.setText('N/A')
+        else:
+            # Setup controls
+            min_, max_ = self.cam.props['temp_range']
+            self.tempSetPointBox.setRange(int(min_), int(max_))
+            self.tempSetPointBox.setValue(self.cam.temperature_set_point)
+
+            # Setup a timer to poll the temperature
+            self.temp_checker = QtCore.QTimer()
+            self.temp_checker.setInterval(5000)
+            self.temp_checker.timeout.connect(self.check_temperature)
+            self.temp_checker.start()
+
+        # Gain control
+        grange = self.cam.props['gain_range']
+        self.gainSlider.setRange(grange[0], grange[1])
+        self.gainLbl.setNum(self.cam.props['init_gain'])
+        if not self.cam.props['gain_adjust']:
+            self.gainSlider.setEnabled(False)
+        self.gainSlider.sliderReleased.connect(self.set_gain)
 
         # Start the thread.
         self.cam_thread.start()
@@ -183,24 +226,43 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         img = self._get_image_plot()
         img.set_lut_range(self.scale)
 
+    def autoscale(self):
+        """Change the LUT range to the have min and max values the
+        same as the image data.
+
+        """
+        img = self._get_image_plot()
+        self.scaleMinBox.setValue(int(np.min(img.data)))
+        self.scaleMaxBox.setValue(int(np.max(img.data)))
+        self.set_lut_range()
+
     def toggle_acquisition(self):
         """Toggle between acquisition states (on or off)."""
         start_text = "Begin Acquisition"
         stop_text = "Stop Acquisition"
         if self.acquisitionButton.text() == start_text:
-            #self.cam_thread.queue.put('unpause')
             self.cam_thread.unpause()
             self.acquisitionButton.setText(stop_text)
+            self.shutterGroupBox.setEnabled(False)
+            self.gainGroupBox.setEnabled(False)
         else:
-            #self.cam_thread.queue.put('pause')
             self.cam_thread.pause()
             self.acquisitionButton.setText(start_text)
+            self.shutterGroupBox.setEnabled(True)
+            if self.cam.props['gain_adjust']:
+                self.gainGroupBox.setEnabled(True)
 
     def set_trigger_mode(self):
         """Change the camera's triggering mode."""
         self.cam_thread.queue.put('pause')
         mode = self.triggerModeBox.currentIndex()
         self.cam.set_trigger_mode(mode)
+
+    def open_shutter(self):
+        self.cam.open_shutter()
+
+    def close_shutter(self):
+        self.cam.close_shutter()
 
     def set_t_exp(self):
         """Change the exposure time."""
@@ -285,21 +347,108 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
                 print(e)
                 self.cam.set_roi(old_roi)
 
+    def bins_setup(self):
+        """Show a dialog for setting binning."""
+        # Pause acquisition.
+        if not self.cam_thread.paused:
+            self.toggle_acquisition()
+        while not self.cam_thread.paused:
+            time.sleep(0.01)
+
+        # Query for new binning.
+        bin_options = [str(x) for x in self.cam.props['bins']]
+        bin_index = 0
+        for i, bin in enumerate(bin_options):
+            if int(bin) == self.cam.bins:
+                bin_index = i
+        bins, ok = QtGui.QInputDialog.getItem(
+            self, 'Camera binning setup',
+            'Bins:', bin_options, bin_index, False)
+
+        # Set bins
+        if ok:
+            self.cam.set_bins(int(bins))
+            
+
+    # Temperature controls
+    # -------------------------------------------------------------------------
+
+    def check_temperature(self):
+        temp = cam.get_cooler_temperature()
+        self.tempLbl.setText('%i' % temp)
+
+    def set_temperature(self):
+        temp = self.tempSetPointBox.value()
+        self.cam.set_cooler_temperature(temp)
+
+    # Gain control
+    # -------------------------------------------------------------------------
+        
+    def set_gain(self):
+        self.cam.set_gain(self.gainSlider.value())
+        
+
+# Main
+# =============================================================================
+
 if __name__ == "__main__":
-    class CameraSelectDialog(QtGui.QDialog):
-        """For interactive selection of cameras at startup.
-
-        TODO
-
-        """
+    class CameraSelectDialog(QtGui.QDialog): # TODO
+        """For interactive selection of cameras at startup."""
         def __init__(self):
             super(CameraSelectDialog, self).__init__()
 
+    import os
+    import argparse
+    import json
     import logging
+    
     logging.basicConfig(level=logging.DEBUG)
+
+    cam_options = {
+        'andor': AndorCamera,
+        'sensicam': Sensicam
+    }
+    def cam_options_string():
+        out = ''
+        for cam in cam_options:
+            out = out + cam + ' '
+        return out
+
+    parser = argparse.ArgumentParser(description='qCamera Viewer')
+    parser.add_argument(
+        '-c', '--camera-type', metavar='<camera type>', type=str,
+        help='Specify the camera type to use. If not given, ' + \
+        'default to the last camera type used. Options include:\n' + \
+        cam_options_string())
+    args = parser.parse_args()
+
+    config_file = 'viewer.json'
+    if args.camera_type is None:
+        if os.path.exists(config_file):
+            with open(config_file, 'r') as f:
+                config = json.load(f)
+                camera_type = config['camera_type']
+                Camera = cam_options[camera_type]
+        else:
+            raise RuntimeError(
+                "If this is your first time running viewer.py, " + \
+                "you need to specify what camera to use. " + \
+                "Try viewer.py -h.")
+    else:
+        try:
+            camera_type = args.camera_type
+            Camera = cam_options[camera_type]
+        except KeyError:
+            print("Invalid selection. Valid camera options are:",
+                  cam_options_string())
+            sys.exit(1)
+
+    with open(config_file, 'w') as f:
+        last_cam = {'camera_type': camera_type}
+        json.dump(last_cam, f)
+    
     app = QtGui.QApplication(sys.argv)
-    with Sensicam(real=True, recording=False) as cam:
-        #with AndorCamera(real=True, recording=False) as cam:
+    with Camera(real=True, recording=False) as cam:
         thread = CameraThread(cam)
         win = Viewer(cam, thread)
         win.show()

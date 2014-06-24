@@ -13,4 +13,8 @@ files.txt
 *.ipynb
 *.csv
 *.npy
+tests/viewer.json
+qcamera/test.json
+util/header.h
+util/outfile.py
 docs/_build

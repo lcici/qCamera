@@ -13,9 +13,7 @@ import numpy as np
 import numpy.random as npr
 from ring_buffer import RingBuffer
 from camera_properties import CameraProperties
-from camera_errors import CameraError, UnitsError
-
-_t_units = {'ms': 1, 's': 1e3} # Allowed units for exposure time
+from camera_errors import CameraError
 
 class Camera:
     """Abstract base class for all cameras.
@@ -121,6 +119,8 @@ class Camera:
         y0 = npr.randint(self.shape[1]/4, self.shape[1]/2)
         self.sim_img_center = (x0, y0)
         self.initialize(**kwargs)
+        self.get_camera_properties()
+        self.logger.debug(self.props)
 
     def initialize(self, **kwargs):
         """Any extra initialization required should be placed in this
@@ -129,6 +129,12 @@ class Camera:
         """
         self.logger.warn(
             "Nothing done in initialize. Did you forget to override it?")
+
+    def get_camera_properties(self):
+        """Code for getting camera properties should go here."""
+        self.logger.warn(
+            "Properties not being set. " + \
+            "Did you forget to override get_camera_properties?")
 
     def __enter__(self):
         return self
@@ -238,13 +244,13 @@ class Camera:
         if self.real_camera:
             self.set_shutter('closed')
 
-    def set_shutter(state):
+    def set_shutter(self, state):
         """This will set the shutter to the given state ('open' or
         'closed'). Since not all cameras have a built in shutter, this
         will simply do nothing if not overridden.
 
         """
-        pass        
+        pass
         
     def toggle_shutter(self, state):
         """Toggle the shutter state from open to closed and vice versa."""
@@ -264,20 +270,15 @@ class Camera:
         return self.t_ms
 
     @abstractmethod
-    def set_exposure_time(self, t, units='ms'):
+    def set_exposure_time(self, t):
         """Set the exposure time."""
-        try:
-            self.t_ms = t*_t_units[units]
-        except KeyError:
-            raise UnitsError(
-                "Exposure time units must be one of: " + _t_units.keys())
 
     @abstractmethod
     def get_gain(self):
         """Query the current gain settings."""
 
     @abstractmethod
-    def set_gain(self, gain, **kwargs):
+    def set_gain(self, **kwargs):
         """Set the camera gain."""
 
     # Cooling
