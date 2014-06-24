@@ -32,8 +32,8 @@
          <rect>
           <x>10</x>
           <y>10</y>
-          <width>456</width>
-          <height>85</height>
+          <width>411</width>
+          <height>121</height>
          </rect>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -117,152 +117,140 @@
               </property>
              </widget>
             </item>
-            <item>
-             <spacer name="horizontalSpacer">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <layout class="QVBoxLayout" name="verticalLayout_7">
-              <item>
-               <widget class="QToolButton" name="adjustCropButton">
-                <property name="text">
-                 <string>Adjust Crop</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="setBinsButton">
-                <property name="text">
-                 <string>Set Bins</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
            </layout>
           </widget>
          </item>
-        </layout>
-       </widget>
-       <widget class="QGroupBox" name="groupBox_2">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>100</y>
-          <width>271</width>
-          <height>132</height>
-         </rect>
-        </property>
-        <property name="title">
-         <string>Viewing Settings</string>
-        </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="1,0">
          <item>
-          <layout class="QVBoxLayout" name="verticalLayout">
+          <layout class="QVBoxLayout" name="verticalLayout_7" stretch="0,0">
            <item>
-            <layout class="QFormLayout" name="formLayout_2">
-             <property name="fieldGrowthPolicy">
-              <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+            <widget class="QToolButton" name="adjustCropButton">
+             <property name="text">
+              <string>Adjust Crop</string>
              </property>
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_2">
-               <property name="text">
-                <string>Scale Min</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QSpinBox" name="scaleMinBox">
-               <property name="maximum">
-                <number>9999</number>
-               </property>
-               <property name="singleStep">
-                <number>20</number>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="label_3">
-               <property name="text">
-                <string>Scale Max</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QSpinBox" name="scaleMaxBox">
-               <property name="minimum">
-                <number>1</number>
-               </property>
-               <property name="maximum">
-                <number>9999</number>
-               </property>
-               <property name="singleStep">
-                <number>10</number>
-               </property>
-               <property name="value">
-                <number>2000</number>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="label_5">
-               <property name="text">
-                <string>Colormap</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="1">
-              <widget class="QComboBox" name="colormapBox"/>
-             </item>
-            </layout>
+            </widget>
            </item>
            <item>
-            <widget class="QCheckBox" name="rbufferBox">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
+            <widget class="QPushButton" name="setBinsButton">
              <property name="text">
-              <string>Enable Ring Buffer</string>
+              <string>Set Bins</string>
              </property>
             </widget>
            </item>
           </layout>
          </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="horizontalLayoutWidget_2">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>150</y>
+          <width>324</width>
+          <height>134</height>
+         </rect>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_5">
          <item>
-          <widget class="QPushButton" name="autoscaleButton">
+          <widget class="QGroupBox" name="groupBox_2">
+           <property name="title">
+            <string>Viewing Settings</string>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="1,0">
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout">
+              <item>
+               <layout class="QFormLayout" name="formLayout_2">
+                <property name="fieldGrowthPolicy">
+                 <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                </property>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_2">
+                  <property name="text">
+                   <string>Scale Min</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QSpinBox" name="scaleMinBox">
+                  <property name="maximum">
+                   <number>9999</number>
+                  </property>
+                  <property name="singleStep">
+                   <number>20</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="label_3">
+                  <property name="text">
+                   <string>Scale Max</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QSpinBox" name="scaleMaxBox">
+                  <property name="minimum">
+                   <number>1</number>
+                  </property>
+                  <property name="maximum">
+                   <number>9999</number>
+                  </property>
+                  <property name="singleStep">
+                   <number>10</number>
+                  </property>
+                  <property name="value">
+                   <number>2000</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0">
+                 <widget class="QLabel" name="label_5">
+                  <property name="text">
+                   <string>Colormap</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1">
+                 <widget class="QComboBox" name="colormapBox"/>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="rbufferBox">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="text">
+                 <string>Enable Ring Buffer</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QPushButton" name="autoscaleButton">
+              <property name="text">
+               <string>Autoscale</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="acquisitionButton">
            <property name="text">
-            <string>Autoscale</string>
+            <string>Begin Acquisition</string>
            </property>
           </widget>
          </item>
         </layout>
        </widget>
-       <widget class="QPushButton" name="acquisitionButton">
-        <property name="geometry">
-         <rect>
-          <x>310</x>
-          <y>160</y>
-          <width>101</width>
-          <height>23</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>Begin Acquisition</string>
-        </property>
-       </widget>
        <zorder>horizontalLayoutWidget</zorder>
+       <zorder>horizontalLayoutWidget</zorder>
+       <zorder>setBinsButton</zorder>
+       <zorder>horizontalLayoutWidget_2</zorder>
        <zorder>shutterGroupBox</zorder>
-       <zorder>groupBox_2</zorder>
-       <zorder>acquisitionButton</zorder>
       </widget>
       <widget class="QWidget" name="tab_3">
        <attribute name="title">
@@ -341,6 +329,35 @@
            </property>
            <property name="checked">
             <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QGroupBox" name="gainGroupBox">
+        <property name="geometry">
+         <rect>
+          <x>150</x>
+          <y>20</y>
+          <width>261</width>
+          <height>51</height>
+         </rect>
+        </property>
+        <property name="title">
+         <string>Gain</string>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_6">
+         <item>
+          <widget class="QSlider" name="gainSlider">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="gainLbl">
+           <property name="text">
+            <string>100</string>
            </property>
           </widget>
          </item>
@@ -596,8 +613,6 @@
      </widget>
     </item>
    </layout>
-   <zorder>tabWidget</zorder>
-   <zorder>imageWidget</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -633,6 +648,9 @@
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QDockWidget" name="dockWidget">
+   <property name="windowTitle">
+    <string>Preview</string>
+   </property>
    <attribute name="dockWidgetArea">
     <number>4</number>
    </attribute>
@@ -700,9 +718,25 @@
   <tabstop>triggerModeBox</tabstop>
   <tabstop>colormapBox</tabstop>
   <tabstop>rbufferBox</tabstop>
-  <tabstop>acquisitionButton</tabstop>
   <tabstop>exposureTimeBox</tabstop>
  </tabstops>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>gainSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>gainLbl</receiver>
+   <slot>setNum(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>351</x>
+     <y>449</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>403</x>
+     <y>447</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

@@ -557,7 +557,6 @@ class Sensicam(camera.Camera):
 
     def set_gain(self, gain, **kwargs):
         """Set the camera gain."""
-        super(Sensicam, self).set_gain(gain, kwargs)
         if not self.real_camera:
             return
         # TODO

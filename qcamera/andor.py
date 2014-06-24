@@ -1,7 +1,13 @@
-"""Andor camera interface"""
+"""Andor camera interface
+
+The Andor SDK is generic for all of their cameras. However, this was
+written more for using the Andor iXon line, so although it will
+probably work with any Andor camera, there may be some unforeseen
+bugs.
+
+"""
 
 from __future__ import print_function
-import os.path
 import time
 import traceback as tb
 import ctypes
@@ -107,6 +113,10 @@ class AndorCamera(camera.Camera):
         self.set_acquisition_mode('continuous')
         self.set_trigger_mode('software')
 
+        # Enable EM gain mode
+        # TODO: This is not general for all Andor cameras!
+        self._chk(self.clib.SetEMGainMode(0))
+
     def get_camera_properties(self):
         """Code for getting camera properties should go here."""
         # Get generic Andor properties
@@ -120,7 +130,7 @@ class AndorCamera(camera.Camera):
         # Get cooler temperature range and initial set point.
         min_, max_ = ctypes.c_int(), ctypes.c_int()
         self._chk(self.clib.GetTemperatureRange(ctypes.pointer(min_), ctypes.pointer(max_)))
-        self.temperature_set_point = self.props['set_point']
+        self.temperature_set_point = self.props['init_set_point']
         self.set_cooler_temperature(self.temperature_set_point)
         self.temp_stabilized = False
 
@@ -288,38 +298,26 @@ class AndorCamera(camera.Camera):
             self._chk(self.clib.GetEMCCDGain(gain))
             return gain.contents.value
         else:
-            return 1
+            return 0
 
     def set_gain(self, gain, **kwargs):
         """Set the camera gain and mode.
 
+        TODO: EM gain is specific to certain cameras, and even for the
+        ones that have it, you may not want it. Therefore, this should
+        be changed to be more general at some point.
+
         Parameters
         ----------
-        gain : float
-            Gain for the camera. The acceptable values depend on the
-            mode.
-
-        Keyword arguments
-        -----------------
-        em_gain : bool
-            When True, enable EM gain. The gain parameter is then
-            setting the gain value for EM gain rather than
-            conventional gain.
-
-        Raises
-        ------
-        ValueError
+        gain : int
+            EM gain for the camera between 0 and 255.
 
         """
-        em_gain = kwargs.get('em_gain', False)
-        if em_gain:
-            self._chk(self.clib.SetEMGainMode(0)) # gain is 0-255
-            if gain < 0 or gain > 255:
-                raise ValueError("gain must be in the range [0, 255].")
-            self._chk(self.clib.SetEMCCDGain(ctypes.c_int(gain)))
-        else:
-            # TODO
-            pass
+        assert 0 <= gain <= 255
+        self.logger.info("Setting gain to %i." % gain)
+        if not self.real_camera:
+            return
+        self._chk(self.clib.SetEMCCDGain(ctypes.c_int(gain)))
 
     # Cooling
     # -------------------------------------------------------------------------

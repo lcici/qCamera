@@ -62,6 +62,10 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         # Shutter control
         self.openShutterButton.clicked.connect(self.open_shutter)
         self.closeShutterButton.clicked.connect(self.close_shutter)
+        if self.cam.props['shutter']:
+            if self.cam.props['init_shutter']:
+                self.openShutterButton.setChecked(True)
+                self.open_shutter()
 
         # Crop/binning/ROI dialogs
         self.adjustCropButton.clicked.connect(self.crop_setup)
@@ -93,6 +97,14 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
             self.temp_checker.setInterval(5000)
             self.temp_checker.timeout.connect(self.check_temperature)
             self.temp_checker.start()
+
+        # Gain control
+        grange = self.cam.props['gain_range']
+        self.gainSlider.setRange(grange[0], grange[1])
+        self.gainLbl.setNum(self.cam.props['init_gain'])
+        if not self.cam.props['gain_adjust']:
+            self.gainSlider.setEnabled(False)
+        self.gainSlider.sliderReleased.connect(self.set_gain)
 
         # Start the thread.
         self.cam_thread.start()
@@ -231,9 +243,14 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         if self.acquisitionButton.text() == start_text:
             self.cam_thread.unpause()
             self.acquisitionButton.setText(stop_text)
+            self.shutterGroupBox.setEnabled(False)
+            self.gainGroupBox.setEnabled(False)
         else:
             self.cam_thread.pause()
             self.acquisitionButton.setText(start_text)
+            self.shutterGroupBox.setEnabled(True)
+            if self.cam.props['gain_adjust']:
+                self.gainGroupBox.setEnabled(True)
 
     def set_trigger_mode(self):
         """Change the camera's triggering mode."""
@@ -363,6 +380,13 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
     def set_temperature(self):
         temp = self.tempSetPointBox.value()
         self.cam.set_cooler_temperature(temp)
+
+    # Gain control
+    # -------------------------------------------------------------------------
+        
+    def set_gain(self):
+        self.cam.set_gain(self.gainSlider.value())
+        
 
 # Main
 # =============================================================================

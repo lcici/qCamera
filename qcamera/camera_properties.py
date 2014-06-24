@@ -51,8 +51,13 @@ class CameraProperties(object):
             # List of valid values for binning
             'bins': [1],
 
-            # Min and max temperatures for cameras with a cooler
+            # Min and max temperatures for cameras with a
+            # cooler. Meaningless otherwise.
             'temp_range': [-90, 30],
+
+            # Min and max values for gain. Meaningless if the camera
+            # gain cannot be adjusted.
+            'gain_range': [0, 255],
 
             # Functionality flags
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -74,16 +79,22 @@ class CameraProperties(object):
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
             # Minimum and maximum threshold values for contrast adjustment
-            'contrast': [0, 256],
+            'init_contrast': [0, 256],
 
             # Start acquisition immediately if True
             'auto_start': True,
 
             # Initial temperature set point
-            'set_point': -10,
+            'init_set_point': -10,
 
             # Start temperature control immediately?
             'auto_temp_control': False,
+
+            # Initial shutter state open?
+            'init_shutter': False,
+
+            # Initial gain
+            'init_gain': 0,
         }
 
         # Update parameters from a file if given.
