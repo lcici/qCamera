@@ -94,7 +94,15 @@ class AndorCamera(camera.Camera):
     # -------------------------------------------------------------------------
     
     def initialize(self, **kwargs):
-        """Initialize the Andor camera."""
+        """Initialize the Andor camera.
+
+        Keyword arguments
+        -----------------
+        use_noise_filter : bool
+            When True, use the "median" post-processing noise filter
+            provided by the Andor SDK.
+
+        """
         
         # Try to load the Andor DLL
         # TODO: library name in Linux?
@@ -106,16 +114,27 @@ class AndorCamera(camera.Camera):
         xpx, ypx = _int_ptr(), _int_ptr()
         self._chk(self.clib.GetDetector(xpx, ypx))
         self.shape = [xpx.contents.value, ypx.contents.value]
+        #self._chk(self.clib.SetReadMode(4)) # image read mode
         self.set_crop([1, self.shape[0], 1, self.shape[1]])
         self.set_bins(1)
+        self.use_noise_filter = kwargs.get('use_noise_filter', False)
 
         # Set default acquisition and trigger modes
         self.set_acquisition_mode('continuous')
         self.set_trigger_mode('software')
 
+        # Set maximum preamp gain
+        gains = ctypes.c_int()
+        self._chk(self.clib.GetNumberPreAmpGains(ctypes.pointer(gains)))
+        self._chk(self.clib.SetPreAmpGain(gains.value - 1))
+
         # Enable EM gain mode
         # TODO: This is not general for all Andor cameras!
         self._chk(self.clib.SetEMGainMode(0))
+        gmin, gmax = ctypes.c_int(), ctypes.c_int()
+        self._chk(self.clib.GetEMGainRange(ctypes.pointer(gmin), ctypes.pointer(gmax)))
+        self.logger.debug(
+            "EM gain range = [%i, %i]" % (gmin.value, gmax.value))
 
     def get_camera_properties(self):
         """Code for getting camera properties should go here."""
@@ -159,11 +178,19 @@ class AndorCamera(camera.Camera):
         self.cooler_off()
         self.close_shutter()
         while True:
-            temp = self.get_cooler_temperature()
-            if temp > -20:
-                break
-            else:
-                time.sleep(1)
+            try:
+                temp = self.get_cooler_temperature()
+                if temp > -20:
+                    break
+                else:
+                    time.sleep(5)
+                    self.logger.info(
+                        "Waiting for CCD to warm up." + \
+                        " Current temperature = %i" % temp)
+            except KeyboardInterrupt:
+                result = raw_input("Are you sure you want to exit? y/[n] >>> ")
+                if result.lower() == 'y':
+                    break
         self._chk(self.clib.ShutDown())
 
     # Image acquisition
@@ -215,6 +242,17 @@ class AndorCamera(camera.Camera):
             self._chk(self.clib.SendSoftwareTrigger())
         self.clib.WaitForAcquisition()
         self._chk(self.clib.GetMostRecentImage(ctypes.pointer(c_img), ctypes.c_ulong(img_size)))
+
+        # Apply noise filter if requested.
+        if self.use_noise_filter:
+            c_img_filtered = c_array()
+            self._chk(self.clib.PostProcessNoiseFilter(
+                ctypes.pointer(c_img), ctypes.pointer(c_img_filtered),
+                ctypes.sizeof(c_img), 0, 1, 0,
+                self.shape[0], self.shape[1]))
+            c_img = c_img_filtered
+
+        # Pythonize and return.
         img_array = np.frombuffer(c_img, dtype=ctypes.c_long)
         img_array.shape = np.array(self.shape)/self.bins
         return img_array
@@ -317,7 +355,12 @@ class AndorCamera(camera.Camera):
         self.logger.info("Setting gain to %i." % gain)
         if not self.real_camera:
             return
-        self._chk(self.clib.SetEMCCDGain(ctypes.c_int(gain)))
+        result = self.clib.SetEMCCDGain(ctypes.c_int(gain))
+        if result == ANDOR_STATUS['DRV_P1INVALID']:
+            self.logger.warn("Andor reports the specified gain value is invalid.")
+            # TODO: why does this happen?
+        else:
+            self._chk(result)
 
     # Cooling
     # -------------------------------------------------------------------------
@@ -374,11 +417,19 @@ class AndorCamera(camera.Camera):
         from. Using a reduced sensor area typically allows for faster
         readout.
 
+        TODO: The proper way to do this is to use the
+              SetIsolatedCropMode function, but I am not really clear
+              on what the arguments are supposed to be. This also just
+              doesn't work for some reason.
+
         """
         self.logger.info("Setting new crop to: " + ', '.join([str(x) for x in crop]))
         self._chk(self.clib.SetImage(
             self.bins, self.bins,
             self.crop[0], self.crop[1], self.crop[2], self.crop[3]))
+        #self._chk(self.clib.SetIsolatedCropMode(
+        #    1, self.crop[3], self.crop[1], self.crop[2], self.crop[0]))
+            
 
     def set_bins(self, bins):
         """Set binning to bins x bins."""

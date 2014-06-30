@@ -55,6 +55,7 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self.cam_thread.image_signal.connect(self.update_image)
 
         # Exposure and trigger settings signals
+        self.set_t_exp()
         self.exposureTimeBox.editingFinished.connect(self.set_t_exp)
         self.acquisitionButton.clicked.connect(self.toggle_acquisition)
         self.triggerModeBox.currentIndexChanged.connect(self.set_trigger_mode)
@@ -75,7 +76,8 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         # Viewing settings
         self.scaleMinBox.valueChanged.connect(self.set_lut_range)
         self.scaleMaxBox.valueChanged.connect(self.set_lut_range)
-        self.autoscaleButton.clicked.connect(self.autoscale)
+        self.rescaleButton.clicked.connect(self.rescale)
+        self.rotateImageButton.clicked.connect(self.rotate_image)
         #self.rbufferBox.stateChanged.connect(self.set_rbuffer_recording)
 
         # Temperature control
@@ -91,6 +93,13 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
             min_, max_ = self.cam.props['temp_range']
             self.tempSetPointBox.setRange(int(min_), int(max_))
             self.tempSetPointBox.setValue(self.cam.temperature_set_point)
+
+            # Turn on temperature control if camera properties say to.
+            if self.cam.props['auto_temp_control']:
+                self.tempSetPointBox.setValue(self.cam.props['init_set_point'])
+                self.coolerOnButton.setChecked(True)
+                self.set_temperature()
+                self.cam.cooler_on()
 
             # Setup a timer to poll the temperature
             self.temp_checker = QtCore.QTimer()
@@ -184,7 +193,9 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
                 plot.del_item(roi_rect)
 
         # Update plot
-        img.set_lut_range(self.scale)
+        if self.autoscaleButton.isChecked():
+            self.rescale()
+        self.set_lut_range()
         plot.set_plot_limits(0, img_data.shape[1], 0, img_data.shape[0])
         plot.replot()
 
@@ -226,7 +237,7 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         img = self._get_image_plot()
         img.set_lut_range(self.scale)
 
-    def autoscale(self):
+    def rescale(self):
         """Change the LUT range to the have min and max values the
         same as the image data.
 
@@ -236,6 +247,10 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self.scaleMaxBox.setValue(int(np.max(img.data)))
         self.set_lut_range()
 
+    def rotate_image(self):
+        """Rotate the image 90 degrees upon presing."""
+        print("Rotating not yet implemented!")
+
     def toggle_acquisition(self):
         """Toggle between acquisition states (on or off)."""
         start_text = "Begin Acquisition"
@@ -244,13 +259,10 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
             self.cam_thread.unpause()
             self.acquisitionButton.setText(stop_text)
             self.shutterGroupBox.setEnabled(False)
-            self.gainGroupBox.setEnabled(False)
         else:
             self.cam_thread.pause()
             self.acquisitionButton.setText(start_text)
             self.shutterGroupBox.setEnabled(True)
-            if self.cam.props['gain_adjust']:
-                self.gainGroupBox.setEnabled(True)
 
     def set_trigger_mode(self):
         """Change the camera's triggering mode."""
@@ -281,7 +293,7 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
             time.sleep(0.01)
         old_crop = self.cam.get_crop()
         self.cam.reset_crop()
-        time.sleep(0.05)
+        time.sleep(0.01)
         self.cam_thread.get_single_image()
         
         # Setup the dialog with rectangle selection tool
@@ -385,7 +397,11 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
     # -------------------------------------------------------------------------
         
     def set_gain(self):
+        self.cam_thread.pause()
+        while not self.cam_thread.paused:
+            time.sleep(0.01)
         self.cam.set_gain(self.gainSlider.value())
+        self.cam_thread.unpause()
         
 
 # Main

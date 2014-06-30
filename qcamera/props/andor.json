@@ -7,7 +7,7 @@
 	"continuous"
     ], 
     "auto_start": false,
-    "auto_temp_control": false,
+    "auto_temp_control": true,
     "bins": [1, 2, 4, 8, 16, 32], 
     "depth": 8, 
     "gain_adjust": true, 
@@ -15,7 +15,7 @@
     "hardware_crop": true, 
     "init_contrast": [0, 256],
     "init_gain": 0,
-    "init_set_point": -10,
+    "init_set_point": -70,
     "init_shutter": true,
     "pixel_mode": "mono", 
     "pixels": [
