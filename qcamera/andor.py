@@ -262,6 +262,8 @@ class AndorCamera(camera.Camera):
 
     def get_trigger_mode(self):
         """Query the current trigger mode."""
+        self.logger.debug("Trigger mode: " + str(self.trigger_mode))
+        return self.trigger_mode
 
     def set_trigger_mode(self, mode):
         """Setup trigger mode.

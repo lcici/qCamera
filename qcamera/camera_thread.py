@@ -76,8 +76,10 @@ class CameraThread(QtCore.QThread):
                     self.paused = False
                     self.cam.start()
                 elif msg == 'single':
+                    self.cam.stop()
                     mode = self.cam.get_trigger_mode()
-                    self.cam.set_trigger_mode('software')
+                    self.logger.debug(mode)
+                    self.cam.set_trigger_mode('internal')
                     self.cam.start()
                     img_data = self.cam.get_image()
                     self.image_signal.emit(img_data)

@@ -52,7 +52,7 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self.colormapBox.currentIndexChanged.connect(self.update_colormap)
 
         # Connect image signals
-        self.cam_thread.image_signal.connect(self.update_image)
+        self.cam_thread.image_signal.connect(self.update)
 
         # Exposure and trigger settings signals
         self.set_t_exp()
@@ -157,12 +157,8 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
     # -------------------------------------------------------------------------
 
     @QtCore.pyqtSlot(np.ndarray)
-    def update_image(self, img_data):
-        """Update the image plot and other information.
-
-        TODO: Rename this function simply 'update'.
-
-        """
+    def update(self, img_data):
+        """Update the image plot and other information."""
         # Get and display the next image.
         plot = self.imageWidget.get_plot()
         #plot.del_all_items(except_grid=True)
