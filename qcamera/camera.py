@@ -40,6 +40,8 @@ class Camera:
     shutter_open : bool
         For cameras that are equipped with an integrated shutter: is the
         shutter open?
+    cooler_active : bool
+        True if the cooler is on.
     acq_mode : str
         Camera acquisition mode.
     trigger_mode : int
@@ -68,6 +70,7 @@ class Camera:
     bins = 1
     crop = (1, shape[0], 1, shape[1])
     shutter_open = False
+    cooler_active = False
     acq_mode = "single"
     trigger_mode = 0
     rbuffer = None
@@ -283,6 +286,9 @@ class Camera:
 
     # Cooling
     # -------------------------------------------------------------------------
+
+    # TODO: change it so that implementations don't have to manually
+    #       set the cooler_active attribute.
     
     # Not all cameras have this capability, so these are not abstract
     # methods but instead raise a NotImplementedError if you try to

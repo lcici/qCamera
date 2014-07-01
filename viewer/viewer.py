@@ -92,7 +92,7 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
             # Setup controls
             min_, max_ = self.cam.props['temp_range']
             self.tempSetPointBox.setRange(int(min_), int(max_))
-            self.tempSetPointBox.setValue(self.cam.temperature_set_point)
+            self.tempSetPointBox.setValue(self.cam.get_cooler_temperature())
 
             # Turn on temperature control if camera properties say to.
             if self.cam.props['auto_temp_control']:

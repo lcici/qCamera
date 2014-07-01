@@ -370,12 +370,14 @@ class AndorCamera(camera.Camera):
     def cooler_on(self):
         """Turn on the TEC."""
         self.logger.info("Turning cooler on.")
+        self.cooler_active = True
         if self.real_camera:
             self._chk(self.clib.CoolerON())
 
     def cooler_off(self):
         """Turn off the TEC."""
         self.logger.info("Turning cooler off.")
+        self.cooler_active = False
         if self.real_camera:
             self._chk(self.clib.CoolerOFF())
 
