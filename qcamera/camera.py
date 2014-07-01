@@ -42,6 +42,8 @@ class Camera:
         shutter open?
     cooler_active : bool
         True if the cooler is on.
+    temperature_set_point : int
+        Temperature set point for the cooler if present.
     acq_mode : str
         Camera acquisition mode.
     trigger_mode : int
@@ -71,6 +73,7 @@ class Camera:
     crop = (1, shape[0], 1, shape[1])
     shutter_open = False
     cooler_active = False
+    temperature_set_point = 0
     acq_mode = "single"
     trigger_mode = 0
     rbuffer = None
