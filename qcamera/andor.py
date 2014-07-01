@@ -436,6 +436,7 @@ class AndorCamera(camera.Camera):
     def set_bins(self, bins):
         """Set binning to bins x bins."""
         self.bins = bins
+        self.logger.info('Updating binning to ' + str(bins))
         self._chk(self.clib.SetImage(
             self.bins, self.bins,
             self.crop[0], self.crop[1], self.crop[2], self.crop[3]))

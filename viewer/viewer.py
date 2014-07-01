@@ -34,7 +34,7 @@ def _get_image_item(imageWidget):
 class Viewer(QtGui.QMainWindow, Ui_MainWindow):
     """Simple GUI testbed for qCamera."""
 
-    # Setup
+    # Setup and shutdown
     # -------------------------------------------------------------------------
     
     def __init__(self, camera, thread):
@@ -118,6 +118,10 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         # Start the thread.
         self.cam_thread.start()
         self.toggle_acquisition()
+
+    def closeEvent(self, event):
+        self.cam_thread.stop()
+        super(Viewer, self).closeEvent(event)
 
     # Utility functions
     # -------------------------------------------------------------------------

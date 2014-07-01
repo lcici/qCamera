@@ -12,12 +12,36 @@ from camera import Camera
 from PyQt4 import QtCore
 
 class CameraThread(QtCore.QThread):
-    """Thread class for producing live feed images from a camera."""
+    """Thread class for producing live feed images from a camera.
+
+    Attributes
+    ----------
+    abort : bool
+        Signals that the thread should abort. This should not be
+        modified directly, but instead set using the :func:`stop`
+        function.
+    paused : bool
+        Indicates that the thread is currently paused. This should not
+        be modified directly, but instead through the use of the
+        :func:`pause` and :func:`unpause` functions.
+    mode : str
+        Indicates what mode the camera is running in, either
+        'software' or 'hardware' (i.e., is it triggered with software
+        or hardware).
+    queue : Queue
+        A queue for communicating with the thread.
+    image_queue : Queue
+        Storage area for the most recently acquired image.
+    image_signal : QtCore.pyqtSignal
+        Used for signaling changes to a GUI.
+
+    """
 
     abort = False
     paused = True
     mode = 'software'
     queue = Queue()
+    image_queue = Queue(maxsize=1)
     image_signal = QtCore.pyqtSignal(np.ndarray)
     
     def __init__(self, camera):
@@ -82,6 +106,9 @@ class CameraThread(QtCore.QThread):
                     self.cam.set_trigger_mode('internal')
                     self.cam.start()
                     img_data = self.cam.get_image()
+                    if not self.image_queue.empty():
+                        self.image_queue.get()
+                    self.image_queue.put(img_data)
                     self.image_signal.emit(img_data)
                     self.cam.stop()
                     self.cam.set_trigger_mode(mode)
