@@ -18,3 +18,4 @@ qcamera/test.json
 util/header.h
 util/outfile.py
 docs/_build
+*.orig
