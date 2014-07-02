@@ -26,8 +26,6 @@ class CameraThread(QtCore.QThread):
         :func:`pause` and :func:`unpause` functions.
     queue : Queue
         A queue for communicating with the thread.
-    image_queue : Queue
-        Storage area for the most recently acquired image.
     image_signal : QtCore.pyqtSignal
         Used for signaling changes to a GUI.
 
@@ -36,7 +34,6 @@ class CameraThread(QtCore.QThread):
     abort = False
     paused = True
     queue = Queue()
-    image_queue = Queue(maxsize=1)
     image_signal = QtCore.pyqtSignal(np.ndarray)
     
     def __init__(self, camera):
@@ -83,9 +80,6 @@ class CameraThread(QtCore.QThread):
                     self.cam.set_trigger_mode('internal')
                     self.cam.start()
                     img_data = self.cam.get_image()
-                    if not self.image_queue.empty():
-                        self.image_queue.get()
-                    self.image_queue.put(img_data)
                     self.image_signal.emit(img_data)
                     self.cam.stop()
                     self.cam.set_trigger_mode(mode)
