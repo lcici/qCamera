@@ -24,10 +24,6 @@ class CameraThread(QtCore.QThread):
         Indicates that the thread is currently paused. This should not
         be modified directly, but instead through the use of the
         :func:`pause` and :func:`unpause` functions.
-    mode : str
-        Indicates what mode the camera is running in, either
-        'software' or 'hardware' (i.e., is it triggered with software
-        or hardware).
     queue : Queue
         A queue for communicating with the thread.
     image_queue : Queue
@@ -39,7 +35,6 @@ class CameraThread(QtCore.QThread):
 
     abort = False
     paused = True
-    mode = 'software'
     queue = Queue()
     image_queue = Queue(maxsize=1)
     image_signal = QtCore.pyqtSignal(np.ndarray)
@@ -52,24 +47,6 @@ class CameraThread(QtCore.QThread):
     def stop(self):
         """Stop the thread."""
         self.abort = True
-
-    def start_live_feed(self):
-        """Continuously gather and emit images, i.e., run in
-        preview/software triggering mode.
-
-        """
-        self.mode = 'software'
-        self.cam.set_trigger_mode(self.mode)
-        self.paused = False
-
-    def start_hardware_triggered_acquisition(self):
-        """Start gathering images in hardware triggered mode, i.e.,
-        run in the mode for actual data collection.
-
-        """
-        self.mode = 'hardware'
-        self.cam.set_trigger_mode(self.mode)
-        self.paused = False
 
     def pause(self):
         if not self.paused:

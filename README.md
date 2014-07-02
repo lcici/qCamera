@@ -14,7 +14,8 @@ Not all SDK features of supported cameras are necessarily
 implemented. Currently, cameras supported by qCamera include:
 
 * [Andor](http://www.andor.com/) cameras
-  * This includes all cameras supported by the Andor SDK
+  * Development is focused on the iXon line, so there could be some
+    issues with other Andor cameras.
 * [PCO](http://www.pco.de/) Sensicam
 
 Coming soon:
@@ -22,19 +23,16 @@ Coming soon:
 * [Thorlabs](http://www.thorlabs.de)
   [DCx-series](http://www.thorlabs.de/software_pages/ViewSoftwarePage.cfm?Code=DCx)
   CCD/CMOS cameras
-
-Possible for future inclusion∆
-
-* Generic web cam driver interface (avicap32.dll on Windows)
+* [OpenCV](http://opencv.org/) generic camera interface
 
 Requirements
 ------------
 
-qCamera at the moment is limited to working on Windows only, though
-this should not be difficult to allow functionality on Linux where
-camera SDKs exist. Apart from having the shared libraries for the
-cameras being used installed in the proper location, the following
-Python packages are required:
+qCamera at the moment is generally limited to working on Windows only
+with most cameras, though this should not be difficult to allow
+functionality on Linux where camera SDKs exist. Apart from having the
+shared libraries for the cameras being used installed in the proper
+location, the following Python packages are required:
 
 * [Numpy](http://www.numpy.org/)
 * [h5py](http://www.h5py.org/)
@@ -57,6 +55,7 @@ TODO
 
 * Verify that all docstrings are up to date and accurately reflecting
   arguments, class attributes, etc.
+* Make a second thread class that doesn't depend on Qt.
 
 Issues
 ------
