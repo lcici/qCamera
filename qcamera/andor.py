@@ -358,7 +358,9 @@ class AndorCamera(camera.Camera):
         if not self.real_camera:
             return
         result = self.clib.SetEMCCDGain(ctypes.c_int(gain))
-        if result == ANDOR_STATUS['DRV_P1INVALID']:
+        if result in (ANDOR_STATUS['DRV_SUCCESS'], ANDOR_STATUS['DRV_P1INVALID']):
+            self.gain = gain
+        elif result == ANDOR_STATUS['DRV_P1INVALID']:
             self.logger.warn("Andor reports the specified gain value is invalid.")
             # TODO: why does this happen?
         else:
