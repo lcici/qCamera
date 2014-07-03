@@ -101,6 +101,11 @@ class AndorCamera(camera.Camera):
         use_noise_filter : bool
             When True, use the "median" post-processing noise filter
             provided by the Andor SDK.
+        wait_for_temp : bool
+            When False, don't wait for the temperature to reach -20
+            before shutting off. Andor recommends waiting, but for
+            quicker debugging, it is useful to not wait to rerun a
+            program. Defaults to True.
 
         """
         
@@ -117,7 +122,8 @@ class AndorCamera(camera.Camera):
         #self._chk(self.clib.SetReadMode(4)) # image read mode
         self.set_crop([1, self.shape[0], 1, self.shape[1]])
         self.set_bins(1)
-        self.use_noise_filter = kwargs.get('use_noise_filter', False)
+        self.use_noise_filter = kwargs.get('use_noise_filter', True)
+        self.wait_for_temp = kwargs.get('wait_for_temp', True)
 
         # Set default acquisition and trigger modes
         self.set_acquisition_mode('continuous')
@@ -177,20 +183,21 @@ class AndorCamera(camera.Camera):
         self.stop()
         self.cooler_off()
         self.close_shutter()
-        while True:
-            try:
-                temp = self.get_cooler_temperature()
-                if temp > -20:
-                    break
-                else:
-                    time.sleep(5)
-                    self.logger.info(
-                        "Waiting for CCD to warm up." + \
-                        " Current temperature = %i" % temp)
-            except KeyboardInterrupt:
-                result = raw_input("Are you sure you want to exit? y/[n] >>> ")
-                if result.lower() == 'y':
-                    break
+        if self.wait_for_temp:
+            while True:
+                try:
+                    temp = self.get_cooler_temperature()
+                    if temp > -20:
+                        break
+                    else:
+                        time.sleep(5)
+                        self.logger.info(
+                            "Waiting for CCD to warm up." + \
+                            " Current temperature = %i" % temp)
+                except KeyboardInterrupt:
+                    result = raw_input("Are you sure you want to exit? y/[n] >>> ")
+                    if result.lower() == 'y':
+                        break
         self._chk(self.clib.ShutDown())
 
     # Image acquisition
