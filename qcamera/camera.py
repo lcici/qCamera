@@ -57,7 +57,7 @@ class Camera:
     props : CameraProperties
         A CameraProperties object defining several generic settings of
         the camera as well as flags indicating if certain
-        functionality is available. TODO!
+        functionality is available.
 
     """
     __metaclass__ = ABCMeta
