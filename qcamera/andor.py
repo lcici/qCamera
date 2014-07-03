@@ -122,7 +122,7 @@ class AndorCamera(camera.Camera):
         #self._chk(self.clib.SetReadMode(4)) # image read mode
         self.set_crop([1, self.shape[0], 1, self.shape[1]])
         self.set_bins(1)
-        self.use_noise_filter = kwargs.get('use_noise_filter', True)
+        self.use_noise_filter = kwargs.get('use_noise_filter', False)
         self.wait_for_temp = kwargs.get('wait_for_temp', True)
 
         # Set default acquisition and trigger modes
