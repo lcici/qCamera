@@ -1,0 +1,11 @@
+#+TITLE: qCamera TODO list
+
+* Camera interfaces to add [0/4]
+  - [ ] Thorlabs DCx
+  - [ ] OpenCV
+  - [ ] libdc1394
+    - Standard for firewire cameras
+    - http://damien.douxchamps.net/ieee1394/libdc1394/
+  - [ ] GigE Vision
+    - https://gitorious.org/opengigevision
+    - https://wiki.gnome.org/Projects/Aravis
