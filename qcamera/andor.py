@@ -70,6 +70,7 @@ class AndorCamera(camera.Camera):
         if status == ANDOR_STATUS['DRV_ACQUIRING']:
             self.logger.warn(
                 "Action not completed when data acquisition is in progress!")
+            self.logger.debug(''.join(tb.format_list(tb.extract_stack())))
         elif status == ANDOR_STATUS['DRV_TEMPERATURE_OFF']:
             #self.logger.warn("Temperature control is off.")
             pass
@@ -227,9 +228,7 @@ class AndorCamera(camera.Camera):
         # TODO: Check that acquisition was actually started!
         
         # Wait for acquisition to finish
-        #print('waiting')
         #self.clib.WaitForAcquisition()
-        #print('done waiting')
         while False:
             status = ctypes.c_int(0)
             self.clib.GetStatus(ctypes.pointer(status))
@@ -289,16 +288,18 @@ class AndorCamera(camera.Camera):
         self.logger.info("Setting trigger mode to " + mode)
         if self.real_camera:
             self._chk(self.clib.SetTriggerMode(self.trigger_mode))
-        if mode == 'external':
-            self.set_acquisition_mode('continuous')
+        #if mode == 'external':
+        #    self.set_acquisition_mode('continuous')
 
     def start(self):
         """Start accepting triggers."""
+        self.logger.info('Calling StartAcquisition()')
         if self.real_camera:
             self._chk(self.clib.StartAcquisition())
 
     def stop(self):
         """Stop acquisition."""
+        self.logger.info('Calling AbortAcquisition()')
         if self.real_camera:
             status = self.clib.AbortAcquisition()
             if status != ANDOR_STATUS['DRV_IDLE']:

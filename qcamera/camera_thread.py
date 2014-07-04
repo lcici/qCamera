@@ -31,14 +31,14 @@ class CameraThread(QtCore.QThread):
 
     """
 
-    abort = False
-    paused = True
-    queue = Queue()
     image_signal = QtCore.pyqtSignal(np.ndarray)
     
     def __init__(self, camera):
         super(CameraThread, self).__init__()
         assert isinstance(camera, Camera)
+        self.abort = False
+        self.paused = True
+        self.queue = Queue()
         self.cam = camera
 
     def stop(self):
@@ -61,7 +61,6 @@ class CameraThread(QtCore.QThread):
 
     def run(self):
         """Run the thread until receiving a stop request."""
-        self.paused = True
         while not self.abort:
             # Check from the main thread if we need to pause
             # (e.g., if a hardware update is happening).
