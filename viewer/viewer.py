@@ -21,7 +21,7 @@ from guiqwt.annotations import AnnotatedRectangle
 from guiqwt.builder import make
 from guiqwt.colormap import get_colormap_list
 
-from qcamera import AndorCamera, Sensicam
+from qcamera import AndorCamera, Sensicam, ThorlabsDCx
 from ui_viewer import Ui_MainWindow
 from qcamera.camera_thread import CameraThread
 
@@ -417,12 +417,13 @@ if __name__ == "__main__":
     import argparse
     import json
     import logging
-    
+
     logging.basicConfig(level=logging.DEBUG)
 
     cam_options = {
         'andor': AndorCamera,
-        'sensicam': Sensicam
+        'sensicam': Sensicam,
+        'thorlabs_dcx': ThorlabsDCx
     }
     def cam_options_string():
         out = ''
@@ -444,6 +445,7 @@ if __name__ == "__main__":
             with open(config_file, 'r') as f:
                 config = json.load(f)
                 camera_type = config['camera_type']
+                print(camera_type)
                 Camera = cam_options[camera_type]
         else:
             raise RuntimeError(
@@ -462,11 +464,21 @@ if __name__ == "__main__":
     with open(config_file, 'w') as f:
         last_cam = {'camera_type': camera_type}
         json.dump(last_cam, f)
+        
+    # This statement is make sure that if run in interactive mode app will be 
+    # cleaned up. Without this you get intermittent: QApplocation before QPainter errors.
+    try: 
+        del(app)
+    except:
+        pass
+    app = QtGui.QApplication(sys.argv)    
     
-    app = QtGui.QApplication(sys.argv)
     with Camera(real=True, recording=False) as cam:
+
         thread = CameraThread(cam)
-        win = Viewer(cam, thread)
+
+        win = Viewer(cam, thread)   
         win.show()
+        #print("Return value:",app.exec_())
         sys.exit(app.exec_())
     

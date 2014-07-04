@@ -10,6 +10,7 @@ from __future__ import print_function
 import sys
 from camera import Camera
 import ctypes
+import time
 
 def _chk(msg):
     """Check for errors from the C library."""
@@ -22,14 +23,14 @@ class ThorlabsDCx(Camera):
     # Setup and shutdown
     # ------------------
 
-    def initialize(self):
+    def initialize(self,**kwargs):
         """Initialize the camera."""
         # Load the library.
         if 'win' in sys.platform:
             try:
-                self.clib = ctypes.windll.uc480_64
+                self.clib = ctypes.cdll.uc480_64
             except:
-                self.clib = ctypes.windll.uc480
+                self.clib = ctypes.cdll.uc480
         else:
             self.clib = ctypes.cdll.LoadLibrary('libueye_api.so')
 
@@ -40,7 +41,7 @@ class ThorlabsDCx(Camera):
         # of cases.
         self.filehandle = ctypes.c_int(0)
         _chk(self.clib.is_InitCamera(
-            ctypes.pointer(self.filehandle), None))
+            ctypes.pointer(self.filehandle)))
 
         # Enable autoclosing. This allows for safely closing the
         # camera if it is disconnected.
@@ -49,7 +50,11 @@ class ThorlabsDCx(Camera):
     def close(self):
         """Close the camera safely."""
         _chk(self.clib.is_ExitCamera(self.filehandle))
+    def start(self):
+        print("Starting??")
         
+    def stop(self):
+        print("Stopping??")
     # Image acquisition
     # -----------------
 
@@ -61,6 +66,7 @@ class ThorlabsDCx(Camera):
         placed here.
 
         """
+        #time.sleep(1)
         raise NotImplementedError("You must define this method.")
         
     # Triggering
@@ -94,7 +100,9 @@ class ThorlabsDCx(Camera):
 
     def set_exposure_time(self, t, units='ms'):
         """Set the exposure time."""
-        super(self, ThorlabsDCx).set_exposure_time(t, units)
+        time.sleep(1)
+        print("Setting exposure time")
+        super(ThorlabsDCx,self).set_exposure_time(t,)
 
     def get_gain(self):
         """Query the current gain settings."""
@@ -126,7 +134,7 @@ class ThorlabsDCx(Camera):
 
     def set_roi(self, roi):
         """Define the region of interest."""
-        super(self, ThorlabsDCx).set_roi(roi)
+        super(ThorlabsDCx,self).set_roi(roi)
         
     def get_crop(self):
         """Get the current CCD crop settings."""
@@ -137,7 +145,7 @@ class ThorlabsDCx(Camera):
         readout.
 
         """
-        super(self, ThorlabsDCx).set_crop(crop)
+        super(ThorlabsDCx,self).set_crop(crop)
         
     def get_bins(self):
         """Query the current binning."""
@@ -146,5 +154,35 @@ class ThorlabsDCx(Camera):
         """Set binning to bins x bins."""
 
 if __name__ == "__main__":
+    #clib = ctypes.cdll.uc480
+    #import ctypes.wintypes
+#    print(clib.is_GetOsVersion())
+#    version = clib.is_GetDLLVersion()
+#    print("Build",version & 0xFFFF)
+#    version = version >> 16
+#    print("minor", version & 0xFF)
+#    version = version >> 8
+#    print("major", version & 0xFF)
+    #clib.is_GetNumberOfCameras.restype = ctypes.c_int
+#    number = ctypes.c_int()
+#    #clib.is_GetNumberOfCameras.argtypes = [ctypes.wintypes.POINTER(ctypes.c_int)]
+#    test = ctypes.c_int(4)
+#    mypointer = ctypes.addressof(number)
+#    mypointer = ctypes.c_int()
+#    test = clib.is_GetNumberOfCameras(ctypes.pointer(mypointer))
+#    print(test)
+#    print(mypointer.value)
+    #print(clib.is_InitCamera(0))
+    
+    
+    
+    
+    
     with ThorlabsDCx() as cam:
         pass
+    
+    
+    
+    
+    
+    
