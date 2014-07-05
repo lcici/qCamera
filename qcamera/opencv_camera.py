@@ -74,11 +74,12 @@ class OpenCVCamera(camera.Camera):
 
     def acquire_image_data(self):
         """Read the image data from the camera."""
-        retval, img = self.cam.read()
+        retval, img = self.cam.read(cv2.CV_LOAD_IMAGE_GRAYSCALE)
         if not retval:
+            print retval
             raise CameraError(
                 "Reading the image failed! Was the camera disconnected?")
-        return img
+        return np.array(img[:,:,2])
 
     # Triggering
     # -------------------------------------------------------------------------
@@ -109,7 +110,12 @@ class OpenCVCamera(camera.Camera):
             return
         t = t/1000.
         fps = 1/t
-        self.cam.set(CV_CAP_PROP_FPS, fps)
+        import time
+        time.sleep(0.1)
+        #retval = self.cam.set(CV_CAP_PROP_FPS, fps)
+        retval = self.cam.set(CV_CAP_PROP_EXPOSURE,t)
+        time.sleep(0.1)
+        print("Setting fps to: %f with retval %f"%(fps,retval))
 
     def get_gain(self):
         """Query the current gain settings."""
@@ -131,6 +137,11 @@ class OpenCVCamera(camera.Camera):
 
 if __name__ == "__main__":
     with OpenCVCamera(recording=False) as cam:
-        cam.set_exposure_time(100)
-        cam.test_real_time_acquisition()
-        
+        cam.set_exposure_time(10)
+        #cam.test_real_time_acquisition()
+        plt.clf()
+        img = cam.get_image()
+        cam.close()
+    plt.imshow(img)
+    plt.colorbar()
+    print("Done!")

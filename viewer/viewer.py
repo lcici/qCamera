@@ -21,7 +21,7 @@ from guiqwt.annotations import AnnotatedRectangle
 from guiqwt.builder import make
 from guiqwt.colormap import get_colormap_list
 
-from qcamera import AndorCamera, Sensicam, ThorlabsDCx
+from qcamera import AndorCamera, Sensicam, ThorlabsDCx, OpenCVCamera
 from ui_viewer import Ui_MainWindow
 from qcamera.camera_thread import CameraThread
 
@@ -244,8 +244,12 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
 
         """
         img = self._get_image_plot()
-        self.scaleMinBox.setValue(int(np.min(img.data)))
-        self.scaleMaxBox.setValue(int(np.max(img.data)))
+        minimum = int(np.min(img.data))
+        maximum = int(np.max(img.data))
+        assert type(minimum) is int
+        assert type(maximum) is int
+        self.scaleMinBox.setValue(minimum)
+        self.scaleMaxBox.setValue(maximum)
         self.set_lut_range()
 
     def rotate_image(self):
@@ -421,10 +425,12 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG)
 
+    # Place new camera options here. Remember to also inclue modules in __init__.py
     cam_options = {
         'andor': AndorCamera,
         'sensicam': Sensicam,
-        'thorlabs_dcx': ThorlabsDCx
+        'thorlabs_dcx': ThorlabsDCx,
+        'opencv' : OpenCVCamera
     }
     def cam_options_string():
         out = ''
@@ -447,7 +453,12 @@ if __name__ == "__main__":
                 config = json.load(f)
                 camera_type = config['camera_type']
                 print(camera_type)
-                Camera = cam_options[camera_type]
+                try:
+                    Camera = cam_options[camera_type]
+                except KeyError, e:
+                    print("Invalid camera name. Valid names are:")
+                    print(cam_options)
+                    raise(e)
         else:
             raise RuntimeError(
                 "If this is your first time running viewer.py, " + \
