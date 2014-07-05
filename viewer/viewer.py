@@ -236,6 +236,7 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self.scale = [self.scaleMinBox.value(), self.scaleMaxBox.value()]
         img = self._get_image_plot()
         img.set_lut_range(self.scale)
+        self.update_colormap()
 
     def rescale(self):
         """Change the LUT range to the have min and max values the
