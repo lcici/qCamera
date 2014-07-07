@@ -63,7 +63,19 @@ class ThorlabsDCx(Camera):
         self.filehandle = ctypes.c_int(0)
         _chk(self.clib.is_InitCamera(
             ctypes.pointer(self.filehandle)))
+        # Resolution of camera. (height, width)    
         self.shape=(1024,1280)
+
+        # Allocate memory:
+        # Declare variables for storing memory ID and memory start location:
+        self.pid = ctypes.c_int()          
+        self.ppcImgMem = ctypes.c_char_p()
+        # Allocate the right amount of memory:
+        bitdepth = 8 # Camera is 8 bit.
+        _chk(self.clib.is_AllocImageMem(self.filehandle, self.shape[1], self.shape[0], bitdepth, byref(self.ppcImgMem),  byref(self.pid)))
+        # Tell the driver to use the newly allocated memory:        
+        _chk(self.clib.is_SetImageMem(self.filehandle, self.ppcImgMem , self.pid)) 
+        
         # Enable autoclosing. This allows for safely closing the
         # camera if it is disconnected.
         _chk(self.clib.is_EnableAutoExit(self.filehandle, 1))
@@ -108,7 +120,6 @@ class ThorlabsDCx(Camera):
             c_img = c_array()
             print(self.shape)            
             pid = ctypes.c_int()
-            pid = pid            
             mem = ctypes.c_char_p
             ppcImgMem = mem()
 
@@ -161,20 +172,13 @@ class ThorlabsDCx(Camera):
         img_size = self.shape[0]*self.shape[1]/self.bins**2
         c_array = ctypes.c_char*img_size
         c_img = c_array()       
-        # Declare variables for storing memory ID and memory start location:
-        pid = ctypes.c_int()          
-        ppcImgMem = ctypes.c_char_p()
-        # Allocate the right amount of memory:
-        bitdepth = 8 # Camera is 8 bit.
-        _chk(self.clib.is_AllocImageMem(self.filehandle, self.shape[1], self.shape[0], bitdepth, byref(ppcImgMem),  byref(pid)))
-        # Tell the driver to use the newly allocated memory:        
-        _chk(self.clib.is_SetImageMem(self.filehandle, ppcImgMem , pid))
+
         # Take one picture: wait time is waittime * 10 ms:
         waittime = c_int(20)
         _chk(self.clib.is_FreezeVideo(self.filehandle, waittime))
         # Copy image data from the driver allocated memory to the memory that we
         # allocated.
-        _chk(self.clib.is_CopyImageMem(self.filehandle, ppcImgMem, pid, c_img))            
+        _chk(self.clib.is_CopyImageMem(self.filehandle, self.ppcImgMem, self.pid, c_img))            
 
         # Pythonize and return. Read
         img_array = np.frombuffer(c_img, dtype=ctypes.c_ubyte)#, count=self.shape[0]*self.shape[1])
