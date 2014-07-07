@@ -36,6 +36,10 @@ class CameraProperties(object):
             # Number of horizontal and vertical pixels
             'pixels': [0, 0],
 
+            # Pixel size in um. 0 means N/A
+            'pixel_um': 0,
+            
+
             # Bits per pixel. This could conceivably be a tuple if a
             # color camera. The pixel_mode attribute specifies if it
             # is mono or some form of color.
@@ -59,6 +63,11 @@ class CameraProperties(object):
             # gain cannot be adjusted.
             'gain_range': [0, 255],
 
+            # Min and max values for exposure. Meaningless if the camera
+            # exposure cannot be adjusted. For some cameras this has units 
+            # for others these are an arbitrary units.
+            'exposure_range': [1,2000],
+
             # Functionality flags
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -67,6 +76,9 @@ class CameraProperties(object):
 
             # Can the gain be adjusted?
             'gain_adjust': False,
+            
+            # Can the exposure be adjusted?
+            'exposure_adjust': True,
 
             # Is there a built-in tempurature controller for the
             # sensor?
@@ -95,6 +107,9 @@ class CameraProperties(object):
 
             # Initial gain
             'init_gain': 0,
+            
+            # Initial exposure
+            'init_exposure': 100,
         }
 
         # Update parameters from a file if given.

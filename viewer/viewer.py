@@ -57,6 +57,7 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         # Exposure and trigger settings signals
         self.set_t_exp()
         self.exposureTimeBox.editingFinished.connect(self.set_t_exp)
+        self.exposureTimeBox.valueChanged.connect(self.set_t_exp)
         self.acquisitionButton.clicked.connect(self.toggle_acquisition)
         self.triggerModeBox.currentIndexChanged.connect(self.set_trigger_mode)
 
@@ -483,10 +484,22 @@ if __name__ == "__main__":
         del(app)
     except:
         pass
-    app = QtGui.QApplication(sys.argv)    
+    app = QtGui.QApplication(sys.argv)
+    app.setOrganizationName("IonTrap Group") # For storing windows states in registry
+    app.setApplicationName("qCamera viewer")
+    app.setStyle("cleanlooks")
     
-    with Camera(real=True, recording=False) as cam:
 
+    
+    # Make sure the application gets a seperate taskbargroup on Win7
+    try:
+        import ctypes
+        myappid = 'qCamera_viewer' # arbitrary string
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+    except:
+        pass
+
+    with Camera(real=True, recording=False) as cam:
         thread = CameraThread(cam)
 
         win = Viewer(cam, thread)   

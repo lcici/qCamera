@@ -23,6 +23,8 @@ def _chk(msg):
     if msg:
         if msg==127:
             print("Out of memory, probably because of a memory leak!!!")
+        if msg==125:
+            print("125: IS_INVALID_PARAMETER: One of the submitted parameters is outside the valid range or is not supported for this sensor or is not available in this mode.")
         print("msg:",msg)
     pass
 
@@ -225,9 +227,7 @@ class ThorlabsDCx(Camera):
         nCommand =  IS_EXPOSURE_CMD_SET_EXPOSURE
         Param = c_double(t)
         SizeOfParam = 8
-        print("Setting exposure time:", t)
         _chk(self.clib.is_Exposure(self.filehandle, nCommand, byref(Param), SizeOfParam))
-        #super(ThorlabsDCx,self).set_exposure_time(t,)
 
     def get_gain(self):
         """Query the current gain settings."""

@@ -1,0 +1,45 @@
+{
+    "acquisition_modes": [
+        "continuous"
+    ], 
+    "auto_start": true, 
+    "auto_temp_control": false, 
+    "bins": [
+        1
+    ], 
+    "depth": 8, 
+    "exposure_adjust": true, 
+    "exposure_range": [
+        1, 
+        2000
+    ], 
+    "gain_adjust": false, 
+    "gain_range": [
+        0, 
+        255
+    ], 
+    "hardware_crop": false, 
+    "init_contrast": [
+        0, 
+        256
+    ], 
+    "init_exposure": 100, 
+    "init_gain": 0, 
+    "init_set_point": -10, 
+    "init_shutter": false, 
+    "pixel_mode": "mono", 
+    "pixel_um": 5.2, 
+    "pixels": [
+        0, 
+        0
+    ], 
+    "shutter": false, 
+    "temp_control": false, 
+    "temp_range": [
+        -90, 
+        30
+    ], 
+    "trigger_modes": [
+        "internal"
+    ]
+}
