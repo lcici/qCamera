@@ -21,7 +21,7 @@ from guiqwt.annotations import AnnotatedRectangle
 from guiqwt.builder import make
 from guiqwt.colormap import get_colormap_list
 
-from qcamera import AndorCamera, Sensicam
+from qcamera import AndorCamera, Sensicam, ThorlabsDCx, OpenCVCamera
 from ui_viewer import Ui_MainWindow
 from qcamera.camera_thread import CameraThread
 
@@ -57,6 +57,7 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         # Exposure and trigger settings signals
         self.set_t_exp()
         self.exposureTimeBox.editingFinished.connect(self.set_t_exp)
+        self.exposureTimeBox.valueChanged.connect(self.set_t_exp)
         self.acquisitionButton.clicked.connect(self.toggle_acquisition)
         self.triggerModeBox.currentIndexChanged.connect(self.set_trigger_mode)
 
@@ -236,6 +237,7 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self.scale = [self.scaleMinBox.value(), self.scaleMaxBox.value()]
         img = self._get_image_plot()
         img.set_lut_range(self.scale)
+        self.update_colormap()
 
     def rescale(self):
         """Change the LUT range to the have min and max values the
@@ -243,8 +245,12 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
 
         """
         img = self._get_image_plot()
-        self.scaleMinBox.setValue(int(np.min(img.data)))
-        self.scaleMaxBox.setValue(int(np.max(img.data)))
+        minimum = int(np.min(img.data))
+        maximum = int(np.max(img.data))
+        assert type(minimum) is int
+        assert type(maximum) is int
+        self.scaleMinBox.setValue(minimum)
+        self.scaleMaxBox.setValue(maximum)
         self.set_lut_range()
 
     def rotate_image(self):
@@ -417,12 +423,15 @@ if __name__ == "__main__":
     import argparse
     import json
     import logging
-    
+
     logging.basicConfig(level=logging.DEBUG)
 
+    # Place new camera options here. Remember to also inclue modules in __init__.py
     cam_options = {
         'andor': AndorCamera,
-        'sensicam': Sensicam
+        'sensicam': Sensicam,
+        'thorlabs_dcx': ThorlabsDCx,
+        'opencv' : OpenCVCamera
     }
     def cam_options_string():
         out = ''
@@ -444,7 +453,13 @@ if __name__ == "__main__":
             with open(config_file, 'r') as f:
                 config = json.load(f)
                 camera_type = config['camera_type']
-                Camera = cam_options[camera_type]
+                print(camera_type)
+                try:
+                    Camera = cam_options[camera_type]
+                except KeyError, e:
+                    print("Invalid camera name. Valid names are:")
+                    print(cam_options)
+                    raise(e)
         else:
             raise RuntimeError(
                 "If this is your first time running viewer.py, " + \
@@ -462,11 +477,33 @@ if __name__ == "__main__":
     with open(config_file, 'w') as f:
         last_cam = {'camera_type': camera_type}
         json.dump(last_cam, f)
-    
+        
+    # This statement is make sure that if run in interactive mode app will be 
+    # cleaned up. Without this you get intermittent: QApplocation before QPainter errors.
+    try: 
+        del(app)
+    except:
+        pass
     app = QtGui.QApplication(sys.argv)
+    app.setOrganizationName("IonTrap Group") # For storing windows states in registry
+    app.setApplicationName("qCamera viewer")
+    app.setStyle("cleanlooks")
+    
+
+    
+    # Make sure the application gets a seperate taskbargroup on Win7
+    try:
+        import ctypes
+        myappid = 'qCamera_viewer' # arbitrary string
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+    except:
+        pass
+
     with Camera(real=True, recording=False) as cam:
         thread = CameraThread(cam)
-        win = Viewer(cam, thread)
+
+        win = Viewer(cam, thread)   
         win.show()
+        #print("Return value:",app.exec_())
         sys.exit(app.exec_())
     

@@ -50,6 +50,12 @@ functionality:
 All of these are contained in the default installation of
 [Python(x,y)](https://code.google.com/p/pythonxy/) for Windows.
 
+To install the qcamera library in your site-packages run
+ python setup.py install
+(you will need to do this again if you update the code)
+
+See also the [Mercurial](https://iontrap.phys.au.dk/wiki/index.php/Mercurial) page.
+
 TODO
 ----
 

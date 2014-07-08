@@ -9,3 +9,6 @@
   - [ ] GigE Vision
     - https://gitorious.org/opengigevision
     - https://wiki.gnome.org/Projects/Aravis
+* Things to fix
+  - [ ] Close HD5PY file issue when failing
+  - [ ] PythonXY installs HD5PY by default?
