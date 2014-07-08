@@ -25,6 +25,8 @@ def _chk(msg):
             print("Out of memory, probably because of a memory leak!!!")
         if msg==125:
             print("125: IS_INVALID_PARAMETER: One of the submitted parameters is outside the valid range or is not supported for this sensor or is not available in this mode.")
+        if msg==159:
+            print("159: IS_INVALID_BUFFER_SIZE: The image memory has an inappropriate size to store the image in the desired format.")
         print("msg:",msg)
     pass
 
@@ -66,15 +68,15 @@ class ThorlabsDCx(Camera):
         _chk(self.clib.is_InitCamera(
             ctypes.pointer(self.filehandle)))
         # Resolution of camera. (height, width)    
-        self.shape=(1024,1280)
-
+        self.shape=(1280,1024)
+        self.props.load('thorlabs_dcx.json')
         # Allocate memory:
         # Declare variables for storing memory ID and memory start location:
         self.pid = ctypes.c_int()          
         self.ppcImgMem = ctypes.c_char_p()
         # Allocate the right amount of memory:
         bitdepth = 8 # Camera is 8 bit.
-        _chk(self.clib.is_AllocImageMem(self.filehandle, self.shape[1], self.shape[0], bitdepth, byref(self.ppcImgMem),  byref(self.pid)))
+        _chk(self.clib.is_AllocImageMem(self.filehandle, self.shape[0], self.shape[1], bitdepth, byref(self.ppcImgMem),  byref(self.pid)))
         # Tell the driver to use the newly allocated memory:        
         _chk(self.clib.is_SetImageMem(self.filehandle, self.ppcImgMem , self.pid)) 
         
@@ -88,73 +90,73 @@ class ThorlabsDCx(Camera):
     def start(self):
         print("Starting??")
 
-    def test(self):
-        print("Testing camera:")
-        os_version = self.clib.is_GetOsVersion()
-        print("OS version:",os_version)
-        if os_version == 12:
-            print("Windows 7")
-        number_of_cameras = ctypes.c_int(0)
-        mypoint = ctypes.pointer(number_of_cameras)
-        self.clib.is_GetNumberOfCameras(mypoint)
-        print("Number of cameras:",number_of_cameras.value)
-        if number_of_cameras >= 1:
-            return_value = ctypes.c_int()
-
-            caminfo = CamInfo()
-
-            return_value = self.clib.is_GetCameraInfo(self.filehandle, ctypes.pointer(caminfo))
-            if return_value == 0:
-                print("SerNo: ",caminfo.SerNo)        
-                print("ID: ",caminfo.ID)
-                print("Version: ",caminfo.Version)
-                print("Date: ",caminfo.Date)
-                print("Select: ",caminfo.Select)
-                print("Type: ",caminfo.Type)
-                print("Reserved: ", caminfo.Reserved)
-            else:
-                print("No camera detected!")
-                print("returned:",return_value)
-
-            # Allocate image storage
-            img_size = self.shape[0]*self.shape[1]/self.bins**2
-            c_array = ctypes.c_char*img_size
-            c_img = c_array()
-            print(self.shape)            
-            pid = ctypes.c_int()
-            mem = ctypes.c_char_p
-            ppcImgMem = mem()
-
-            _chk(self.clib.is_AllocImageMem(self.filehandle, 1280, 1024, 8, byref(ppcImgMem),  byref(pid)))
-                        
-            print("Inquiring about memory:")
-            print(pid)
-            width = c_int()
-            height = c_int()
-            bitdepth = c_int()
-            _chk(self.clib.is_InquireImageMem(self.filehandle, ppcImgMem, pid, byref(width), byref(height), byref(bitdepth), None))
-            print("width:",width)
-            print("height:",height)
-            print("depth:",bitdepth)
-            print("SetImageMem")
-            _chk(self.clib.is_SetImageMem(self.filehandle, ppcImgMem , pid))
-#            print("Set display mode")
-#            _chk(self.clib.is_SetDisplayMode(self.filehandle,  1))
-
-            #pMem = ctypes.pointer(ctypes.c_void_p())
-            #_chk(self.clib.is_FreezeVideo(self.filehandle, 0))
-#            _chk(self.clib.is_CaptureVideo(self.filehandle, 0))
-#            print("is live?")
-#            _chk(self.clib.is_CaptureVideo(self.filehandle, 0x8000))
-#            time.sleep(0.2)
-            _chk(self.clib.is_FreezeVideo(self.filehandle, c_int(20)))
-            _chk(self.clib.is_CopyImageMem(self.filehandle, ppcImgMem, pid, c_img))            
-
-            
-            # Pythonize and return.
-            img_array = np.frombuffer(c_img, dtype=ctypes.c_ubyte, count=1280*1024)
-            img_array.shape = np.array(self.shape)#/self.bins
-            return img_array
+#    def test(self):
+#        print("Testing camera:")
+#        os_version = self.clib.is_GetOsVersion()
+#        print("OS version:",os_version)
+#        if os_version == 12:
+#            print("Windows 7")
+#        number_of_cameras = ctypes.c_int(0)
+#        mypoint = ctypes.pointer(number_of_cameras)
+#        self.clib.is_GetNumberOfCameras(mypoint)
+#        print("Number of cameras:",number_of_cameras.value)
+#        if number_of_cameras >= 1:
+#            return_value = ctypes.c_int()
+#
+#            caminfo = CamInfo()
+#
+#            return_value = self.clib.is_GetCameraInfo(self.filehandle, ctypes.pointer(caminfo))
+#            if return_value == 0:
+#                print("SerNo: ",caminfo.SerNo)        
+#                print("ID: ",caminfo.ID)
+#                print("Version: ",caminfo.Version)
+#                print("Date: ",caminfo.Date)
+#                print("Select: ",caminfo.Select)
+#                print("Type: ",caminfo.Type)
+#                print("Reserved: ", caminfo.Reserved)
+#            else:
+#                print("No camera detected!")
+#                print("returned:",return_value)
+#
+#            # Allocate image storage
+#            img_size = self.shape[0]*self.shape[1]/self.bins**2
+#            c_array = ctypes.c_char*img_size
+#            c_img = c_array()
+#            print(self.shape)            
+#            pid = ctypes.c_int()
+#            mem = ctypes.c_char_p
+#            ppcImgMem = mem()
+#
+#            _chk(self.clib.is_AllocImageMem(self.filehandle, self.shape[0], self.shape[1], 8, byref(ppcImgMem),  byref(pid)))
+#                        
+#            print("Inquiring about memory:")
+#            print(pid)
+#            width = c_int()
+#            height = c_int()
+#            bitdepth = c_int()
+#            _chk(self.clib.is_InquireImageMem(self.filehandle, ppcImgMem, pid, byref(width), byref(height), byref(bitdepth), None))
+#            print("width:",width)
+#            print("height:",height)
+#            print("depth:",bitdepth)
+#            print("SetImageMem")
+#            _chk(self.clib.is_SetImageMem(self.filehandle, ppcImgMem , pid))
+##            print("Set display mode")
+##            _chk(self.clib.is_SetDisplayMode(self.filehandle,  1))
+#
+#            #pMem = ctypes.pointer(ctypes.c_void_p())
+#            #_chk(self.clib.is_FreezeVideo(self.filehandle, 0))
+##            _chk(self.clib.is_CaptureVideo(self.filehandle, 0))
+##            print("is live?")
+##            _chk(self.clib.is_CaptureVideo(self.filehandle, 0x8000))
+##            time.sleep(0.2)
+#            _chk(self.clib.is_FreezeVideo(self.filehandle, c_int(20)))
+#            _chk(self.clib.is_CopyImageMem(self.filehandle, ppcImgMem, pid, c_img))            
+#
+#            
+#            # Pythonize and return.
+#            img_array = np.frombuffer(c_img, dtype=ctypes.c_ubyte, count=self.shape[0]*self.shape[1])
+#            img_array.shape = np.array(self.shape)#/self.bins
+#            return img_array
 
             
     def stop(self):
@@ -184,7 +186,7 @@ class ThorlabsDCx(Camera):
 
         # Pythonize and return. Read
         img_array = np.frombuffer(c_img, dtype=ctypes.c_ubyte)#, count=self.shape[0]*self.shape[1])
-        img_array.shape = np.array(self.shape)#/self.bins
+        img_array.shape = np.array([self.shape[1], self.shape[0]])
         return img_array
         
     # Triggering

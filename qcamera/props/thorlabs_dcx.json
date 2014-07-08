@@ -11,7 +11,7 @@
     "exposure_adjust": true, 
     "exposure_range": [
         1, 
-        2000
+        100
     ], 
     "gain_adjust": false, 
     "gain_range": [
