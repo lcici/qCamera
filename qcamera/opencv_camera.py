@@ -35,7 +35,7 @@ class OpenCVCamera(camera.Camera):
     # Setup and shutdown
     # -------------------------------------------------------------------------
     
-    def initialize(self, **kwargs):
+    def _initialize(self, **kwargs):
         """Open the camera.
 
         Keyword Arguments
@@ -72,7 +72,7 @@ class OpenCVCamera(camera.Camera):
     def set_acquisition_mode(self, mode):
         """Set the image acquisition mode."""
 
-    def acquire_image_data(self):
+    def _acquire_image_data(self):
         """Read the image data from the camera."""
         retval, img = self.cam.read()
         if not retval:
@@ -120,7 +120,7 @@ class OpenCVCamera(camera.Camera):
     # Cropping and binning
     # -------------------------------------------------------------------------
 
-    def update_crop(self, crop):
+    def _update_crop(self, crop):
         """Camera-specific code for setting the crop should go
         here.
 

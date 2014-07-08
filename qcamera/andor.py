@@ -94,7 +94,7 @@ class AndorCamera(camera.Camera):
     # Setup and shutdown
     # -------------------------------------------------------------------------
     
-    def initialize(self, **kwargs):
+    def _initialize(self, **kwargs):
         """Initialize the Andor camera.
 
         Keyword arguments
@@ -220,7 +220,7 @@ class AndorCamera(camera.Camera):
         if mode == 'continuous':
             self._chk(self.clib.SetKineticCycleTime(0))
 
-    def acquire_image_data(self):
+    def _acquire_image_data(self):
         """Acquire the most recent image data from the camera. This
         will work best in single image acquisition mode.
 
@@ -308,7 +308,7 @@ class AndorCamera(camera.Camera):
     # Shutter control
     # -------------------------------------------------------------------------
 
-    def set_shutter(self, state):
+    def _set_shutter(self, state):
         """Open or close the shutter."""
         assert state in ['open', 'closed']
         if state == 'open':
@@ -426,7 +426,7 @@ class AndorCamera(camera.Camera):
     # Cropping and binning
     # -------------------------------------------------------------------------
 
-    def update_crop(self, crop):
+    def _update_crop(self, crop):
         """Define the portion of the CCD to actually collect data
         from. Using a reduced sensor area typically allows for faster
         readout.

@@ -18,7 +18,7 @@ class Template(camera.Camera):
 
         """
     
-    def initialize(self, **kwargs):
+    def _initialize(self, **kwargs):
         """Initialization should take place here."""
 
     def get_camera_properties(self):
@@ -36,7 +36,7 @@ class Template(camera.Camera):
     def set_acquisition_mode(self, mode):
         """Set the image acquisition mode."""
 
-    def acquire_image_data(self):
+    def _acquire_image_data(self):
         """Code for getting image data from the camera should be
         placed here. This must return a numpy array.
 
@@ -66,7 +66,7 @@ class Template(camera.Camera):
     # Shutter control
     # -------------------------------------------------------------------------
 
-    def set_shutter(state):
+    def _set_shutter(state):
         """This will set the shutter to the given state ('open' or
         'closed'). Since not all cameras have a built in shutter, this
         will simply do nothing if not overridden.
@@ -77,7 +77,7 @@ class Template(camera.Camera):
     # Gain and exposure time
     # -------------------------------------------------------------------------
 
-    def set_exposure_time(self, t):
+    def _update_exposure_time(self, t):
         """Code required to change the camera exposure time should go
         here.
 
@@ -110,7 +110,7 @@ class Template(camera.Camera):
     # Cropping and binning
     # -------------------------------------------------------------------------
 
-    def update_crop(self, crop):
+    def _update_crop(self, crop):
         """Camera-specific code for setting the crop should go
         here.
 

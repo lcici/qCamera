@@ -124,17 +124,17 @@ class Camera:
         x0 = npr.randint(self.shape[0]/4, self.shape[0]/2)
         y0 = npr.randint(self.shape[1]/4, self.shape[1]/2)
         self.sim_img_center = (x0, y0)
-        self.initialize(**kwargs)
+        self._initialize(**kwargs)
         self.get_camera_properties()
         self.logger.debug(self.props)
 
-    def initialize(self, **kwargs):
+    def _initialize(self, **kwargs):
         """Any extra initialization required should be placed in this
         function for child camera classes.
 
         """
-        self.logger.warn(
-            "Nothing done in initialize. Did you forget to override it?")
+        if self.real_camera:
+            self.logger.warn("_initialize not implemented.")
 
     def get_camera_properties(self):
         """Code for getting camera properties should go here."""
@@ -169,25 +169,25 @@ class Camera:
         the ring buffer. This function should *not* be overwritten by
         child classes. Instead, everything necessary to acquire an
         image from the camera should be added to the
-        :meth:`acquire_image_data` method.
+        :meth:`_acquire_image_data` method.
 
         """
         if not self.real_camera:
             x0, y0 = self.sim_img_center
-            img = self.get_simulated_image(x0, y0)
+            img = self._get_simulated_image(x0, y0)
         else:
-            img = self.acquire_image_data()
+            img = self._acquire_image_data()
         self.rbuffer.write(img)
         return img
 
-    def acquire_image_data(self):
+    def _acquire_image_data(self):
         """Code for getting image data from the camera should be
         placed here. This must return a numpy array.
 
         """
         raise NotImplementedError("You must define this method.")
 
-    def get_simulated_image(self, x0, y0):
+    def _get_simulated_image(self, x0, y0):
         """Generate and return a simulated image centered at the point
         (x0, y0). This is primarily useful when testing out a full
         control program so that there is a simulated camera with an
@@ -234,29 +234,29 @@ class Camera:
 
     # Not all cameras have builtin shutters, so these functions should
     # have no actual effect in that case. Child classes should
-    # override the set_shutter function to set the shutter state.
+    # override the _set_shutter function to set the shutter state.
 
     def open_shutter(self):
         """Open the shutter."""
         self.shutter_open = True
         self.logger.info('Opening shutter.')
         if self.real_camera:
-            self.set_shutter('open')
+            self._set_shutter('open')
         
     def close_shutter(self):
         """Close the shutter."""
         self.shutter_open = False
         self.logger.info('Closing shutter.')
         if self.real_camera:
-            self.set_shutter('closed')
+            self._set_shutter('closed')
 
-    def set_shutter(self, state):
+    def _set_shutter(self, state):
         """This will set the shutter to the given state ('open' or
         'closed'). Since not all cameras have a built in shutter, this
         will simply do nothing if not overridden.
 
         """
-        pass
+        self.logger.warn("No shutter action taken (_set_shutter not overridden).")
         
     def toggle_shutter(self, state):
         """Toggle the shutter state from open to closed and vice versa."""
@@ -275,9 +275,17 @@ class Camera:
         """
         return self.t_ms
 
-    @abstractmethod
     def set_exposure_time(self, t):
         """Set the exposure time."""
+        self.t_ms = t
+        self._update_exposure_time(t)
+
+    @abstractmethod
+    def _update_exposure_time(self, t):
+        """Camera-specific code for setting the exposure time should
+        go here.
+
+        """
 
     @abstractmethod
     def get_gain(self):
@@ -292,34 +300,31 @@ class Camera:
 
     # TODO: change it so that implementations don't have to manually
     #       set the cooler_active attribute.
-    
-    # Not all cameras have this capability, so these are not abstract
-    # methods but instead raise a NotImplementedError if you try to
-    # call them without defining them explicitly.
 
     def cooler_on(self):
         """Turn on the TEC."""
-        raise NotImplementedError("No cooler?")
+        self.logger.warn("No action: cooler_on not overriden.")
 
     def cooler_off(self):
         """Turn off the TEC."""
-        raise NotImplementedError("No cooler?")
+        self.logger.warn("No action: cooler_off not overriden.")
 
     def get_cooler_temperature(self):
         """Check the TEC temperature."""
-        raise NotImplementedError("No cooler?")
+        self.logger.warn("No action: get_cooler_temperature not overriden.")
 
     def set_cooler_temperature(self, temp):
         """Set the cooler temperature to temp."""
+        self.logger.warn("No action: set_cooler_temperature not overriden.")
         raise NotImplementedError("No cooler?")
 
     # ROI, cropping, and binning
     # -------------------------------------------------------------------------
 
     def set_roi(self, roi):
-        """Define the region of interest. Since ROI stuff is generally
-        handled entirely in software, this function does not need to
-        be implemented in inheriting classes.
+        """Define the region of interest. Since ROI stuff is handled
+        entirely in software, this function does not need to be
+        implemented in inheriting classes.
 
         """
         if len(roi) != 4:
@@ -340,7 +345,7 @@ class Camera:
     def set_crop(self, crop):
         """Define the portion of the CCD to actually collect data
         from. Using a reduced sensor area typically allows for faster
-        readout. Derived classes should define :func:`update_crop`
+        readout. Derived classes should define :meth:`_update_crop`
         instead of overriding this one.
 
         """
@@ -349,19 +354,19 @@ class Camera:
         if len(crop) != 4:
             raise CameraError("crop must be a length 4 array.")
         self.crop = crop
-        self.update_crop(self.crop)
+        self._update_crop(self.crop)
 
     def reset_crop(self):
         """Reset the crop to the maximum size."""
         self.crop = [1, self.shape[0], 1, self.shape[1]]
-        self.update_crop(self.crop)
+        self._update_crop(self.crop)
 
-    def update_crop(self, crop):
+    def _update_crop(self, crop):
         """Camera-specific code for setting the crop should go
         here.
 
         """
-        raise NotImplementedError("This function needs to be defined.")
+        self.logger.warn("_update_crop not implemented.")
         
     def get_bins(self):
         """Query the current binning. If this function is not
@@ -371,9 +376,9 @@ class Camera:
         """
         return self.bins
 
-    @abstractmethod
     def set_bins(self, bins):
         """Set binning to bins x bins."""
+        self.logger.warn("set_bins not implemented.")
 
     # Standard tests
     # -------------------------------------------------------------------------

@@ -397,7 +397,7 @@ class Sensicam(camera.Camera):
     # Setup and shutdown
     # -------------------------------------------------------------------------
 
-    def initialize(self, **kwargs):
+    def _initialize(self, **kwargs):
         """Initialize a PCO Sensicam.
 
         Keyword arguments
@@ -479,7 +479,7 @@ class Sensicam(camera.Camera):
         self.logger.warn("No action: set_acquisition_mode not yet implemented.")
         #self._update_coc()
 
-    def acquire_image_data(self):
+    def _acquire_image_data(self):
         """Acquire the current image from the camera."""
         # Times 2 because the camera returns 16 bit data... despite
         # the function having 12 bit in the name...
@@ -509,7 +509,7 @@ class Sensicam(camera.Camera):
             self.logger.debug("img.shape = %i" % (img.shape[0]))
             self.logger.debug("shape = (%i, %i)" % (shape[0], shape[1]))
             tb.print_stack()
-            #img = self.acquire_image_data() # Try again
+            #img = self._acquire_image_data() # Try again
         return img
         
     # Triggering
@@ -566,7 +566,7 @@ class Sensicam(camera.Camera):
     # ROI, cropping, and binning
     # -------------------------------------------------------------------------
 
-    def update_crop(self, crop):
+    def _update_crop(self, crop):
         """Define the portion of the CCD to actually collect data
         from. Using a reduced sensor area typically allows for faster
         readout.
