@@ -545,7 +545,7 @@ class Sensicam(camera.Camera):
         """Query for the current exposure time."""
         return self.t_ms
 
-    def set_exposure_time(self, t):
+    def _update_exposure_time(self, t):
         """Set the exposure time."""
         self.t_ms = t
         if not self.real_camera:

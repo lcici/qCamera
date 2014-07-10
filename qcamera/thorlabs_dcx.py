@@ -87,7 +87,7 @@ class ThorlabsDCx(Camera):
         """Close the camera safely."""
         _chk(self.clib.is_ExitCamera(self.filehandle))
     
-	def start(self):
+    def start(self):
         print("Starting??")
 
     def test(self):

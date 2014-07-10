@@ -124,8 +124,9 @@ class Camera:
         x0 = npr.randint(self.shape[0]/4, self.shape[0]/2)
         y0 = npr.randint(self.shape[1]/4, self.shape[1]/2)
         self.sim_img_center = (x0, y0)
-        self._initialize(**kwargs)
-        self.get_camera_properties()
+        if self.real_camera:
+            self._initialize(**kwargs)
+            self.get_camera_properties()
         self.logger.debug(self.props)
 
     def _initialize(self, **kwargs):
@@ -278,7 +279,8 @@ class Camera:
     def set_exposure_time(self, t):
         """Set the exposure time."""
         self.t_ms = t
-        self._update_exposure_time(t)
+        if self.real_camera:
+            self._update_exposure_time(t)
 
     @abstractmethod
     def _update_exposure_time(self, t):
@@ -354,7 +356,8 @@ class Camera:
         if len(crop) != 4:
             raise CameraError("crop must be a length 4 array.")
         self.crop = crop
-        self._update_crop(self.crop)
+        if self.real_camera:
+            self._update_crop(self.crop)
 
     def reset_crop(self):
         """Reset the crop to the maximum size."""

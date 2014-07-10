@@ -319,7 +319,7 @@ class AndorCamera(camera.Camera):
     # Gain and exposure time
     # -------------------------------------------------------------------------
 
-    def set_exposure_time(self, t):
+    def _update_exposure_time(self, t):
         """Set the exposure time in ms."""
         self.t_ms = t
         t_s = self.t_ms/1000.
@@ -415,13 +415,12 @@ class AndorCamera(camera.Camera):
         """Set the cooler temperature to temp."""
         self.temperature_set_point = temp
         self.logger.info("Temperature set point changed to %i" % temp)
-        if not self.real_camera:
-            pass
         if temp > self.props['temp_range'][1] or temp < self.props['temp_range'][0]:
             raise ValueError(
                 "Invalid set point. Valid range is " + \
                 repr(self.props['temp_range']))
-        self._chk(self.clib.SetTemperature(temp))
+        if self.real_camera:
+            self._chk(self.clib.SetTemperature(temp))
 
     # Cropping and binning
     # -------------------------------------------------------------------------
@@ -449,10 +448,11 @@ class AndorCamera(camera.Camera):
         """Set binning to bins x bins."""
         self.bins = bins
         self.logger.info('Updating binning to ' + str(bins))
-        self._chk(self.clib.SetImage(
-            self.bins, self.bins,
-            self.crop[0], self.crop[1], self.crop[2], self.crop[3]))
-        
+        if self.real_camera:
+            self._chk(self.clib.SetImage(
+                self.bins, self.bins,
+                self.crop[0], self.crop[1], self.crop[2], self.crop[3]))
+            
 if __name__ == "__main__":
     import logging
 

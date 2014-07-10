@@ -18,12 +18,12 @@ class CameraThread(QtCore.QThread):
     ----------
     abort : bool
         Signals that the thread should abort. This should not be
-        modified directly, but instead set using the :func:`stop`
-        function.
+        modified directly, but instead set using the :meth:`stop`
+        method.
     paused : bool
         Indicates that the thread is currently paused. This should not
         be modified directly, but instead through the use of the
-        :func:`pause` and :func:`unpause` functions.
+        :meth:`pause` and :meth:`unpause` methods.
     queue : Queue
         A queue for communicating with the thread.
     image_signal : QtCore.pyqtSignal
