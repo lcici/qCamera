@@ -13,7 +13,6 @@ import sys
 from camera import Camera
 import ctypes
 from ctypes import *
-import time
 import numpy as np
 from camera_errors import ThorlabsDCxError
 
@@ -29,6 +28,26 @@ def _chk(msg):
             print("159: IS_INVALID_BUFFER_SIZE: The image memory has an inappropriate size to store the image in the desired format.")
         print("msg:",msg)
     pass
+
+
+# Structures used by the ctypes code:
+class ImageFileParams(ctypes.Structure):
+    _fields_ =[
+    ("pwchFileName", c_wchar_p),
+    ("nFileType", c_uint),
+    ("nQuality", c_uint),
+    ("ppcImageMem;", c_void_p),
+    ("pnImageID", c_uint),
+    ("reserved", c_byte*32)
+    ]
+
+class IS_RECT(ctypes.Structure):
+    _fields_ =[
+        ("s32x", c_int),
+        ("s32y", c_int),
+        ("s32Width", c_int),
+        ("s32Height", c_int)
+        ]
 
 class CamInfo(ctypes.Structure):
     _fields_ = [("SerNo", ctypes.c_char*12),
@@ -67,13 +86,22 @@ class ThorlabsDCx(Camera):
         self.filehandle = ctypes.c_int(0)
         _chk(self.clib.is_InitCamera(
             ctypes.pointer(self.filehandle)))
-        # Resolution of camera. (height, width)    
-        self.shape=(1280,1024)
+
+        # Resolution of camera. (height, width)
+        AOI = self.get_roi()
+        print("Width , Height =%d , %d"%(AOI.s32Width,AOI.s32Height))
+        self.shape=(AOI.s32Width,AOI.s32Height)
         self.props.load('thorlabs_dcx.json')
+
         # Allocate memory:
         # Declare variables for storing memory ID and memory start location:
         self.pid = ctypes.c_int()          
         self.ppcImgMem = ctypes.c_char_p()
+        
+        # Setting monocrome 8 bit color mode
+        # (otherwise we would get several identical readings per pixel!)
+        _chk(self.clib.is_SetColorMode(self.filehandle,6))
+
         # Allocate the right amount of memory:
         bitdepth = 8 # Camera is 8 bit.
         _chk(self.clib.is_AllocImageMem(self.filehandle, self.shape[0], self.shape[1], bitdepth, byref(self.ppcImgMem),  byref(self.pid)))
@@ -166,6 +194,9 @@ class ThorlabsDCx(Camera):
 
     def set_acquisition_mode(self, mode):
         """Set the image acquisition mode."""
+        
+    def get_display_mode(self):
+        return self.clib.is_SetDisplayMode(self.filehandle, 0x8000 )
 
     def acquire_image_data(self):
         """Code for getting image data from the camera should be
@@ -178,16 +209,19 @@ class ThorlabsDCx(Camera):
         c_img = c_array()       
 
         # Take one picture: wait time is waittime * 10 ms:
-        waittime = c_int(20)
+        waittime = c_int(100)
         _chk(self.clib.is_FreezeVideo(self.filehandle, waittime))
         # Copy image data from the driver allocated memory to the memory that we
         # allocated.
         _chk(self.clib.is_CopyImageMem(self.filehandle, self.ppcImgMem, self.pid, c_img))            
 
-        # Pythonize and return. Read
-        img_array = np.frombuffer(c_img, dtype=ctypes.c_ubyte)#, count=self.shape[0]*self.shape[1])
-        img_array.shape = np.array([self.shape[1], self.shape[0]])
+        # Pythonize and return. Readself.clib.is_AOI(self.filehandle, 1, pointer(rectAOI),4*4)
+        img_array = np.frombuffer(c_img, dtype=ctypes.c_ubyte)#, count=1*self.shape[0]*self.shape[1])\
+        #img_array.shape = np.array([self.shape[1    ], self.shape[0]])
+        img_array.shape = (1024, 1280) # FIXME
         return img_array
+
+
         
     # Triggering
     # ----------
@@ -237,6 +271,7 @@ class ThorlabsDCx(Camera):
     def set_gain(self, gain, **kwargs):
         """Set the camera gain."""
 
+
     # Cooling
     # -------
 
@@ -261,7 +296,24 @@ class ThorlabsDCx(Camera):
 
     def set_roi(self, roi):
         """Define the region of interest."""
-        super(ThorlabsDCx,self).set_roi(roi)
+        rectAOI = IS_RECT()
+        rectAOI.s32x = roi[0]
+        rectAOI.s32y = roi[1]
+        rectAOI.s32Width = roi[2]
+        rectAOI.s32Height = roi[3]
+        retval = self.clib.is_AOI(self.filehandle, 1, pointer(rectAOI),4*4)
+        _chk(retval) 
+        if retval==125:
+            self.logger.error("Invalid ROI interest settings!")
+            raise ThorlabsDCxError("Invalid ROI setting!")
+            print(roi)
+        return rectAOI
+        
+    def get_roi(self):
+        """Define the region of interest."""
+        rectAOI = IS_RECT()
+        _chk(self.clib.is_AOI(self.filehandle, 2, pointer(rectAOI),4*4))
+        return rectAOI
         
     def get_crop(self):
         """Get the current CCD crop settings."""
@@ -279,20 +331,48 @@ class ThorlabsDCx(Camera):
 
     def set_bins(self, bins):
         """Set binning to bins x bins."""
+        
+
+        
+    def save_image(self):
+        size = sizeof(ImageFileParams)
+        params = ImageFileParams()
+        params.nQuality = 0
+        params.pwchFileName = u"mypic.bmp"
+        params.ppcImageMem = None
+        print("size",size)
+        nCommand = c_int(0)
+        _chk(self.clib.is_ImageFile(self.filehandle,2, pointer(params),  size))
+        
+    def get_parameters(self):
+        nCommand = c_int(0)
+        _chk(self.clib.is_ParameterSet(self.filehandle,4, "file.ini", None))
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-    with ThorlabsDCx() as cam:
+    with ThorlabsDCx(recording=False) as cam:
+        displaymode = cam.get_display_mode()
+        print("displaymode",displaymode)
+        #depth = cam.get_colordepth()
+        #print("colordepth",depth)
+        print("Setting AOI:")
+        AOI = cam.set_roi([0,0,1280,1024])
+        print("x,y,w,h",AOI.s32x, AOI.s32y, AOI.s32Width, AOI.s32Height)
         print("Exposure time:")
         print(cam.get_exposure_time())
-        cam.set_exposure_time(1)
+        cam.set_exposure_time(80)
         print("Exposure time:")
-        print(cam.get_exposure_time())        
-        img = cam.acquire_image_data()
+        print(cam.get_exposure_time())
+        print("Get image")
+        img = cam.get_image()
+        AOI = cam.get_roi()
+        print(AOI.s32x, AOI.s32y, AOI.s32Width, AOI.s32Height)
         plt.figure(1)
         plt.clf()
-        ax1= plt.imshow(img,cmap='hot')
+        ax1= plt.imshow(img,cmap='gray',interpolation='nearest')
         plt.colorbar()
+        #cam.get_parameters()
+        cam.save_image()
         print("Delete camera")
     print("Done!")    
 
