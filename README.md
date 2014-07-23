@@ -17,13 +17,10 @@ implemented. Currently, cameras supported by qCamera include:
   * Development is focused on the iXon line, so there could be some
     issues with other Andor cameras.
 * [PCO](http://www.pco.de/) Sensicam
-
-Coming soon:
-
 * [Thorlabs](http://www.thorlabs.de)
   [DCx-series](http://www.thorlabs.de/software_pages/ViewSoftwarePage.cfm?Code=DCx)
   CCD/CMOS cameras
-* [OpenCV](http://opencv.org/) generic camera interface
+* [OpenCV](http://opencv.org/) generic camera interface (partial support)
 
 Requirements
 ------------
@@ -50,11 +47,12 @@ functionality:
 All of these are contained in the default installation of
 [Python(x,y)](https://code.google.com/p/pythonxy/) for Windows.
 
-To install the qcamera library in your site-packages run
- python setup.py install
-(you will need to do this again if you update the code)
+Installation
+------------
 
-See also the [Mercurial](https://iontrap.phys.au.dk/wiki/index.php/Mercurial) page.
+`python setup.py install`
+
+Don't forget to rerun this whenever you want to import new changes!
 
 TODO
 ----
