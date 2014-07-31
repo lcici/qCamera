@@ -478,32 +478,21 @@ if __name__ == "__main__":
         last_cam = {'camera_type': camera_type}
         json.dump(last_cam, f)
         
-    # This statement is make sure that if run in interactive mode app will be 
-    # cleaned up. Without this you get intermittent: QApplocation before QPainter errors.
-    try: 
-        del(app)
-    except:
-        pass
+    # Setup QApplication
     app = QtGui.QApplication(sys.argv)
-    app.setOrganizationName("IonTrap Group") # For storing windows states in registry
+    app.setOrganizationName("IonTrap Group")
     app.setApplicationName("qCamera viewer")
     app.setStyle("cleanlooks")
-    
-
-    
-    # Make sure the application gets a seperate taskbargroup on Win7
     try:
         import ctypes
-        myappid = 'qCamera_viewer' # arbitrary string
+        myappid = 'qCamera_viewer'
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
     except:
         pass
 
     with Camera(real=True, recording=False) as cam:
         thread = CameraThread(cam)
-
         win = Viewer(cam, thread)   
         win.show()
-        #print("Return value:",app.exec_())
         sys.exit(app.exec_())
     
