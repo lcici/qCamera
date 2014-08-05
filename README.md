@@ -67,4 +67,15 @@ Issues
 * The ring buffer has problems if the image size changes. This needs
   to be addressed so that binning can be changed and images are still
   recorded to the buffer properly.
+  
+Credits
+-------
+
+The camera that appears in the qCamera viewer icon is the
+[Gnome-dev-camera][camicon] by David Vignoni and licensed under the
+GNU Lesser General Public License via Wikimedia Commons. The original
+can also be found [here][camicon_original].
+
+[camicon]: https://commons.wikimedia.org/wiki/File:Gnome-dev-camera.svg#mediaviewer/File:Gnome-dev-camera.svg
+[camicon_original]: http://ftp.gnome.org/pub/GNOME/sources/gnome-themes-extras/0.9/gnome-themes-extras-0.9.0.tar.gz
 

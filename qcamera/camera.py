@@ -9,6 +9,7 @@ from __future__ import division
 from __future__ import print_function
 from abc import ABCMeta, abstractmethod
 import logging
+import time
 import numpy as np
 import numpy.random as npr
 from ring_buffer import RingBuffer
@@ -176,6 +177,7 @@ class Camera:
         if not self.real_camera:
             x0, y0 = self.sim_img_center
             img = self._get_simulated_image(x0, y0)
+            time.sleep(self.t_ms/1000.)
         else:
             img = self._acquire_image_data()
         self.rbuffer.write(img)

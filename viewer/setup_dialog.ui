@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>298</width>
-    <height>438</height>
+    <height>538</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -95,16 +95,6 @@
           </widget>
          </item>
         </layout>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="adjustCropButton">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string>Adjust Crop</string>
-        </property>
        </widget>
       </item>
      </layout>

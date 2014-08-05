@@ -224,7 +224,7 @@ class ThorlabsDCx(Camera):
         _chk(self.clib.is_Exposure(self.filehandle, nCommand, byref(Param),SizeOfParam))
         return Param.value
 
-    def set_exposure_time(self, t, units='ms'):
+    def _update_exposure_time(self, t):
         """Set the exposure time."""
         IS_EXPOSURE_CMD_SET_EXPOSURE = 12
         nCommand =  IS_EXPOSURE_CMD_SET_EXPOSURE
