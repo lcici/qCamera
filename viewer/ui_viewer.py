@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'viewer.ui'
 #
-# Created: Tue Aug  5 13:36:34 2014
+# Created: Wed Aug  6 15:56:44 2014
 #      by: PyQt4 UI code generator 4.9.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -91,7 +91,6 @@ class Ui_MainWindow(object):
         spacerItem1 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
         self.gridLayout_3.addItem(spacerItem1, 0, 2, 1, 1)
         self.showROIBox = QtGui.QCheckBox(self.groupBox_2)
-        self.showROIBox.setEnabled(False)
         self.showROIBox.setObjectName(_fromUtf8("showROIBox"))
         self.gridLayout_3.addWidget(self.showROIBox, 2, 3, 1, 1)
         self.gridLayout.addLayout(self.gridLayout_3, 0, 0, 2, 1)
@@ -156,15 +155,15 @@ class Ui_MainWindow(object):
         self.label.setText(QtGui.QApplication.translate("MainWindow", "Exposure time [ms]", None, QtGui.QApplication.UnicodeUTF8))
         self.groupBox_2.setTitle(QtGui.QApplication.translate("MainWindow", "Viewing Settings", None, QtGui.QApplication.UnicodeUTF8))
         self.autoscaleButton.setText(QtGui.QApplication.translate("MainWindow", "Autoscale", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_2.setText(QtGui.QApplication.translate("MainWindow", "Scale Min", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_2.setText(QtGui.QApplication.translate("MainWindow", "Scale min", None, QtGui.QApplication.UnicodeUTF8))
         self.label_5.setText(QtGui.QApplication.translate("MainWindow", "Colormap", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_3.setText(QtGui.QApplication.translate("MainWindow", "Scale Max", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_3.setText(QtGui.QApplication.translate("MainWindow", "Scale max", None, QtGui.QApplication.UnicodeUTF8))
         self.rescaleButton.setText(QtGui.QApplication.translate("MainWindow", "Rescale", None, QtGui.QApplication.UnicodeUTF8))
-        self.rotateImageButton.setText(QtGui.QApplication.translate("MainWindow", "Rotate Image", None, QtGui.QApplication.UnicodeUTF8))
+        self.rotateImageButton.setText(QtGui.QApplication.translate("MainWindow", "Rotate image", None, QtGui.QApplication.UnicodeUTF8))
         self.showROIBox.setText(QtGui.QApplication.translate("MainWindow", "Show ROI", None, QtGui.QApplication.UnicodeUTF8))
-        self.adjustROIButton.setText(QtGui.QApplication.translate("MainWindow", "Adjust ROI", None, QtGui.QApplication.UnicodeUTF8))
+        self.adjustROIButton.setText(QtGui.QApplication.translate("MainWindow", "ROI settings...", None, QtGui.QApplication.UnicodeUTF8))
         self.cameraSettingsButton.setText(QtGui.QApplication.translate("MainWindow", "Camera settings...", None, QtGui.QApplication.UnicodeUTF8))
-        self.acquisitionButton.setText(QtGui.QApplication.translate("MainWindow", "Begin Acquisition", None, QtGui.QApplication.UnicodeUTF8))
+        self.acquisitionButton.setText(QtGui.QApplication.translate("MainWindow", "Begin acquisition", None, QtGui.QApplication.UnicodeUTF8))
         self.menuFile.setTitle(QtGui.QApplication.translate("MainWindow", "File", None, QtGui.QApplication.UnicodeUTF8))
         self.menuHelp.setTitle(QtGui.QApplication.translate("MainWindow", "Help", None, QtGui.QApplication.UnicodeUTF8))
         self.menuRing_Buffer.setTitle(QtGui.QApplication.translate("MainWindow", "Ring Buffer", None, QtGui.QApplication.UnicodeUTF8))

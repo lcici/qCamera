@@ -16,8 +16,6 @@ try:
     from PyQt4 import QtGui, QtCore
 except ImportError:
     from PySide import QtGui, QtCore
-from guiqwt.plot import ImageDialog
-from guiqwt.tools import SelectTool, AnnotatedRectangleTool
 from guiqwt.image import ImageItem
 from guiqwt.annotations import AnnotatedRectangle
 from guiqwt.builder import make
@@ -27,26 +25,10 @@ from setup_dialog import SetupDialog
 from roi_dialog import ROIDialog
 from camera_select_dialog import CameraSelectDialog
 from config import CAM_TYPES, CONFIG_FILE
+from util import *
 
 from ui_viewer import Ui_MainWindow
-from qcamera.camera_thread import CameraThread
-
-# Utility functions
-# =============================================================================
-
-def _get_image_item(imageWidget):
-    """Return the guiqwt ImageItem of an ImageWidget."""
-    items = imageWidget.get_plot().get_items()
-    for item in items:
-        image = item if isinstance(item, ImageItem) else None
-    return image
-
-def cam_options_string():
-    """Returns a string to print the valid camera types."""
-    out = ''
-    for cam in CAM_TYPES:
-        out = out + cam + ' '
-    return out
+from camera_thread import CameraThread
 
 # Viewer
 # =============================================================================
@@ -110,6 +92,7 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
 
     def closeEvent(self, event):
         self.cam_thread.stop()
+        self.cam.close()
         super(Viewer, self).closeEvent(event)
 
     # Utility functions
@@ -138,26 +121,14 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
     def _make_image_item(self, data):
         return make.image(data, colormap=str(self.colormapBox.currentText()))
 
-    def _get_image_plot(self):
-        """Extract the image plot from the image widget."""
-        for item in self.imageWidget.get_plot().get_items():
-            img = item
-            if isinstance(item, ImageItem):
-                break
-        return img
-
     # Slots
     # -------------------------------------------------------------------------
 
     def update(self, img_data):
         """Update the image plot and other information."""
-        # Get and display the next image.
         plot = self.imageWidget.get_plot()
-        #plot.del_all_items(except_grid=True)
-        items = plot.get_items()
-        for item in items:
-            img = item if isinstance(item, ImageItem) else None
-            roi_rect = item if isinstance(item, AnnotatedRectangle) else None
+        img = get_image_item(self.imageWidget)
+        roi_rect = get_rect_item(self.imageWidget)
         if img is None:
             img = self._make_image_item(img_data)
             plot.add_item(img)
@@ -167,7 +138,6 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         #plot.replot()
             
         # Display ROI if requested.
-        # TODO
         roi_x1, roi_x2, roi_y1, roi_y2 = self.cam.roi
         if self.showROIBox.isChecked():
             if roi_rect is None:
@@ -176,6 +146,8 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
                 roi_rect.set_resizable(False)
                 roi_rect.set_selectable(False)
                 plot.add_item(roi_rect)
+            else:
+                roi_rect.set_rect(roi_x1, roi_y1, roi_x2, roi_y2)
         else:
             if roi_rect is not None:
                 plot.del_item(roi_rect)
@@ -189,13 +161,13 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         plot.replot()
                     
     def update_colormap(self):
-        image = _get_image_item(self.imageWidget)
+        image = get_image_item(self.imageWidget)
         image.set_color_map(str(self.colormapBox.currentText()))
         
     def set_lut_range(self):
         """Change the LUT range."""
         self.scale = [self.scaleMinBox.value(), self.scaleMaxBox.value()]
-        img = self._get_image_plot()
+        img = get_image_item(self.imageWidget)
         img.set_lut_range(self.scale)
         self.update_colormap()
 
@@ -204,7 +176,7 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         same as the image data.
 
         """
-        img = self._get_image_plot()
+        img = get_image_item(self.imageWidget)
         minimum = int(np.min(img.data))
         maximum = int(np.max(img.data))
         assert type(minimum) is int
@@ -219,8 +191,8 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
 
     def toggle_acquisition(self):
         """Toggle between acquisition states (on or off)."""
-        start_text = "Begin Acquisition"
-        stop_text = "Stop Acquisition"
+        start_text = "Begin acquisition"
+        stop_text = "Stop acquisition"
         if self.acquisitionButton.text() == start_text:
             self.cam_thread.unpause()
             self.acquisitionButton.setText(stop_text)
@@ -237,7 +209,7 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
     # -------------------------------------------------------------------------
 
     def launch_roi_dialog(self):
-        roiDialog = ROIDialog(self.cam)
+        roiDialog = ROIDialog(self.cam, self.cam_thread)
         roiDialog.exec_()
 
     def launch_setup_dialog(self):
@@ -318,6 +290,7 @@ if __name__ == "__main__":
     app.setOrganizationName("IonTrap Group")
     app.setApplicationName("qCamera viewer")
     app.setStyle("cleanlooks")
+    app.setWindowIcon(QtGui.QIcon('icon.png'))
     try:
         import ctypes
         myappid = 'qCamera_viewer'
@@ -326,6 +299,5 @@ if __name__ == "__main__":
         pass
 
     win = Viewer(config, cam_select=cam_select)
-    win.setWindowIcon(QtGui.QIcon('icon.png'))
     sys.exit(app.exec_())
     

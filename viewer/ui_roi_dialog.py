@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'roi_dialog.ui'
 #
-# Created: Tue Aug  5 13:36:34 2014
+# Created: Wed Aug  6 15:56:44 2014
 #      by: PyQt4 UI code generator 4.9.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -17,7 +17,7 @@ except AttributeError:
 class Ui_ROIDialog(object):
     def setupUi(self, ROIDialog):
         ROIDialog.setObjectName(_fromUtf8("ROIDialog"))
-        ROIDialog.resize(391, 466)
+        ROIDialog.resize(411, 533)
         self.verticalLayout = QtGui.QVBoxLayout(ROIDialog)
         self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
         self.groupBox_5 = QtGui.QGroupBox(ROIDialog)
@@ -25,6 +25,12 @@ class Ui_ROIDialog(object):
         self.verticalLayout_3 = QtGui.QVBoxLayout(self.groupBox_5)
         self.verticalLayout_3.setObjectName(_fromUtf8("verticalLayout_3"))
         self.roiHistWidget = CurveWidget(self.groupBox_5)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(100)
+        sizePolicy.setHeightForWidth(self.roiHistWidget.sizePolicy().hasHeightForWidth())
+        self.roiHistWidget.setSizePolicy(sizePolicy)
+        self.roiHistWidget.setMinimumSize(QtCore.QSize(0, 10))
         self.roiHistWidget.setOrientation(QtCore.Qt.Horizontal)
         self.roiHistWidget.setObjectName(_fromUtf8("roiHistWidget"))
         self.verticalLayout_3.addWidget(self.roiHistWidget)
@@ -55,10 +61,6 @@ class Ui_ROIDialog(object):
         self.gridLayout = QtGui.QGridLayout(self.groupBox_4)
         self.gridLayout.setHorizontalSpacing(12)
         self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
-        self.showROIBox = QtGui.QCheckBox(self.groupBox_4)
-        self.showROIBox.setEnabled(False)
-        self.showROIBox.setObjectName(_fromUtf8("showROIBox"))
-        self.gridLayout.addWidget(self.showROIBox, 1, 0, 1, 1)
         self.formLayout = QtGui.QFormLayout()
         self.formLayout.setFieldGrowthPolicy(QtGui.QFormLayout.AllNonFixedFieldsGrow)
         self.formLayout.setObjectName(_fromUtf8("formLayout"))
@@ -124,17 +126,27 @@ class Ui_ROIDialog(object):
         self.formLayout_4.setWidget(3, QtGui.QFormLayout.FieldRole, self.roiY2Lbl)
         self.gridLayout.addLayout(self.formLayout_4, 0, 1, 1, 1)
         self.verticalLayout.addWidget(self.groupBox_4)
+        self.horizontalLayout = QtGui.QHBoxLayout()
+        self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
+        spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        self.horizontalLayout.addItem(spacerItem)
+        self.adjustROIButton = QtGui.QPushButton(ROIDialog)
+        self.adjustROIButton.setObjectName(_fromUtf8("adjustROIButton"))
+        self.horizontalLayout.addWidget(self.adjustROIButton)
+        self.closeButton = QtGui.QPushButton(ROIDialog)
+        self.closeButton.setObjectName(_fromUtf8("closeButton"))
+        self.horizontalLayout.addWidget(self.closeButton)
+        self.verticalLayout.addLayout(self.horizontalLayout)
 
         self.retranslateUi(ROIDialog)
         QtCore.QMetaObject.connectSlotsByName(ROIDialog)
 
     def retranslateUi(self, ROIDialog):
-        ROIDialog.setWindowTitle(QtGui.QApplication.translate("ROIDialog", "Dialog", None, QtGui.QApplication.UnicodeUTF8))
+        ROIDialog.setWindowTitle(QtGui.QApplication.translate("ROIDialog", "Region of Interest", None, QtGui.QApplication.UnicodeUTF8))
         self.groupBox_5.setTitle(QtGui.QApplication.translate("ROIDialog", "ROI Histogram", None, QtGui.QApplication.UnicodeUTF8))
         self.label_19.setText(QtGui.QApplication.translate("ROIDialog", "x lim", None, QtGui.QApplication.UnicodeUTF8))
         self.label_20.setText(QtGui.QApplication.translate("ROIDialog", "y lim", None, QtGui.QApplication.UnicodeUTF8))
         self.groupBox_4.setTitle(QtGui.QApplication.translate("ROIDialog", "ROI Statistics", None, QtGui.QApplication.UnicodeUTF8))
-        self.showROIBox.setText(QtGui.QApplication.translate("ROIDialog", "Show ROI", None, QtGui.QApplication.UnicodeUTF8))
         self.label_15.setText(QtGui.QApplication.translate("ROIDialog", "Total", None, QtGui.QApplication.UnicodeUTF8))
         self.roiTotalLbl.setText(QtGui.QApplication.translate("ROIDialog", "0", None, QtGui.QApplication.UnicodeUTF8))
         self.label_16.setText(QtGui.QApplication.translate("ROIDialog", "Mean", None, QtGui.QApplication.UnicodeUTF8))
@@ -151,5 +163,7 @@ class Ui_ROIDialog(object):
         self.roiX2Lbl.setText(QtGui.QApplication.translate("ROIDialog", "2", None, QtGui.QApplication.UnicodeUTF8))
         self.roiY1Lbl.setText(QtGui.QApplication.translate("ROIDialog", "1", None, QtGui.QApplication.UnicodeUTF8))
         self.roiY2Lbl.setText(QtGui.QApplication.translate("ROIDialog", "2", None, QtGui.QApplication.UnicodeUTF8))
+        self.adjustROIButton.setText(QtGui.QApplication.translate("ROIDialog", "Adjust ROI", None, QtGui.QApplication.UnicodeUTF8))
+        self.closeButton.setText(QtGui.QApplication.translate("ROIDialog", "Close", None, QtGui.QApplication.UnicodeUTF8))
 
 from guiqwt.plot import CurveWidget

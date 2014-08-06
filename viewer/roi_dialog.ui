@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>391</width>
-    <height>466</height>
+    <width>411</width>
+    <height>533</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Region of Interest</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -22,6 +22,18 @@
      <layout class="QVBoxLayout" name="verticalLayout_3">
       <item>
        <widget class="CurveWidget" name="roiHistWidget">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>100</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>10</height>
+         </size>
+        </property>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
@@ -83,16 +95,6 @@
       <property name="horizontalSpacing">
        <number>12</number>
       </property>
-      <item row="1" column="0">
-       <widget class="QCheckBox" name="showROIBox">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Show ROI</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="0">
        <layout class="QFormLayout" name="formLayout">
         <property name="fieldGrowthPolicy">
@@ -246,13 +248,49 @@
      </layout>
     </widget>
    </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="adjustROIButton">
+       <property name="text">
+        <string>Adjust ROI</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="closeButton">
+       <property name="text">
+        <string>Close</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
   </layout>
+  <zorder>groupBox_5</zorder>
+  <zorder>groupBox_4</zorder>
+  <zorder></zorder>
+  <zorder>roiHistWidget</zorder>
  </widget>
  <customwidgets>
   <customwidget>
    <class>CurveWidget</class>
    <extends>QSplitter</extends>
    <header>guiqwt.plot</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

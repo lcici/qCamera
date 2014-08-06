@@ -124,7 +124,7 @@
          <item row="0" column="0">
           <widget class="QLabel" name="label_2">
            <property name="text">
-            <string>Scale Min</string>
+            <string>Scale min</string>
            </property>
           </widget>
          </item>
@@ -138,7 +138,7 @@
          <item row="1" column="0">
           <widget class="QLabel" name="label_3">
            <property name="text">
-            <string>Scale Max</string>
+            <string>Scale max</string>
            </property>
           </widget>
          </item>
@@ -155,7 +155,7 @@
             <bool>false</bool>
            </property>
            <property name="text">
-            <string>Rotate Image</string>
+            <string>Rotate image</string>
            </property>
           </widget>
          </item>
@@ -177,9 +177,6 @@
          </item>
          <item row="2" column="3">
           <widget class="QCheckBox" name="showROIBox">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
            <property name="text">
             <string>Show ROI</string>
            </property>
@@ -222,7 +219,7 @@
       <item>
        <widget class="QPushButton" name="acquisitionButton">
         <property name="text">
-         <string>Begin Acquisition</string>
+         <string>Begin acquisition</string>
         </property>
        </widget>
       </item>
