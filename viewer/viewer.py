@@ -8,9 +8,8 @@ import sys
 
 # Ensure we're loading the newest version of qcamera rather than
 # anything that was installed with distutils.
-sys.path[0:0] = ['..']
+sys.path.insert(0, '..')
 
-import time
 import numpy as np
 
 try:
@@ -25,17 +24,32 @@ from guiqwt.builder import make
 from guiqwt.colormap import get_colormap_list
 
 from setup_dialog import SetupDialog
-#from roi_dialog import ROIDialog
+from roi_dialog import ROIDialog
+from camera_select_dialog import CameraSelectDialog
+from config import CAM_TYPES, CONFIG_FILE
 
-from qcamera import AndorCamera, Sensicam, ThorlabsDCx, OpenCVCamera
 from ui_viewer import Ui_MainWindow
 from qcamera.camera_thread import CameraThread
 
+# Utility functions
+# =============================================================================
+
 def _get_image_item(imageWidget):
+    """Return the guiqwt ImageItem of an ImageWidget."""
     items = imageWidget.get_plot().get_items()
     for item in items:
         image = item if isinstance(item, ImageItem) else None
     return image
+
+def cam_options_string():
+    """Returns a string to print the valid camera types."""
+    out = ''
+    for cam in CAM_TYPES:
+        out = out + cam + ' '
+    return out
+
+# Viewer
+# =============================================================================
 
 class Viewer(QtGui.QMainWindow, Ui_MainWindow):
     """Simple GUI testbed for qCamera."""
@@ -43,16 +57,27 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
     # Setup and shutdown
     # -------------------------------------------------------------------------
     
-    def __init__(self, camera, thread):
-        # Basic initialization.
+    def __init__(self, config, **kwargs):
+        # UI initialization
         QtGui.QWidget.__init__(self)
         self.setupUi(self)
-        self.cam = camera
-        self.cam_thread = thread
-        self.scale = [self.scaleMinBox.value(), self.scaleMaxBox.value()]
+        self.config = config
+
+        # Run the camera select dialog if necessary
+        if kwargs.get('cam_select', False):
+            self.launch_camera_select_dialog()
+            with open(CONFIG_FILE, 'w') as f:
+                json.dump(config, f, sort_keys=True, indent=4)
+        self.show()
+
+        # Open the camera and create a camera thread
+        Camera = CAM_TYPES[self.config['camera_type']]
+        self.cam = Camera(real=self.config['real'], recording=self.config['recording'])
+        self.cam_thread = CameraThread(self.cam)
         #self.cam.rbuffer.recording = not self.rbufferBox.checkState()
 
-        # Add colormaps to the combo box
+        # Basic UI configuration
+        self.scale = [self.scaleMinBox.value(), self.scaleMaxBox.value()]
         self.colormapBox.addItems(get_colormap_list())
         self.colormapBox.setCurrentIndex(51) # jet
         self.colormapBox.currentIndexChanged.connect(self.update_colormap)
@@ -79,6 +104,7 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self.cameraSettingsButton.clicked.connect(self.launch_setup_dialog)
 
         # Start the thread.
+        self.acquisitionButton.clicked.connect(self.toggle_acquisition)
         self.cam_thread.start()
         self.toggle_acquisition()
 
@@ -161,35 +187,6 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         plot.set_plot_limits(0, img_data.shape[1], 0, img_data.shape[0])
         plot.set_aspect_ratio(img_data.shape[0]/img_data.shape[1], lock=True)
         plot.replot()
-
-        # Calculate and update ROI statistics.
-        # TODO: move to the ROI dialog
-        # roi = img_data[self.cam.roi[2]:self.cam.roi[3],
-        #                self.cam.roi[0]:self.cam.roi[1]]
-        # #np.save('roi.npy', roi) # for debugging
-        # try:
-        #     self.roiTotalLbl.setText('%.0f' % np.sum(roi))
-        #     self.roiMeanLbl.setText('%.2f' % np.mean(roi))
-        #     self.roiMaxLbl.setText('%.0f' % np.max(roi))
-        #     self.roiMinLbl.setText('%.0f' % np.min(roi))
-        # except:
-        #     print("self.cam.roi:", self.cam.roi)
-        #     print("roi:", roi)
-        #     print("img_data:", img_data)
-
-        # self.roiX1Lbl.setNum(roi_x1)
-        # self.roiX2Lbl.setNum(roi_x2)
-        # self.roiY1Lbl.setNum(roi_y1)
-        # self.roiY2Lbl.setNum(roi_y2)
-
-        # # ROI histogram plot
-        # h_plot = self.roiHistWidget.get_plot()
-        # h_plot.del_all_items(except_grid=True)
-        # hist = make.histogram(roi.flatten(), 50)
-        # h_plot.add_item(hist)
-        # #print(hist.get_data())
-        # h_plot.set_plot_limits(0, self.xHistLimBox.value(), 0, self.yHistLimBox.value())
-        # h_plot.set_item_visible(hist, True)
                     
     def update_colormap(self):
         image = _get_image_item(self.imageWidget)
@@ -240,22 +237,30 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
     # -------------------------------------------------------------------------
 
     def launch_roi_dialog(self):
-        pass
+        roiDialog = ROIDialog(self.cam)
+        roiDialog.exec_()
 
     def launch_setup_dialog(self):
         self.cam_thread.pause()
         setupDialog = SetupDialog(self.cam)
         setupDialog.exec_()
         self.cam_thread.unpause()
+
+    def launch_camera_select_dialog(self):
+        selectDialog = CameraSelectDialog(self.config)
+        selectDialog.exec_()
+        if not selectDialog.quit:
+            self.config.update(selectDialog.config)
+        else:
+            sys.exit(0)
         
 # Main
 # =============================================================================
 
 if __name__ == "__main__":
-    class CameraSelectDialog(QtGui.QDialog): # TODO
-        """For interactive selection of cameras at startup."""
-        def __init__(self):
-            super(CameraSelectDialog, self).__init__()
+
+    # Basic setup
+    # -------------------------------------------------------------------------
 
     import os
     import argparse
@@ -264,57 +269,51 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG)
 
-    cam_options = {
-        'andor': AndorCamera,
-        'sensicam': Sensicam,
-        'thorlabs_dcx': ThorlabsDCx,
-        'opencv' : OpenCVCamera
-    }
-    
-    def cam_options_string():
-        out = ''
-        for cam in cam_options:
-            out = out + cam + ' '
-        return out
-
+    # Argument parsing
+    # -------------------------------------------------------------------------
+        
     parser = argparse.ArgumentParser(description='qCamera Viewer')
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
         '-c', '--camera-type', metavar='<camera type>', type=str,
         help='Specify the camera type to use. If not given, ' + \
         'default to the last camera type used. Options include:\n' + \
-        cam_options_string())
+        cam_options_string()
+    )
+    group.add_argument(
+        '-s', '--camera-select', action='store_true',
+        help="Run the camera select dialog."
+    )
     args = parser.parse_args()
 
-    config_file = 'viewer.json'
-    config = {'camera_type': '', 'real': True, 'recording': False}
-    if args.camera_type is None:
-        if os.path.exists(config_file):
-            with open(config_file, 'r') as f:
-                config.update(json.load(f))
-                try:
-                    Camera = cam_options[config['camera_type']]
-                except KeyError, e:
-                    print("Invalid camera name. Valid names are:")
-                    print(cam_options)
-                    raise(e)
-        else:
-            raise RuntimeError(
-                "If this is your first time running viewer.py, " + \
-                "you need to specify what camera to use. " + \
-                "Try viewer.py -h.")
-    else:
-        try:
-            config['camera_type'] = args.camera_type
-            Camera = cam_options[config['camera_type']]
-        except KeyError:
-            print("Invalid selection. Valid camera options are:",
-                  cam_options_string())
-            sys.exit(1)
+    # Configuration
+    # -------------------------------------------------------------------------
 
-    with open(config_file, 'w') as f:
-        json.dump(config, f, sort_keys=True, indent=4)
-        
-    # Setup QApplication
+    # Basic config file structure
+    config = {
+        'camera_type': '',    # Must be one of the keys in cam_options
+        'real': True,         # Real or simulated camera?
+        'recording': False,   # Use the ring buffer if set to True
+        'props_file': None,   # A custom camera properties JSON file if not None
+    }
+
+    # Determine camera type if possible
+    cam_select = False
+    if args.camera_type is None:
+        if os.path.exists(CONFIG_FILE):
+            with open(CONFIG_FILE, 'r') as f:
+                config.update(json.load(f))
+        else:
+            cam_select = True
+    else:
+        assert args.camera_type in CAM_TYPES
+        config['camera_type'] = args.camera_type
+    if args.camera_select:
+        cam_select = args.camera_select
+
+    # Main application
+    # -------------------------------------------------------------------------
+
     app = QtGui.QApplication(sys.argv)
     app.setOrganizationName("IonTrap Group")
     app.setApplicationName("qCamera viewer")
@@ -326,10 +325,7 @@ if __name__ == "__main__":
     except:
         pass
 
-    with Camera(real=config['real'], recording=config['recording']) as cam:
-        thread = CameraThread(cam)
-        win = Viewer(cam, thread)
-        win.setWindowIcon(QtGui.QIcon('icon.png'))
-        win.show()
-        sys.exit(app.exec_())
+    win = Viewer(config, cam_select=cam_select)
+    win.setWindowIcon(QtGui.QIcon('icon.png'))
+    sys.exit(app.exec_())
     

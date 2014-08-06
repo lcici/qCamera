@@ -208,7 +208,7 @@
       <item>
        <widget class="QToolButton" name="adjustROIButton">
         <property name="text">
-         <string>Adjust ROI</string>
+         <string>ROI settings...</string>
         </property>
        </widget>
       </item>

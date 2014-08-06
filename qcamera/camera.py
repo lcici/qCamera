@@ -177,7 +177,6 @@ class Camera:
         if not self.real_camera:
             x0, y0 = self.sim_img_center
             img = self._get_simulated_image(x0, y0)
-            time.sleep(self.t_ms/1000.)
         else:
             img = self._acquire_image_data()
         self.rbuffer.write(img)
@@ -203,8 +202,10 @@ class Camera:
         y = np.arange(0, self.shape[1])
         X, Y = np.meshgrid(x, y)
         img = g(X, Y, x0, y0, 20)
-        img /= np.max(img)
-        img += 0.25*npr.random(self.shape)
+        img = self.t_ms*img/np.max(img)
+        img += self.t_ms*0.25*npr.random(self.shape)
+        wait_time = max(self.t_ms/1000., 0.05)
+        time.sleep(wait_time)
         return img
         
     # Triggering
