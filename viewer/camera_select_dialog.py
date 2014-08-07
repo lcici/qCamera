@@ -31,7 +31,7 @@ class CameraSelectDialog(QtGui.QDialog, Ui_CameraSelectDialog):
         """What to do on pressing the OK button."""
         self.config['camera_type'] = str(self.cameraTypeBox.currentText())
         self.config['real'] = bool(self.realCameraBox.checkState())
-        self.config['recording'] = str(self.useRingBufferBox.checkState())
+        self.config['recording'] = bool(self.useRingBufferBox.checkState())
         self.config['props_file'] = str(self.propsFileEdit.text())
         self.done(0)
         

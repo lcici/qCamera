@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'viewer.ui'
 #
-# Created: Wed Aug  6 15:56:44 2014
+# Created: Thu Aug  7 10:28:17 2014
 #      by: PyQt4 UI code generator 4.9.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -18,7 +18,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
         MainWindow.setEnabled(True)
-        MainWindow.resize(503, 810)
+        MainWindow.resize(540, 810)
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName(_fromUtf8("centralwidget"))
         self.verticalLayout_2 = QtGui.QVBoxLayout(self.centralwidget)
@@ -91,6 +91,7 @@ class Ui_MainWindow(object):
         spacerItem1 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
         self.gridLayout_3.addItem(spacerItem1, 0, 2, 1, 1)
         self.showROIBox = QtGui.QCheckBox(self.groupBox_2)
+        self.showROIBox.setEnabled(True)
         self.showROIBox.setObjectName(_fromUtf8("showROIBox"))
         self.gridLayout_3.addWidget(self.showROIBox, 2, 3, 1, 1)
         self.gridLayout.addLayout(self.gridLayout_3, 0, 0, 2, 1)
@@ -111,7 +112,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_2.addLayout(self.horizontalLayout)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtGui.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 503, 29))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 540, 29))
         self.menubar.setObjectName(_fromUtf8("menubar"))
         self.menuFile = QtGui.QMenu(self.menubar)
         self.menuFile.setObjectName(_fromUtf8("menuFile"))
@@ -120,6 +121,9 @@ class Ui_MainWindow(object):
         self.menuRing_Buffer = QtGui.QMenu(self.menubar)
         self.menuRing_Buffer.setObjectName(_fromUtf8("menuRing_Buffer"))
         MainWindow.setMenuBar(self.menubar)
+        self.statusBar = QtGui.QStatusBar(MainWindow)
+        self.statusBar.setObjectName(_fromUtf8("statusBar"))
+        MainWindow.setStatusBar(self.statusBar)
         self.actionSave_image_as = QtGui.QAction(MainWindow)
         self.actionSave_image_as.setEnabled(False)
         self.actionSave_image_as.setObjectName(_fromUtf8("actionSave_image_as"))

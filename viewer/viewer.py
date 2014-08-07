@@ -64,31 +64,50 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self.colormapBox.setCurrentIndex(51) # jet
         self.colormapBox.currentIndexChanged.connect(self.update_colormap)
 
-        # Connect image signals
+        # Connect image signal
         self.cam_thread.image_signal.connect(self.update)
 
         # Exposure time signals
         self.set_t_exp()
         self.exposureTimeBox.editingFinished.connect(self.set_t_exp)
         self.exposureTimeBox.valueChanged.connect(self.set_t_exp)
-        #self.acquisitionButton.clicked.connect(self.toggle_acquisition)
-        #self.triggerModeBox.currentIndexChanged.connect(self.set_trigger_mode)
 
         # Viewing settings
         self.scaleMinBox.valueChanged.connect(self.set_lut_range)
         self.scaleMaxBox.valueChanged.connect(self.set_lut_range)
         self.rescaleButton.clicked.connect(self.rescale)
         self.rotateImageButton.clicked.connect(self.rotate_image)
-        #self.rbufferBox.stateChanged.connect(self.set_rbuffer_recording)
 
         # Dialogs
         self.adjustROIButton.clicked.connect(self.launch_roi_dialog)
         self.cameraSettingsButton.clicked.connect(self.launch_setup_dialog)
 
+        self.setup_statusbar()
+
         # Start the thread.
         self.acquisitionButton.clicked.connect(self.toggle_acquisition)
         self.cam_thread.start()
         self.toggle_acquisition()
+
+    def setup_statusbar(self):
+        # Temperature monitoring
+        if self.cam.props['temp_control']:
+            self.tempLbl = QtGui.QLabel('T = ')
+            self.statusBar.addPermanentWidget(self.tempLbl)
+            self.temp_timer = QtCore.QTimer()
+            self.temp_timer.setInterval(100)
+            self.temp_timer.timeout.connect(
+                lambda: self.tempLbl.setText(u'T = {0}\u00b0C'.format(cam.get_cooler_temperature())))
+            self.temp_timer.start()
+
+        # Ring buffer index monitoring
+        self.rbLbl = QtGui.QLabel('Current index = ')
+        self.statusBar.addPermanentWidget(self.rbLbl)
+        self.rb_timer = QtCore.QTimer()
+        self.rb_timer.setInterval(100)
+        self.rb_timer.timeout.connect(
+            lambda: self.rbLbl.setText(u'Current index = {0}'.format(self.cam.rbuffer.get_current_index())))
+        self.rb_timer.start()
 
     def closeEvent(self, event):
         self.cam_thread.stop()

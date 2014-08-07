@@ -97,7 +97,7 @@ class Camera:
             If True, the camera is real; otherwise it is
             simulated. Default: True.
         buffer_dir : str
-            Directory to store the ring buffer HDF5 file to. Default:
+            Directory to store the ring buffer file to. Default:
             '.'.
         logger : str
             Name of the logger to use. Defaults to 'Camera'.

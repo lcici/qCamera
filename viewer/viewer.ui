@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>503</width>
+    <width>540</width>
     <height>810</height>
    </rect>
   </property>
@@ -177,6 +177,9 @@
          </item>
          <item row="2" column="3">
           <widget class="QCheckBox" name="showROIBox">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
            <property name="text">
             <string>Show ROI</string>
            </property>
@@ -232,7 +235,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>503</width>
+     <width>540</width>
      <height>29</height>
     </rect>
    </property>
@@ -260,6 +263,7 @@
    <addaction name="menuRing_Buffer"/>
    <addaction name="menuHelp"/>
   </widget>
+  <widget class="QStatusBar" name="statusBar"/>
   <action name="actionSave_image_as">
    <property name="enabled">
     <bool>false</bool>
