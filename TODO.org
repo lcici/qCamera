@@ -1,14 +1,11 @@
 #+TITLE: qCamera TODO list
 
-* Camera interfaces to add [0/4]
-  - [ ] Thorlabs DCx
-  - [ ] OpenCV
+* Camera interfaces to add [2/4]
+  - [X] Thorlabs DCx
+  - [X] OpenCV
   - [ ] libdc1394
     - Standard for firewire cameras
     - http://damien.douxchamps.net/ieee1394/libdc1394/
   - [ ] GigE Vision
     - https://gitorious.org/opengigevision
     - https://wiki.gnome.org/Projects/Aravis
-* Things to fix
-  - [ ] Close HD5PY file issue when failing
-  - [ ] PythonXY installs HD5PY by default?

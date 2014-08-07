@@ -57,39 +57,55 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self.cam = Camera(real=self.config['real'], recording=self.config['recording'])
         self.cam_thread = CameraThread(self.cam)
         #self.cam.rbuffer.recording = not self.rbufferBox.checkState()
-
-        # Basic UI configuration
-        self.scale = [self.scaleMinBox.value(), self.scaleMaxBox.value()]
-        self.colormapBox.addItems(get_colormap_list())
-        self.colormapBox.setCurrentIndex(51) # jet
-        self.colormapBox.currentIndexChanged.connect(self.update_colormap)
-
+        
         # Connect image signal
         self.cam_thread.image_signal.connect(self.update)
 
-        # Exposure time signals
-        self.set_t_exp()
-        self.exposureTimeBox.editingFinished.connect(self.set_t_exp)
-        self.exposureTimeBox.valueChanged.connect(self.set_t_exp)
-
-        # Viewing settings
-        self.scaleMinBox.valueChanged.connect(self.set_lut_range)
-        self.scaleMaxBox.valueChanged.connect(self.set_lut_range)
-        self.rescaleButton.clicked.connect(self.rescale)
-        self.rotateImageButton.clicked.connect(self.rotate_image)
-
-        # Dialogs
-        self.adjustROIButton.clicked.connect(self.launch_roi_dialog)
-        self.cameraSettingsButton.clicked.connect(self.launch_setup_dialog)
-
-        self.setup_statusbar()
+        # Setup the rest of the GUI
+        self._setup_scale_widgets()
+        self._setup_exposure_widgets()
+        self._setup_transform_buttons()
+        self._setup_statusbar()
+        self._setup_dialogs()
 
         # Start the thread.
         self.acquisitionButton.clicked.connect(self.toggle_acquisition)
         self.cam_thread.start()
         self.toggle_acquisition()
 
-    def setup_statusbar(self):
+    def _setup_scale_widgets(self):
+        self.scale = [self.scaleMinBox.value(), self.scaleMaxBox.value()]
+        self.colormapBox.addItems(get_colormap_list())
+        self.colormapBox.setCurrentIndex(51) # jet
+        self.colormapBox.currentIndexChanged.connect(self.update_colormap)
+        self.scaleMinBox.valueChanged.connect(self.set_lut_range)
+        self.scaleMaxBox.valueChanged.connect(self.set_lut_range)
+        self.rescaleButton.clicked.connect(self.rescale)
+
+    def _setup_exposure_widgets(self):
+        self.set_t_exp()
+        self.exposureTimeBox.editingFinished.connect(self.set_t_exp)
+        self.exposureTimeBox.valueChanged.connect(self.set_t_exp)        
+
+    def _setup_transform_buttons(self):
+        def rotate_cw():
+            pass
+
+        def rotate_ccw():
+            pass
+
+        def flip_vertical():
+            pass
+
+        def flip_horizontal():
+            pass
+
+        self.rotateCWButton.clicked.connect(rotate_cw)
+        self.rotateCCWButton.clicked.connect(rotate_ccw)
+        self.flipVerticalButton.clicked.connect(flip_vertical)
+        self.flipHorizontalButton.clicked.connect(flip_horizontal)
+
+    def _setup_statusbar(self):
         # Temperature monitoring
         if self.cam.props['temp_control']:
             self.tempLbl = QtGui.QLabel('T = ')
@@ -108,6 +124,10 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self.rb_timer.timeout.connect(
             lambda: self.rbLbl.setText(u'Current index = {0}'.format(self.cam.rbuffer.get_current_index())))
         self.rb_timer.start()
+
+    def _setup_dialogs(self):
+        self.adjustROIButton.clicked.connect(self.launch_roi_dialog)
+        self.cameraSettingsButton.clicked.connect(self.launch_setup_dialog)
 
     def closeEvent(self, event):
         self.cam_thread.stop()
@@ -309,7 +329,7 @@ if __name__ == "__main__":
     app.setOrganizationName("IonTrap Group")
     app.setApplicationName("qCamera viewer")
     app.setStyle("cleanlooks")
-    app.setWindowIcon(QtGui.QIcon('icon.png'))
+    #app.setWindowIcon(QtGui.QIcon('icon.png'))
     try:
         import ctypes
         myappid = 'qCamera_viewer'

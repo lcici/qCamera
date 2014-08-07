@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'viewer.ui'
 #
-# Created: Thu Aug  7 10:28:17 2014
+# Created: Thu Aug  7 11:12:19 2014
 #      by: PyQt4 UI code generator 4.9.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -19,6 +19,9 @@ class Ui_MainWindow(object):
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
         MainWindow.setEnabled(True)
         MainWindow.resize(540, 810)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(_fromUtf8("resources/icon.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        MainWindow.setWindowIcon(icon)
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName(_fromUtf8("centralwidget"))
         self.verticalLayout_2 = QtGui.QVBoxLayout(self.centralwidget)
@@ -84,16 +87,25 @@ class Ui_MainWindow(object):
         self.rescaleButton = QtGui.QPushButton(self.groupBox_2)
         self.rescaleButton.setObjectName(_fromUtf8("rescaleButton"))
         self.gridLayout_3.addWidget(self.rescaleButton, 0, 3, 1, 1)
-        self.rotateImageButton = QtGui.QPushButton(self.groupBox_2)
-        self.rotateImageButton.setEnabled(False)
-        self.rotateImageButton.setObjectName(_fromUtf8("rotateImageButton"))
-        self.gridLayout_3.addWidget(self.rotateImageButton, 1, 3, 1, 1)
+        self.rotateCWButton = QtGui.QPushButton(self.groupBox_2)
+        self.rotateCWButton.setEnabled(True)
+        self.rotateCWButton.setObjectName(_fromUtf8("rotateCWButton"))
+        self.gridLayout_3.addWidget(self.rotateCWButton, 1, 3, 1, 1)
         spacerItem1 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
         self.gridLayout_3.addItem(spacerItem1, 0, 2, 1, 1)
+        self.rotateCCWButton = QtGui.QPushButton(self.groupBox_2)
+        self.rotateCCWButton.setObjectName(_fromUtf8("rotateCCWButton"))
+        self.gridLayout_3.addWidget(self.rotateCCWButton, 1, 2, 1, 1)
         self.showROIBox = QtGui.QCheckBox(self.groupBox_2)
         self.showROIBox.setEnabled(True)
         self.showROIBox.setObjectName(_fromUtf8("showROIBox"))
-        self.gridLayout_3.addWidget(self.showROIBox, 2, 3, 1, 1)
+        self.gridLayout_3.addWidget(self.showROIBox, 3, 3, 1, 1)
+        self.flipVerticalButton = QtGui.QPushButton(self.groupBox_2)
+        self.flipVerticalButton.setObjectName(_fromUtf8("flipVerticalButton"))
+        self.gridLayout_3.addWidget(self.flipVerticalButton, 2, 2, 1, 1)
+        self.flipHorizontalButton = QtGui.QPushButton(self.groupBox_2)
+        self.flipHorizontalButton.setObjectName(_fromUtf8("flipHorizontalButton"))
+        self.gridLayout_3.addWidget(self.flipHorizontalButton, 2, 3, 1, 1)
         self.gridLayout.addLayout(self.gridLayout_3, 0, 0, 2, 1)
         self.verticalLayout_2.addWidget(self.groupBox_2)
         self.horizontalLayout = QtGui.QHBoxLayout()
@@ -163,8 +175,11 @@ class Ui_MainWindow(object):
         self.label_5.setText(QtGui.QApplication.translate("MainWindow", "Colormap", None, QtGui.QApplication.UnicodeUTF8))
         self.label_3.setText(QtGui.QApplication.translate("MainWindow", "Scale max", None, QtGui.QApplication.UnicodeUTF8))
         self.rescaleButton.setText(QtGui.QApplication.translate("MainWindow", "Rescale", None, QtGui.QApplication.UnicodeUTF8))
-        self.rotateImageButton.setText(QtGui.QApplication.translate("MainWindow", "Rotate image", None, QtGui.QApplication.UnicodeUTF8))
+        self.rotateCWButton.setText(QtGui.QApplication.translate("MainWindow", "Rotate CW", None, QtGui.QApplication.UnicodeUTF8))
+        self.rotateCCWButton.setText(QtGui.QApplication.translate("MainWindow", "Rotate CCW", None, QtGui.QApplication.UnicodeUTF8))
         self.showROIBox.setText(QtGui.QApplication.translate("MainWindow", "Show ROI", None, QtGui.QApplication.UnicodeUTF8))
+        self.flipVerticalButton.setText(QtGui.QApplication.translate("MainWindow", "Flip vertical", None, QtGui.QApplication.UnicodeUTF8))
+        self.flipHorizontalButton.setText(QtGui.QApplication.translate("MainWindow", "Flip horizontal", None, QtGui.QApplication.UnicodeUTF8))
         self.adjustROIButton.setText(QtGui.QApplication.translate("MainWindow", "ROI settings...", None, QtGui.QApplication.UnicodeUTF8))
         self.cameraSettingsButton.setText(QtGui.QApplication.translate("MainWindow", "Camera settings...", None, QtGui.QApplication.UnicodeUTF8))
         self.acquisitionButton.setText(QtGui.QApplication.translate("MainWindow", "Begin acquisition", None, QtGui.QApplication.UnicodeUTF8))

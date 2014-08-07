@@ -16,6 +16,9 @@
   <property name="windowTitle">
    <string>Camera Setup</string>
   </property>
+  <property name="modal">
+   <bool>true</bool>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>
     <widget class="QGroupBox" name="acquisitionGroupBox">

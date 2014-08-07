@@ -16,6 +16,10 @@
   <property name="windowTitle">
    <string>qCamera Viewer</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>resources/icon.png</normaloff>resources/icon.png</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
@@ -150,12 +154,12 @@
           </widget>
          </item>
          <item row="1" column="3">
-          <widget class="QPushButton" name="rotateImageButton">
+          <widget class="QPushButton" name="rotateCWButton">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="text">
-            <string>Rotate image</string>
+            <string>Rotate CW</string>
            </property>
           </widget>
          </item>
@@ -175,13 +179,34 @@
            </property>
           </spacer>
          </item>
-         <item row="2" column="3">
+         <item row="1" column="2">
+          <widget class="QPushButton" name="rotateCCWButton">
+           <property name="text">
+            <string>Rotate CCW</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="3">
           <widget class="QCheckBox" name="showROIBox">
            <property name="enabled">
             <bool>true</bool>
            </property>
            <property name="text">
             <string>Show ROI</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="2">
+          <widget class="QPushButton" name="flipVerticalButton">
+           <property name="text">
+            <string>Flip vertical</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="3">
+          <widget class="QPushButton" name="flipHorizontalButton">
+           <property name="text">
+            <string>Flip horizontal</string>
            </property>
           </widget>
          </item>
