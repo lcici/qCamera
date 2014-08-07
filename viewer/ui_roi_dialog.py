@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'roi_dialog.ui'
 #
-# Created: Thu Aug  7 11:12:19 2014
+# Created: Thu Aug  7 14:17:29 2014
 #      by: PyQt4 UI code generator 4.9.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -130,9 +130,6 @@ class Ui_ROIDialog(object):
         self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
         spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem)
-        self.adjustROIButton = QtGui.QPushButton(ROIDialog)
-        self.adjustROIButton.setObjectName(_fromUtf8("adjustROIButton"))
-        self.horizontalLayout.addWidget(self.adjustROIButton)
         self.closeButton = QtGui.QPushButton(ROIDialog)
         self.closeButton.setObjectName(_fromUtf8("closeButton"))
         self.horizontalLayout.addWidget(self.closeButton)
@@ -163,7 +160,6 @@ class Ui_ROIDialog(object):
         self.roiX2Lbl.setText(QtGui.QApplication.translate("ROIDialog", "2", None, QtGui.QApplication.UnicodeUTF8))
         self.roiY1Lbl.setText(QtGui.QApplication.translate("ROIDialog", "1", None, QtGui.QApplication.UnicodeUTF8))
         self.roiY2Lbl.setText(QtGui.QApplication.translate("ROIDialog", "2", None, QtGui.QApplication.UnicodeUTF8))
-        self.adjustROIButton.setText(QtGui.QApplication.translate("ROIDialog", "Adjust ROI", None, QtGui.QApplication.UnicodeUTF8))
         self.closeButton.setText(QtGui.QApplication.translate("ROIDialog", "Close", None, QtGui.QApplication.UnicodeUTF8))
 
 from guiqwt.plot import CurveWidget

@@ -17,9 +17,10 @@ try:
 except ImportError:
     from PySide import QtGui, QtCore
 from guiqwt.image import ImageItem
-from guiqwt.annotations import AnnotatedRectangle
 from guiqwt.builder import make
 from guiqwt.colormap import get_colormap_list
+from guiqwt.plot import ImageDialog
+from guiqwt.tools import SelectTool, RectangleTool
 
 from setup_dialog import SetupDialog
 from roi_dialog import ROIDialog
@@ -44,6 +45,10 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         QtGui.QWidget.__init__(self)
         self.setupUi(self)
         self.config = config
+
+        # Rotation and mirroring of the image.
+        self.rotation = 0
+        self.mirror = [False, False]
 
         # Run the camera select dialog if necessary
         if kwargs.get('cam_select', False):
@@ -89,16 +94,16 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
 
     def _setup_transform_buttons(self):
         def rotate_cw():
-            pass
+            self.rotation = (self.rotation + 1) % 4
 
         def rotate_ccw():
-            pass
+            self.rotation = (self.rotation - 1) % 4
 
         def flip_vertical():
-            pass
+            self.mirror[0] = not self.mirror[0]
 
         def flip_horizontal():
-            pass
+            self.mirror[1] = not self.mirror[1]
 
         self.rotateCWButton.clicked.connect(rotate_cw)
         self.rotateCCWButton.clicked.connect(rotate_ccw)
@@ -126,7 +131,8 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self.rb_timer.start()
 
     def _setup_dialogs(self):
-        self.adjustROIButton.clicked.connect(self.launch_roi_dialog)
+        self.adjustROIButton.clicked.connect(self.roi_setup)
+        self.roiStatisticsButton.clicked.connect(self.launch_roi_dialog)
         self.cameraSettingsButton.clicked.connect(self.launch_setup_dialog)
 
     def closeEvent(self, event):
@@ -138,8 +144,8 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
     # -------------------------------------------------------------------------
 
     def _get_rect(self, rect_tool):
-        """Convert the guiqwt AnnotatedRectangleTool shape format to
-        what qCamera wants.
+        """Convert the guiqwt RectangleTool shape format to what
+        qCamera wants.
 
         For some ridiculous reason, the rect shape the get_rect
         function returns depends on which corner you drag from. In
@@ -165,6 +171,14 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
 
     def update(self, img_data):
         """Update the image plot and other information."""
+        # Apply image transformations if necessary.
+        img_data = np.rot90(img_data, -self.rotation)
+        if self.mirror[0]:
+            img_data = np.flipud(img_data)
+        if self.mirror[1]:
+            img_data = np.fliplr(img_data)
+
+        # Configure plot
         plot = self.imageWidget.get_plot()
         img = get_image_item(self.imageWidget)
         roi_rect = get_rect_item(self.imageWidget)
@@ -177,7 +191,16 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         #plot.replot()
             
         # Display ROI if requested.
-        roi_x1, roi_x2, roi_y1, roi_y2 = self.cam.roi
+        # TODO: fix this so that it rotates correctly along with the image!
+        roi = self.cam.roi
+        roi = [[roi[0], roi[2]], [roi[1], roi[3]]]
+        # roi = np.rot90(roi, -self.rotation)
+        # if self.mirror[0]:
+        #     roi = np.flipud(roi)
+        # if self.mirror[1]:
+        #     roi = np.fliplr(roi)
+        roi_x1, roi_y1 = roi[0]
+        roi_x2, roi_y2 = roi[1]
         if self.showROIBox.isChecked():
             if roi_rect is None:
                 roi_rect = make.annotated_rectangle(
@@ -224,10 +247,6 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self.scaleMaxBox.setValue(maximum)
         self.set_lut_range()
 
-    def rotate_image(self):
-        """Rotate the image 90 degrees upon presing."""
-        print("Rotating not yet implemented!")
-
     def toggle_acquisition(self):
         """Toggle between acquisition states (on or off)."""
         start_text = "Begin acquisition"
@@ -264,6 +283,34 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
             self.config.update(selectDialog.config)
         else:
             sys.exit(0)
+
+    def roi_setup(self):
+        """Show a dialog to setup the region of interest."""
+        dialog = ImageDialog("ROI Setup", edit=True, toolbar=False)
+        default = dialog.add_tool(SelectTool)
+        dialog.set_default_tool(default)
+        roi_tool = dialog.add_tool(RectangleTool,
+                                   switch_to_default_tool=True)
+        roi = self.cam.roi
+        old_roi = roi
+        roi_tool.activate()
+
+        # Get image and display
+        plot = dialog.get_plot()
+        img = make.image(self.cam_thread.img_data)
+        plot.add_item(img)
+        plot.set_active_item(img)
+
+        # Wait for user input
+        dialog.show()
+        if dialog.exec_():
+            try:
+                roi = get_rect(roi_tool)
+                self.cam.set_roi(roi)
+            except:
+                e = sys.exc_info()
+                print(e)
+                self.cam.set_roi(old_roi)
         
 # Main
 # =============================================================================

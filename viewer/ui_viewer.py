@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'viewer.ui'
 #
-# Created: Thu Aug  7 11:12:19 2014
+# Created: Thu Aug  7 14:17:29 2014
 #      by: PyQt4 UI code generator 4.9.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -112,9 +112,12 @@ class Ui_MainWindow(object):
         self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
         spacerItem2 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem2)
-        self.adjustROIButton = QtGui.QToolButton(self.centralwidget)
+        self.adjustROIButton = QtGui.QPushButton(self.centralwidget)
         self.adjustROIButton.setObjectName(_fromUtf8("adjustROIButton"))
         self.horizontalLayout.addWidget(self.adjustROIButton)
+        self.roiStatisticsButton = QtGui.QToolButton(self.centralwidget)
+        self.roiStatisticsButton.setObjectName(_fromUtf8("roiStatisticsButton"))
+        self.horizontalLayout.addWidget(self.roiStatisticsButton)
         self.cameraSettingsButton = QtGui.QToolButton(self.centralwidget)
         self.cameraSettingsButton.setObjectName(_fromUtf8("cameraSettingsButton"))
         self.horizontalLayout.addWidget(self.cameraSettingsButton)
@@ -180,7 +183,8 @@ class Ui_MainWindow(object):
         self.showROIBox.setText(QtGui.QApplication.translate("MainWindow", "Show ROI", None, QtGui.QApplication.UnicodeUTF8))
         self.flipVerticalButton.setText(QtGui.QApplication.translate("MainWindow", "Flip vertical", None, QtGui.QApplication.UnicodeUTF8))
         self.flipHorizontalButton.setText(QtGui.QApplication.translate("MainWindow", "Flip horizontal", None, QtGui.QApplication.UnicodeUTF8))
-        self.adjustROIButton.setText(QtGui.QApplication.translate("MainWindow", "ROI settings...", None, QtGui.QApplication.UnicodeUTF8))
+        self.adjustROIButton.setText(QtGui.QApplication.translate("MainWindow", "Adjust ROI", None, QtGui.QApplication.UnicodeUTF8))
+        self.roiStatisticsButton.setText(QtGui.QApplication.translate("MainWindow", "ROI statistics...", None, QtGui.QApplication.UnicodeUTF8))
         self.cameraSettingsButton.setText(QtGui.QApplication.translate("MainWindow", "Camera settings...", None, QtGui.QApplication.UnicodeUTF8))
         self.acquisitionButton.setText(QtGui.QApplication.translate("MainWindow", "Begin acquisition", None, QtGui.QApplication.UnicodeUTF8))
         self.menuFile.setTitle(QtGui.QApplication.translate("MainWindow", "File", None, QtGui.QApplication.UnicodeUTF8))

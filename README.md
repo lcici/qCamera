@@ -33,7 +33,7 @@ existing code. Apart from having the shared libraries for the cameras
 being used installed in the proper location for ctypes to find it, the
 following Python packages are required:
 
-* [Numpy](http://www.numpy.org/)
+* [NumPy](http://www.numpy.org/)
 * [PyTables](http://www.pytables.org)
 
 Optional requirements which if not met will result in limited

@@ -264,13 +264,6 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="adjustROIButton">
-       <property name="text">
-        <string>Adjust ROI</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QPushButton" name="closeButton">
        <property name="text">
         <string>Close</string>

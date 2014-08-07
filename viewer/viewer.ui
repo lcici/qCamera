@@ -231,9 +231,16 @@
        </spacer>
       </item>
       <item>
-       <widget class="QToolButton" name="adjustROIButton">
+       <widget class="QPushButton" name="adjustROIButton">
         <property name="text">
-         <string>ROI settings...</string>
+         <string>Adjust ROI</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="roiStatisticsButton">
+        <property name="text">
+         <string>ROI statistics...</string>
         </property>
        </widget>
       </item>
