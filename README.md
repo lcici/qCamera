@@ -25,24 +25,25 @@ implemented. Currently, cameras supported by qCamera include:
 Requirements
 ------------
 
-qCamera at the moment is generally limited to working on Windows only
-with most cameras, though this should not be difficult to allow
-functionality on Linux where camera SDKs exist. Apart from having the
-shared libraries for the cameras being used installed in the proper
-location, the following Python packages are required:
+qCamera is mostly tested to work on Windows, but this depends on the
+implementation of specific cameras. In the case of cameras with a
+Linux SDK which shares function calls with its Windows counterpart,
+this should be easy to implement if not already done so in the
+existing code. Apart from having the shared libraries for the cameras
+being used installed in the proper location for ctypes to find it, the
+following Python packages are required:
 
 * [Numpy](http://www.numpy.org/)
-* [h5py](http://www.h5py.org/)
+* [PyTables](http://www.pytables.org)
 
 Optional requirements which if not met will result in limited
 functionality:
 
 * [Matplotlib](http://matplotlib.org/) for running tests
-* [PyQt4](http://pyqt.sourceforge.net/Docs/PyQt4/) for embedding in
-  GUI applications. This may be replaced with
-  [PyQt5](http://pyqt.sourceforge.net/Docs/PyQt5/) in the future.
+* [PyQt4](http://pyqt.sourceforge.net/Docs/PyQt4/) for using the
+  viewer application.
 * [GUIQwt](https://pythonhosted.org/guiqwt/) for image widgets in
-  tests.
+  tests and the viewer application.
 
 All of these are contained in the default installation of
 [Python(x,y)](https://code.google.com/p/pythonxy/) for Windows.
@@ -54,20 +55,6 @@ Installation
 
 Don't forget to rerun this whenever you want to import new changes!
 
-TODO
-----
-
-* Verify that all docstrings are up to date and accurately reflecting
-  arguments, class attributes, etc.
-* Make a second thread class that doesn't depend on Qt.
-
-Issues
-------
-
-* The ring buffer has problems if the image size changes. This needs
-  to be addressed so that binning can be changed and images are still
-  recorded to the buffer properly.
-  
 Credits
 -------
 
