@@ -7,12 +7,12 @@ build
 dist
 MANIFEST
 *.h5
+*.fits
 files.txt
 .ipynb_checkpoints
 *.ipynb
 *.csv
 *.npy
-tests/viewer.json
 qcamera/test.json
 util/header.h
 util/outfile.py

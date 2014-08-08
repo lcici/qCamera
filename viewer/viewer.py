@@ -94,6 +94,7 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
 
     def _setup_transform_buttons(self):
         def rotate_cw():
+            print(self.cam.roi)
             self.rotation = (self.rotation + 1) % 4
 
         def rotate_ccw():
@@ -140,31 +141,6 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self.cam.close()
         super(Viewer, self).closeEvent(event)
 
-    # Utility functions
-    # -------------------------------------------------------------------------
-
-    def _get_rect(self, rect_tool):
-        """Convert the guiqwt RectangleTool shape format to what
-        qCamera wants.
-
-        For some ridiculous reason, the rect shape the get_rect
-        function returns depends on which corner you drag from. In
-        other words, it always returns [x1, y1, x2, y2] where [x1, y1]
-        is the first corner you started from and [x2, y2] is the last
-        corner.
-
-        """
-        rect = rect_tool.get_last_final_shape().get_rect()
-        rect = [int(x) for x in rect]
-        rect[1], rect[2] = rect[2], rect[1]
-        if rect[0] > rect[1]:
-            rect[0], rect[1] = rect[1], rect[0]
-        if rect[2] > rect[3]:
-            rect[2], rect[3] = rect[3], rect[2]
-        return rect
-
-    def _make_image_item(self, data):
-        return make.image(data, colormap=str(self.colormapBox.currentText()))
 
     # Slots
     # -------------------------------------------------------------------------
@@ -183,7 +159,7 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         img = get_image_item(self.imageWidget)
         roi_rect = get_rect_item(self.imageWidget)
         if img is None:
-            img = self._make_image_item(img_data)
+            img = make.image(img_data, colormap=str(self.colormapBox.currentText()))
             plot.add_item(img)
         else:
             img.set_data(img_data)
@@ -192,24 +168,24 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
             
         # Display ROI if requested.
         # TODO: fix this so that it rotates correctly along with the image!
-        roi = self.cam.roi
-        roi = [[roi[0], roi[2]], [roi[1], roi[3]]]
+        roi = np.array(self.cam.roi)
+        # roi.shape = (2, 2)
+        # center = img_data.shape[0]/2, img_data.shape[1]/2
         # roi = np.rot90(roi, -self.rotation)
         # if self.mirror[0]:
         #     roi = np.flipud(roi)
         # if self.mirror[1]:
         #     roi = np.fliplr(roi)
-        roi_x1, roi_y1 = roi[0]
-        roi_x2, roi_y2 = roi[1]
+        # roi = roi.flatten()
         if self.showROIBox.isChecked():
             if roi_rect is None:
                 roi_rect = make.annotated_rectangle(
-                    roi_x1, roi_x2, roi_y1, roi_y2)
+                    roi[0], roi[1], roi[2], roi[3])
                 roi_rect.set_resizable(False)
                 roi_rect.set_selectable(False)
                 plot.add_item(roi_rect)
             else:
-                roi_rect.set_rect(roi_x1, roi_y1, roi_x2, roi_y2)
+                roi_rect.set_rect(roi[0], roi[1], roi[2], roi[3])
         else:
             if roi_rect is not None:
                 plot.del_item(roi_rect)

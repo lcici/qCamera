@@ -24,7 +24,7 @@ class Camera:
     Attributes
     ----------
     roi : list
-        The defined region of interest in the form [x1, x2, y1, y2].
+        The defined region of interest in the form [x1, y1, x2, y2].
     t_ms : float
         Exposure time in ms.
     gain : int or float
@@ -66,7 +66,7 @@ class Camera:
     # Attributes
     # -------------------------------------------------------------------------
     
-    roi = [1, 10, 1, 10]
+    roi = [10, 10, 100, 100]
     t_ms = 100.
     gain = 0
     shape = (512, 512)
@@ -334,10 +334,14 @@ class Camera:
         """
         if len(roi) != 4:
             raise CameraError("roi must be a length 4 list.")
-        assert roi[1] > roi[0]
-        assert roi[3] > roi[2]
-        # TODO: implement proper bounds checks
+        if roi[0] >= roi[2] or roi[1] >= roi[3] or roi[0] < 0 or roi[1] < 0:
+            self.logger.error(
+                'Invalid ROI: {0}. Keeping old ROI.'.format(roi))
+            return
+        old = self.roi
         self.roi = roi
+        self.logger.info(
+            'Adjusting ROI: {0} --> {1}'.format(str(old), str(self.roi)))
         
     def get_crop(self):
         """Get the current CCD crop settings. If this function is not

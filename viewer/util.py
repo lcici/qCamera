@@ -17,11 +17,12 @@ def get_rect(rect_tool):
     """
     rect = rect_tool.get_last_final_shape().get_rect()
     rect = [int(x) for x in rect]
-    rect[1], rect[2] = rect[2], rect[1]
-    if rect[0] > rect[1]:
-        rect[0], rect[1] = rect[1], rect[0]
-    if rect[2] > rect[3]:
-        rect[2], rect[3] = rect[3], rect[2]
+    print rect
+    #rect[1], rect[2] = rect[2], rect[1]
+    if rect[0] > rect[2]:
+        rect[0], rect[2] = rect[2], rect[0]
+    if rect[1] > rect[3]:
+        rect[1], rect[3] = rect[3], rect[1]
     return rect
 
 def get_image_item(imageWidget):
