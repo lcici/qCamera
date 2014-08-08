@@ -1,9 +1,10 @@
 """Ring buffer for automatic storage of images"""
 
-import time
 import os.path
 import logging
+from datetime import datetime
 import numpy as np
+from scipy.misc import imsave
 import tables
 
 class RingBuffer(object):
@@ -84,8 +85,10 @@ class RingBuffer(object):
         except tables.NoSuchNodeError:
             pass
         finally:
+            # TODO: Adapt to CArray for compression
+            #filters = tables.Filters(complevel=5, complib='zlib')
             arr = self._db.create_array('/images', name, data)
-            arr.attrs.timestamp = time.ctime()
+            arr.attrs.timestamp = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S.%f')
             arr.flush()
         self._db.flush()
         self._index = self._index + 1 if self._index < self.N - 1 else 0
@@ -99,7 +102,13 @@ class RingBuffer(object):
         will depend on the extension of filename.
 
         """
-        self.logger.warning("Not yet implemented! Not saving...")
+        self.logger.warning("Saving ring buffers to non-HDF5 formats is not yet properly implemented!")
+
+        # Save as PNG files in a zip archive.
+        if filename[-3:] == 'zip':
+            for node in self._db.list_nodes('/images'):
+                data = node.read()
+                imsave('./img.png', data)
 
 if __name__ == "__main__":
     from numpy import random
@@ -110,4 +119,4 @@ if __name__ == "__main__":
         for i in range(200):
             img = random.random(img_size)
             rb.write(img)
-            
+        rb.save_as('test.zip')
