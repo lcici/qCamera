@@ -1,9 +1,6 @@
 """Camera selection dialog"""
 
-try:
-    from PyQt4 import QtGui, QtCore
-except ImportError:
-    from PySide import QtGui, QtCore
+from PyQt4 import QtGui
 from config import CAM_TYPES
 from ui_camera_select_dialog import Ui_CameraSelectDialog
 

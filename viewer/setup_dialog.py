@@ -4,10 +4,7 @@ import sys
 sys.path.insert(0, '..')
 from qcamera import Camera
 
-try:
-    from PyQt4 import QtGui, QtCore
-except ImportError:
-    from PySide import QtGui, QtCore
+from PyQt4 import QtGui, QtCore
 from ui_setup_dialog import Ui_SetupDialog
 
 class SetupDialog(QtGui.QDialog, Ui_SetupDialog):
