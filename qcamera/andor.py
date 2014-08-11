@@ -182,8 +182,9 @@ class AndorCamera(camera.Camera):
 
         """
         self.stop()
-        self.cooler_off()
         self.close_shutter()
+        self.set_gain(0)
+        self.cooler_off()
         if not self.real_camera:
             return
         if self.wait_for_temp:
