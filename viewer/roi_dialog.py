@@ -23,8 +23,8 @@ class ROIDialog(QtGui.QDialog, Ui_ROIDialog):
 
     def update(self, img_data):
         # Calculate and update ROI statistics.
-        roi = img_data[self.cam.roi[2]:self.cam.roi[3],
-                       self.cam.roi[0]:self.cam.roi[1]]
+        roi = img_data[self.cam.roi[1]:self.cam.roi[3],
+                       self.cam.roi[0]:self.cam.roi[2]]
         #np.save('roi.npy', roi) # for debugging
         try:
             self.roiTotalLbl.setText('%.0f' % np.sum(roi))
@@ -36,12 +36,6 @@ class ROIDialog(QtGui.QDialog, Ui_ROIDialog):
             print("roi:", roi)
             print("img_data:", img_data)
 
-        roi_x1, roi_x2, roi_y1, roi_y2 = self.cam.roi
-        self.roiX1Lbl.setNum(roi_x1)
-        self.roiX2Lbl.setNum(roi_x2)
-        self.roiY1Lbl.setNum(roi_y1)
-        self.roiY2Lbl.setNum(roi_y2)
-
         # ROI histogram plot
         h_plot = self.roiHistWidget.get_plot()
         h_plot.del_all_items(except_grid=True)
@@ -50,4 +44,11 @@ class ROIDialog(QtGui.QDialog, Ui_ROIDialog):
         #print(hist.get_data())
         h_plot.set_plot_limits(0, self.xHistLimBox.value(), 0, self.yHistLimBox.value())
         h_plot.set_item_visible(hist, True)
+
+        # Display ROI coordinates
+        roi = self.cam.roi
+        self.roiX1Lbl.setNum(roi[0])
+        self.roiY1Lbl.setNum(roi[1])
+        self.roiX2Lbl.setNum(roi[2])
+        self.roiY2Lbl.setNum(roi[3])
         

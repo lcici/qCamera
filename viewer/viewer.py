@@ -93,7 +93,6 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
 
     def _setup_transform_buttons(self):
         def rotate_cw():
-            print(self.cam.roi)
             self.rotation = (self.rotation + 1) % 4
 
         def rotate_ccw():
