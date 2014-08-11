@@ -20,7 +20,28 @@ implemented. Currently, cameras supported by qCamera include:
 * [Thorlabs](http://www.thorlabs.de)
   [DCx-series](http://www.thorlabs.de/software_pages/ViewSoftwarePage.cfm?Code=DCx)
   CCD/CMOS cameras
-* [OpenCV](http://opencv.org/) generic camera interface (partial support)
+* [OpenCV](http://opencv.org/) generic camera interface (partial
+  support)
+  
+qCamera Viewer
+--------------
+
+This repository includes a sample PyQt-based application for testing
+new camera interfaces in the `viewer` directory. 
+
+```
+usage: viewer.py [-h] [-c <camera type> | -s]
+
+qCamera Viewer
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c <camera type>, --camera-type <camera type>
+                        Specify the camera type to use. If not given, default
+                        to the last camera type used. Options include: opencv
+                        sensicam andor thorlabs_dcx
+  -s, --camera-select   Run the camera select dialog.
+```
 
 Requirements
 ------------
@@ -36,8 +57,8 @@ following Python packages are required:
 * [NumPy](http://www.numpy.org/)
 * [PyTables](http://www.pytables.org)
 
-Optional requirements which if not met will result in limited
-functionality:
+Optional requirements which if not met will result in some slightly
+limited functionality:
 
 * [Matplotlib](http://matplotlib.org/) for running tests
 * [PyQt4](http://pyqt.sourceforge.net/Docs/PyQt4/) for using the
@@ -46,7 +67,9 @@ functionality:
   tests and the viewer application.
 
 All of these are contained in the default installation of
-[Python(x,y)](https://code.google.com/p/pythonxy/) for Windows.
+[Python(x,y)](https://code.google.com/p/pythonxy/) for Windows. Please
+note that all of the above are required to run the qCamera Viewer
+application.
 
 Installation
 ------------
