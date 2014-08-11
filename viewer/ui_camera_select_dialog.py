@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'camera_select_dialog.ui'
 #
-# Created: Mon Aug 11 10:17:45 2014
+# Created: Mon Aug 11 12:44:35 2014
 #      by: PyQt4 UI code generator 4.9.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -41,6 +41,7 @@ class Ui_CameraSelectDialog(object):
         self.formLayout.setWidget(2, QtGui.QFormLayout.LabelRole, self.label_3)
         self.useRingBufferBox = QtGui.QCheckBox(CameraSelectDialog)
         self.useRingBufferBox.setText(_fromUtf8(""))
+        self.useRingBufferBox.setChecked(True)
         self.useRingBufferBox.setObjectName(_fromUtf8("useRingBufferBox"))
         self.formLayout.setWidget(2, QtGui.QFormLayout.FieldRole, self.useRingBufferBox)
         self.label_4 = QtGui.QLabel(CameraSelectDialog)

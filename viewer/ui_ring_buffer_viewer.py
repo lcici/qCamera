@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ring_buffer_viewer.ui'
 #
-# Created: Mon Aug 11 10:17:45 2014
+# Created: Mon Aug 11 12:45:21 2014
 #      by: PyQt4 UI code generator 4.9.3
 #
 # WARNING! All changes made in this file will be lost!
