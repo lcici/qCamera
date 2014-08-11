@@ -75,6 +75,10 @@ class RingBuffer(object):
         """
         return self._index
 
+    def toggle(self):
+        """Toggle the recording state."""
+        self.recording = not self.recording
+
     def write(self, data):
         """Write data to the ring buffer file."""
         if not self.recording:

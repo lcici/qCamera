@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'viewer.ui'
 #
-# Created: Fri Aug  8 13:24:32 2014
+# Created: Mon Aug 11 10:17:45 2014
 #      by: PyQt4 UI code generator 4.9.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -139,23 +139,20 @@ class Ui_MainWindow(object):
         self.statusBar = QtGui.QStatusBar(MainWindow)
         self.statusBar.setObjectName(_fromUtf8("statusBar"))
         MainWindow.setStatusBar(self.statusBar)
-        self.actionSave_image_as = QtGui.QAction(MainWindow)
-        self.actionSave_image_as.setEnabled(False)
-        self.actionSave_image_as.setObjectName(_fromUtf8("actionSave_image_as"))
+        self.actionSaveAs = QtGui.QAction(MainWindow)
+        self.actionSaveAs.setObjectName(_fromUtf8("actionSaveAs"))
         self.actionExit = QtGui.QAction(MainWindow)
-        self.actionExit.setEnabled(False)
         self.actionExit.setObjectName(_fromUtf8("actionExit"))
         self.actionAbout = QtGui.QAction(MainWindow)
         self.actionAbout.setEnabled(False)
         self.actionAbout.setObjectName(_fromUtf8("actionAbout"))
         self.actionEnable = QtGui.QAction(MainWindow)
         self.actionEnable.setCheckable(True)
-        self.actionEnable.setChecked(False)
-        self.actionEnable.setEnabled(False)
+        self.actionEnable.setChecked(True)
         self.actionEnable.setObjectName(_fromUtf8("actionEnable"))
         self.actionView = QtGui.QAction(MainWindow)
         self.actionView.setObjectName(_fromUtf8("actionView"))
-        self.menuFile.addAction(self.actionSave_image_as)
+        self.menuFile.addAction(self.actionSaveAs)
         self.menuFile.addAction(self.actionExit)
         self.menuHelp.addAction(self.actionAbout)
         self.menuRing_Buffer.addAction(self.actionEnable)
@@ -189,10 +186,10 @@ class Ui_MainWindow(object):
         self.menuFile.setTitle(QtGui.QApplication.translate("MainWindow", "File", None, QtGui.QApplication.UnicodeUTF8))
         self.menuHelp.setTitle(QtGui.QApplication.translate("MainWindow", "Help", None, QtGui.QApplication.UnicodeUTF8))
         self.menuRing_Buffer.setTitle(QtGui.QApplication.translate("MainWindow", "Ring Buffer", None, QtGui.QApplication.UnicodeUTF8))
-        self.actionSave_image_as.setText(QtGui.QApplication.translate("MainWindow", "Save image as...", None, QtGui.QApplication.UnicodeUTF8))
+        self.actionSaveAs.setText(QtGui.QApplication.translate("MainWindow", "Save image as...", None, QtGui.QApplication.UnicodeUTF8))
         self.actionExit.setText(QtGui.QApplication.translate("MainWindow", "Exit", None, QtGui.QApplication.UnicodeUTF8))
         self.actionAbout.setText(QtGui.QApplication.translate("MainWindow", "About", None, QtGui.QApplication.UnicodeUTF8))
-        self.actionEnable.setText(QtGui.QApplication.translate("MainWindow", "Enable", None, QtGui.QApplication.UnicodeUTF8))
+        self.actionEnable.setText(QtGui.QApplication.translate("MainWindow", "Enabled", None, QtGui.QApplication.UnicodeUTF8))
         self.actionView.setText(QtGui.QApplication.translate("MainWindow", "View", None, QtGui.QApplication.UnicodeUTF8))
 
 from guiqwt.plot import ImageWidget

@@ -11,12 +11,9 @@ import sys
 sys.path.insert(0, '..')
 
 import numpy as np
+import matplotlib.image as mimg
 
-try:
-    from PyQt4 import QtGui, QtCore
-except ImportError:
-    from PySide import QtGui, QtCore
-from guiqwt.image import ImageItem
+from PyQt4 import QtGui, QtCore
 from guiqwt.builder import make
 from guiqwt.colormap import get_colormap_list
 from guiqwt.plot import ImageDialog
@@ -139,10 +136,24 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self.cameraSettingsButton.clicked.connect(self.launch_setup_dialog)
 
     def _setup_menus(self):
+        # File menu
+        def save_image():
+            self.toggle_acquisition()
+            filename = QtGui.QFileDialog(
+                parent=self, caption='Save as...',
+                filter="Images (*.png)").getSaveFileName()
+            if filename != '':
+                mimg.imsave(str(filename), self.cam_thread.img_data, cmap=str(self.colormapBox.currentText()))
+            self.toggle_acquisition()
+        self.actionSaveAs.triggered.connect(save_image)
+        self.actionExit.triggered.connect(self.close)
+
+        # Ring buffer menu
         def view_ring_buffer():
             rbv = RingBufferViewer(self.cam.rbuffer, self)
             rbv.exec_()
         self.actionView.triggered.connect(view_ring_buffer)
+        self.actionEnable.triggered.connect(self.cam.rbuffer.toggle)
 
     def closeEvent(self, event):
         self.cam_thread.stop()
