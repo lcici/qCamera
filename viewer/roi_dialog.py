@@ -3,10 +3,7 @@
 import numpy as np
 from qcamera import Camera
 
-try:
-    from PyQt4 import QtGui, QtCore
-except ImportError:
-    from PySide import QtGui, QtCore
+from PyQt4 import QtGui
 from guiqwt.builder import make
 from ui_roi_dialog import Ui_ROIDialog
 

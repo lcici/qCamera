@@ -295,6 +295,10 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         img = make.image(self.cam_thread.img_data)
         plot.add_item(img)
         plot.set_active_item(img)
+        old = make.annotated_rectangle(
+            roi[0], roi[1], roi[2], roi[3],
+            title='Original ROI')
+        plot.add_item(old)
 
         # Wait for user input
         dialog.show()
