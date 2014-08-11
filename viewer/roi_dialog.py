@@ -1,6 +1,5 @@
 """ROI setup dialog"""
 
-import sys
 import numpy as np
 from qcamera import Camera
 

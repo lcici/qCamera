@@ -29,6 +29,7 @@ from config import CAM_TYPES, CONFIG_FILE
 from util import *
 
 from ui_viewer import Ui_MainWindow
+from ring_buffer_viewer import RingBufferViewer
 from camera_thread import CameraThread
 
 # Viewer
@@ -72,6 +73,7 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self._setup_transform_buttons()
         self._setup_statusbar()
         self._setup_dialogs()
+        self._setup_menus()
 
         # Start the thread.
         self.acquisitionButton.clicked.connect(self.toggle_acquisition)
@@ -135,6 +137,12 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         self.adjustROIButton.clicked.connect(self.roi_setup)
         self.roiStatisticsButton.clicked.connect(self.launch_roi_dialog)
         self.cameraSettingsButton.clicked.connect(self.launch_setup_dialog)
+
+    def _setup_menus(self):
+        def view_ring_buffer():
+            rbv = RingBufferViewer(self.cam.rbuffer, self)
+            rbv.exec_()
+        self.actionView.triggered.connect(view_ring_buffer)
 
     def closeEvent(self, event):
         self.cam_thread.stop()

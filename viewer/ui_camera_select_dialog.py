@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'camera_select_dialog.ui'
 #
-# Created: Thu Aug  7 14:17:29 2014
+# Created: Fri Aug  8 13:24:32 2014
 #      by: PyQt4 UI code generator 4.9.3
 #
 # WARNING! All changes made in this file will be lost!

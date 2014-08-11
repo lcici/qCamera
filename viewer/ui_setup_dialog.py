@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'setup_dialog.ui'
 #
-# Created: Thu Aug  7 14:17:29 2014
+# Created: Fri Aug  8 13:24:32 2014
 #      by: PyQt4 UI code generator 4.9.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -17,7 +17,7 @@ except AttributeError:
 class Ui_SetupDialog(object):
     def setupUi(self, SetupDialog):
         SetupDialog.setObjectName(_fromUtf8("SetupDialog"))
-        SetupDialog.setWindowModality(QtCore.Qt.WindowModal)
+        SetupDialog.setWindowModality(QtCore.Qt.ApplicationModal)
         SetupDialog.resize(298, 538)
         SetupDialog.setModal(True)
         self.verticalLayout_3 = QtGui.QVBoxLayout(SetupDialog)

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'viewer.ui'
 #
-# Created: Thu Aug  7 14:17:29 2014
+# Created: Fri Aug  8 13:24:32 2014
 #      by: PyQt4 UI code generator 4.9.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -154,7 +154,6 @@ class Ui_MainWindow(object):
         self.actionEnable.setEnabled(False)
         self.actionEnable.setObjectName(_fromUtf8("actionEnable"))
         self.actionView = QtGui.QAction(MainWindow)
-        self.actionView.setEnabled(False)
         self.actionView.setObjectName(_fromUtf8("actionView"))
         self.menuFile.addAction(self.actionSave_image_as)
         self.menuFile.addAction(self.actionExit)

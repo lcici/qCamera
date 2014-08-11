@@ -335,9 +335,6 @@
    </property>
   </action>
   <action name="actionView">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="text">
     <string>View</string>
    </property>

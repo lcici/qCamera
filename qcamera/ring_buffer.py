@@ -54,8 +54,8 @@ class RingBuffer(object):
         self._index = 0
 
         # Initialize HDF5 database.
-        path = os.path.join(directory, filename)
-        self._db = tables.open_file(path, 'w', title="Ring Buffer")
+        self.filename = os.path.join(directory, filename)
+        self._db = tables.open_file(self.filename, 'w', title="Ring Buffer")
         self._db.create_group('/', 'images', 'Buffered Images')
 
     def __enter__(self):
@@ -95,7 +95,8 @@ class RingBuffer(object):
 
     def read(self, index):
         """Return data from the ring buffer file."""
-        return np.array(self.hdf_file[str(index)])
+        img = self._db.get_node('/images/img{:04d}'.format(index))
+        return np.array(img)
 
     def save_as(self, filename):
         """Save the ring buffer to file filename. The output format
