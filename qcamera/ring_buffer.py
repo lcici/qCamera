@@ -80,6 +80,11 @@ class RingBuffer(object):
         """
         return self._index
 
+    def set_recording_state(self, state):
+        """Explicitly set the recording state to state."""
+        assert isinstance(state, (bool, int))
+        self.recording = state
+
     def toggle(self):
         """Toggle the recording state."""
         self.recording = not self.recording
