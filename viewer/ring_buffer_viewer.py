@@ -5,7 +5,7 @@ from qcamera.ring_buffer import RingBuffer
 from PyQt4 import QtGui
 from guiqwt.builder import make
 from ui_ring_buffer_viewer import Ui_RingBufferViewer
-from util import get_image_item
+from util import get_image_item, get_rect_item
 
 class RingBufferViewer(QtGui.QDialog, Ui_RingBufferViewer):
     def __init__(self, rbuffer, parent):
@@ -31,17 +31,24 @@ class RingBufferViewer(QtGui.QDialog, Ui_RingBufferViewer):
 
     def update(self):
         """Show the currently selected image from the ring buffer."""
-        # Get the specified image data
+        # Get the specified image data and ROI
         img_data = self.rbuffer.read(self.indexBox.value())
+        roi = self.rbuffer.get_roi(self.indexBox.value())
 
         # Update the viewer
         plot = self.imageWidget.get_plot()
         img = get_image_item(self.imageWidget)
+        rect = get_rect_item(self.imageWidget)
         if img is None:
             img = make.image(img_data, colormap=str(self.parent().colormapBox.currentText()))
             plot.add_item(img)
         else:
             img.set_data(img_data)
+        if rect is None:
+            rect = make.rectangle(roi[0], roi[1], roi[2], roi[3])
+            plot.add_item(rect)
+        else:
+            rect.set_rect(roi[0], roi[1], roi[2], roi[3])
         plot.replot()
 
     def finished(self):

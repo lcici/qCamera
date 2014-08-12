@@ -121,7 +121,7 @@ class Camera:
         self.logger.info(
             "Connecting to %s camera" % ("real" if real else "simulated"))
         self.real_camera = real
-        self.rbuffer = RingBuffer(directory=buffer_dir, recording=recording)
+        self.rbuffer = RingBuffer(directory=buffer_dir, recording=recording, roi=self.roi)
         x0 = npr.randint(self.shape[0]/4, self.shape[0]/2)
         y0 = npr.randint(self.shape[1]/4, self.shape[1]/2)
         self.sim_img_center = (x0, y0)
@@ -340,6 +340,7 @@ class Camera:
             return
         old = self.roi
         self.roi = roi
+        self.rbuffer.roi = roi
         self.logger.info(
             'Adjusting ROI: {0} --> {1}'.format(str(old), str(self.roi)))
         

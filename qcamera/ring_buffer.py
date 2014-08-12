@@ -36,6 +36,8 @@ class RingBuffer(object):
             Activate recording when True, disable when False.
         logger : str
             The name of the logger to use. Defaults to 'RingBuffer'.
+        roi : list
+            The currently selected region of interest.
 
         """
         directory = kwargs.get('directory', '.')
@@ -43,14 +45,17 @@ class RingBuffer(object):
         recording = kwargs.get('recording', True)
         N = int(kwargs.get('N', 100))
         logger = kwargs.get('logger', 'RingBuffer')
+        roi = kwargs.get('roi', [10, 100, 10, 100])
         assert isinstance(directory, (str, unicode))
         assert isinstance(filename, (str, unicode))
         assert isinstance(recording, (int, bool))
         assert isinstance(logger, (str, unicode))
+        assert isinstance(roi, (list, tuple, np.ndarray))
         
         self.recording = recording
         self.N = N
         self.logger = logging.getLogger(logger)
+        self.roi = roi
         self._index = 0
 
         # Initialize HDF5 database.
@@ -93,6 +98,7 @@ class RingBuffer(object):
             #filters = tables.Filters(complevel=5, complib='zlib')
             arr = self._db.create_array('/images', name, data)
             arr.attrs.timestamp = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S.%f')
+            arr.attrs.roi = self.roi
             arr.flush()
         self._db.flush()
         self._index = self._index + 1 if self._index < self.N - 1 else 0
@@ -101,6 +107,10 @@ class RingBuffer(object):
         """Return data from the ring buffer file."""
         img = self._db.get_node('/images/img{:04d}'.format(index))
         return np.array(img)
+
+    def get_roi(self, index):
+        """Return the recorded ROI for the given index."""
+        return self._db.get_node('/images/img{:04d}'.format(index)).attrs.roi
 
     def save_as(self, filename):
         """Save the ring buffer to file filename. The output format
