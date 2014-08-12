@@ -1,7 +1,5 @@
 """Ring buffer viewer"""
 
-import tables
-
 from qcamera.ring_buffer import RingBuffer
 
 from PyQt4 import QtGui

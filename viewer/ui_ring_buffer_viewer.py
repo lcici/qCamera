@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ring_buffer_viewer.ui'
 #
-# Created: Mon Aug 11 12:45:21 2014
+# Created: Tue Aug 12 12:15:02 2014
 #      by: PyQt4 UI code generator 4.9.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -49,7 +49,7 @@ class Ui_RingBufferViewer(object):
         QtCore.QMetaObject.connectSlotsByName(RingBufferViewer)
 
     def retranslateUi(self, RingBufferViewer):
-        RingBufferViewer.setWindowTitle(QtGui.QApplication.translate("RingBufferViewer", "Dialog", None, QtGui.QApplication.UnicodeUTF8))
+        RingBufferViewer.setWindowTitle(QtGui.QApplication.translate("RingBufferViewer", "Ring buffer viewer", None, QtGui.QApplication.UnicodeUTF8))
         self.closeButton.setText(QtGui.QApplication.translate("RingBufferViewer", "Close", None, QtGui.QApplication.UnicodeUTF8))
 
 from guiqwt.plot import ImageWidget

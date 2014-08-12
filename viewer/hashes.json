@@ -1,7 +1,7 @@
 {
-    "roi_dialog.ui": "f83eb4f0b4687c874e88f0d0cdecabd9", 
+    "camera_select_dialog.ui": "6df25b55f5d5f9cb97872d48778cc971", 
     "setup_dialog.ui": "71395c9e715cd748caeb9b28bae37f64", 
-    "viewer.ui": "e40177f66afa8b155c48a51ecf228086", 
-    "ring_buffer_viewer.ui": "88be0e1c526f1f080c760c1e67a8803c", 
-    "camera_select_dialog.ui": "6df25b55f5d5f9cb97872d48778cc971"
+    "viewer.ui": "0c04fd60145ebcb66a279c1b8ba933d3", 
+    "ring_buffer_viewer.ui": "fbf30bba81471855921c6b8225928760", 
+    "roi_dialog.ui": "f83eb4f0b4687c874e88f0d0cdecabd9"
 }
