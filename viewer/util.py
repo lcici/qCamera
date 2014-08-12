@@ -1,5 +1,6 @@
 """Utility functions for use throughout the viewer application."""
 
+import numpy as np
 from guiqwt.image import ImageItem
 from guiqwt.shapes import RectangleShape as Rectangle
 from guiqwt.annotations import AnnotatedRectangle
@@ -53,6 +54,41 @@ def get_rect_item(imageWidget):
             rect = item
             break
     return rect
+
+def rotate_rect_cw(rect, center, rotations):
+    """Rotate a rectangle 90 degrees clockwise rotations times about a
+    central point.
+
+    Parameters
+    ----------
+    rect : tuple
+        Coordinates in the form [x1, y1, x2, y2]. The input is
+        independent of which corners are being specified.
+    center : tuple
+        The pivot point in the form [x0, y0].
+    rotations : int
+        Number of clockwise 90 degree rotations to perform.
+
+    Returns
+    -------
+    new_rect : tuple
+        Coordinates in the form [x1p, y1p, x2p, y2p]. The output does
+        not keep track of which corners should be specified, so it is
+        up to the user to reorder if necessary.
+
+    """
+    new_rect = rect
+    if rotations != 0:
+        x0, y0 = center
+        x = np.array([rect[0], rect[2]])
+        y = np.array([rect[1], rect[3]])
+        for i in range(rotations):
+            xp = -(y - y0) + x0
+            yp = (x - x0) + y0
+            x = xp
+            y = yp
+        new_rect = [xp[0], yp[0], xp[1], yp[1]]
+    return new_rect
 
 def cam_options_string():
     """Returns a string to print the valid camera types."""

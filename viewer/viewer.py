@@ -187,16 +187,8 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         # Display ROI if requested.
         # TODO: make mirroring work
         roi = np.array(self.cam.roi)
-        if self.rotation != 0:
-            x0, y0 = np.array(img_data.shape)/2
-            x = np.array([roi[0], roi[2]])
-            y = np.array([roi[1], roi[3]])
-            for i in range(self.rotation):
-                xp = -(y - y0) + x0
-                yp = (x - x0) + y0
-                x = xp
-                y = yp
-            roi = [xp[0], yp[0], xp[1], yp[1]]
+        center = np.array(img_data.shape)/2
+        roi = rotate_rect_cw(roi, center, self.rotation)
         if self.showROIBox.isChecked():
             if roi_rect is None:
                 roi_rect = make.rectangle(roi[0], roi[1], roi[2], roi[3])
