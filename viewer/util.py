@@ -1,6 +1,7 @@
 """Utility functions for use throughout the viewer application."""
 
 from guiqwt.image import ImageItem
+from guiqwt.shapes import RectangleShape as Rectangle
 from guiqwt.annotations import AnnotatedRectangle
 from config import CAM_TYPES
 
@@ -33,12 +34,22 @@ def get_image_item(imageWidget):
             break
     return image
 
-def get_rect_item(imageWidget):
+def get_annotated_rect_item(imageWidget):
     """Return a guiqwt AnnotatedRectangle from an ImageWidget."""
     items = imageWidget.get_plot().get_items()
     rect = None
     for item in items:
         if isinstance(item, AnnotatedRectangle):
+            rect = item
+            break
+    return rect
+
+def get_rect_item(imageWidget):
+    """Return a guiqwt Rectangle from an ImageWidget."""
+    items = imageWidget.get_plot().get_items()
+    rect = None
+    for item in items:
+        if isinstance(item, Rectangle):
             rect = item
             break
     return rect

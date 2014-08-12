@@ -185,20 +185,21 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         #plot.replot()
             
         # Display ROI if requested.
-        # TODO: fix this so that it rotates correctly along with the image!
+        # TODO: make mirroring work
         roi = np.array(self.cam.roi)
-        # roi.shape = (2, 2)
-        # center = img_data.shape[0]/2, img_data.shape[1]/2
-        # roi = np.rot90(roi, -self.rotation)
-        # if self.mirror[0]:
-        #     roi = np.flipud(roi)
-        # if self.mirror[1]:
-        #     roi = np.fliplr(roi)
-        # roi = roi.flatten()
+        if self.rotation != 0:
+            x0, y0 = np.array(img_data.shape)/2
+            x = np.array([roi[0], roi[2]])
+            y = np.array([roi[1], roi[3]])
+            for i in range(self.rotation):
+                xp = -(y - y0) + x0
+                yp = (x - x0) + y0
+                x = xp
+                y = yp
+            roi = [xp[0], yp[0], xp[1], yp[1]]
         if self.showROIBox.isChecked():
             if roi_rect is None:
-                roi_rect = make.annotated_rectangle(
-                    roi[0], roi[1], roi[2], roi[3])
+                roi_rect = make.rectangle(roi[0], roi[1], roi[2], roi[3])
                 roi_rect.set_resizable(False)
                 roi_rect.set_selectable(False)
                 plot.add_item(roi_rect)
@@ -280,11 +281,10 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
 
     def roi_setup(self):
         """Show a dialog to setup the region of interest."""
-        dialog = ImageDialog("ROI Setup", edit=True, toolbar=False)
+        dialog = ImageDialog("ROI Setup", edit=True, toolbar=False, parent=self)
         default = dialog.add_tool(SelectTool)
         dialog.set_default_tool(default)
-        roi_tool = dialog.add_tool(RectangleTool,
-                                   switch_to_default_tool=True)
+        roi_tool = dialog.add_tool(RectangleTool, switch_to_default_tool=True)
         roi = self.cam.roi
         old_roi = roi
         roi_tool.activate()
@@ -294,10 +294,6 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         img = make.image(self.cam_thread.img_data)
         plot.add_item(img)
         plot.set_active_item(img)
-        old = make.annotated_rectangle(
-            roi[0], roi[1], roi[2], roi[3],
-            title='Original ROI')
-        plot.add_item(old)
 
         # Wait for user input
         dialog.show()
@@ -319,6 +315,7 @@ if __name__ == "__main__":
     # -------------------------------------------------------------------------
 
     import os
+    import os.path
     import argparse
     import json
     import logging
@@ -370,11 +367,12 @@ if __name__ == "__main__":
     # Main application
     # -------------------------------------------------------------------------
 
+    path = os.path.abspath(os.path.dirname(__file__))
     app = QtGui.QApplication(sys.argv)
     app.setOrganizationName("IonTrap Group")
     app.setApplicationName("qCamera viewer")
     app.setStyle("cleanlooks")
-    #app.setWindowIcon(QtGui.QIcon('icon.png'))
+    app.setWindowIcon(QtGui.QIcon(os.path.join(path, 'resources/icon.png')))
     try:
         import ctypes
         myappid = 'qCamera_viewer'

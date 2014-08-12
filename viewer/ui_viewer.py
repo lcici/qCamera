@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'viewer.ui'
 #
-# Created: Mon Aug 11 12:44:35 2014
+# Created: Tue Aug 12 10:41:47 2014
 #      by: PyQt4 UI code generator 4.9.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -17,11 +17,7 @@ except AttributeError:
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
-        MainWindow.setEnabled(True)
-        MainWindow.resize(540, 810)
-        icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap(_fromUtf8("resources/icon.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        MainWindow.setWindowIcon(icon)
+        MainWindow.resize(540, 854)
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName(_fromUtf8("centralwidget"))
         self.verticalLayout_2 = QtGui.QVBoxLayout(self.centralwidget)
@@ -97,7 +93,7 @@ class Ui_MainWindow(object):
         self.rotateCCWButton.setObjectName(_fromUtf8("rotateCCWButton"))
         self.gridLayout_3.addWidget(self.rotateCCWButton, 1, 2, 1, 1)
         self.showROIBox = QtGui.QCheckBox(self.groupBox_2)
-        self.showROIBox.setEnabled(True)
+        self.showROIBox.setChecked(True)
         self.showROIBox.setObjectName(_fromUtf8("showROIBox"))
         self.gridLayout_3.addWidget(self.showROIBox, 3, 3, 1, 1)
         self.flipVerticalButton = QtGui.QPushButton(self.groupBox_2)

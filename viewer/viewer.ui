@@ -2,23 +2,16 @@
 <ui version="4.0">
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
-  <property name="enabled">
-   <bool>true</bool>
-  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>540</width>
-    <height>810</height>
+    <height>854</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>qCamera Viewer</string>
-  </property>
-  <property name="windowIcon">
-   <iconset>
-    <normaloff>resources/icon.png</normaloff>resources/icon.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -188,11 +181,11 @@
          </item>
          <item row="3" column="3">
           <widget class="QCheckBox" name="showROIBox">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
            <property name="text">
             <string>Show ROI</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
            </property>
           </widget>
          </item>

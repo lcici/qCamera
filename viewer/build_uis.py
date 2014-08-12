@@ -28,5 +28,5 @@ for fname in glob('*.ui'):
         hashes[fname] = new_hash
 
 with open(hash_file, 'w') as output:
-    json.dump(hashes, output, indent=4)
+    json.dump(hashes, output, indent=4, sort_keys=True)
     
