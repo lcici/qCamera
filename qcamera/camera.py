@@ -16,6 +16,18 @@ from ring_buffer import RingBuffer
 from camera_properties import CameraProperties
 from camera_errors import CameraError
 
+class DummyDLL(object):
+    """Fake library reference. This will return a default value for
+    any 'function' call.
+
+    """
+    def __init__(self, success):
+        assert isinstance(success, int)
+        self.success = success
+
+    def __getattr__(self, name):
+        setattr(self, name, lambda *args: self.success)
+
 class Camera:
     """Abstract base class for all cameras.
 
@@ -23,6 +35,9 @@ class Camera:
 
     Attributes
     ----------
+    clib : WinDLL or CDLL or DummyDLL
+        A ctypes library reference or a fake one for simulating a
+        camera.
     roi : list
         The defined region of interest in the form [x1, y1, x2, y2].
     t_ms : float
@@ -65,8 +80,9 @@ class Camera:
 
     # Attributes
     # -------------------------------------------------------------------------
-    
-    roi = [10, 10, 100, 100]
+
+    clib = None
+    roi = [1, 10, 1, 10]
     t_ms = 100.
     gain = 0
     shape = (512, 512)
@@ -101,6 +117,8 @@ class Camera:
             '.'.
         logger : str
             Name of the logger to use. Defaults to 'Camera'.
+        success_value : int
+            Success value to give to the DummyDLL class.
 
         """
         # Get kwargs and set defaults
@@ -109,6 +127,7 @@ class Camera:
         buffer_dir = kwargs.get('buffer_dir', '.')
         recording = kwargs.get('recording', True)
         logger = kwargs.get('logger', 'Camera')
+        success_value = kwargs.get('success_value', 0)
         
         # Check kwarg types are correct
         assert isinstance(bins, int)
@@ -128,6 +147,8 @@ class Camera:
         if self.real_camera:
             self._initialize(**kwargs)
             self.get_camera_properties()
+        else:
+            self.clib = DummyDLL(success_value)
         self.logger.debug(self.props)
 
     def _initialize(self, **kwargs):

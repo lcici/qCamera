@@ -67,6 +67,8 @@ class AndorCamera(camera.Camera):
             something stupid.
 
         """
+        if not self.real_camera:
+            return
         if status == ANDOR_STATUS['DRV_ACQUIRING']:
             self.logger.warn(
                 "Action not completed when data acquisition is in progress!")
@@ -89,6 +91,9 @@ class AndorCamera(camera.Camera):
                 ''.join(tb.format_list(stack)))
         elif status != ANDOR_STATUS['DRV_SUCCESS']:
             raise AndorError("Andor returned the status message " + \
+                             ANDOR_CODES[status])
+        else:
+            self.logger.debug("Andor returned the status message " + \
                              ANDOR_CODES[status])
 
     # Setup and shutdown
@@ -213,8 +218,6 @@ class AndorCamera(camera.Camera):
             raise AndorError(
                 "Acquisition mode must be one of " + repr(self._acq_modes))
         self.acq_mode = mode
-        if not self.real_camera:
-            return
         self.logger.info('Setting acquisition mode to ' + mode)
         self._chk(self.clib.SetAcquisitionMode(
             ctypes.c_int(self._acq_modes[mode])))
@@ -289,24 +292,19 @@ class AndorCamera(camera.Camera):
             raise AndorError("Invalid trigger mode: " + mode)
         self.trigger_mode = self._trigger_modes[mode]
         self.logger.info("Setting trigger mode to " + mode)
-        if self.real_camera:
-            self._chk(self.clib.SetTriggerMode(self.trigger_mode))
         #if mode == 'external':
         #    self.set_acquisition_mode('continuous')
 
     def start(self):
         """Start accepting triggers."""
         self.logger.info('Calling StartAcquisition()')
-        if self.real_camera:
-            self._chk(self.clib.StartAcquisition())
 
     def stop(self):
         """Stop acquisition."""
         self.logger.info('Calling AbortAcquisition()')
-        if self.real_camera:
-            status = self.clib.AbortAcquisition()
-            if status != ANDOR_STATUS['DRV_IDLE']:
-                self._chk(status)
+        status = self.clib.AbortAcquisition()
+        if status != ANDOR_STATUS['DRV_IDLE']:
+            self._chk(status)
 
     # Shutter control
     # -------------------------------------------------------------------------
@@ -344,12 +342,9 @@ class AndorCamera(camera.Camera):
 
     def get_gain(self):
         """Query the current gain settings."""
-        if self.real_camera:
-            gain = _int_ptr()
-            self._chk(self.clib.GetEMCCDGain(gain))
-            return gain.contents.value
-        else:
-            return 0
+        gain = _int_ptr()
+        self._chk(self.clib.GetEMCCDGain(gain))
+        return gain.contents.value
 
     def set_gain(self, gain, **kwargs):
         """Set the camera gain and mode.
@@ -366,8 +361,6 @@ class AndorCamera(camera.Camera):
         """
         assert 0 <= gain <= 255
         self.logger.info("Setting gain to %i." % gain)
-        if not self.real_camera:
-            return
         result = self.clib.SetEMCCDGain(ctypes.c_int(gain))
         if result in (ANDOR_STATUS['DRV_SUCCESS'], ANDOR_STATUS['DRV_P1INVALID']):
             self.gain = gain
@@ -384,15 +377,13 @@ class AndorCamera(camera.Camera):
         """Turn on the TEC."""
         self.logger.info("Turning cooler on.")
         self.cooler_active = True
-        if self.real_camera:
-            self._chk(self.clib.CoolerON())
+        self._chk(self.clib.CoolerON())
 
     def cooler_off(self):
         """Turn off the TEC."""
         self.logger.info("Turning cooler off.")
         self.cooler_active = False
-        if self.real_camera:
-            self._chk(self.clib.CoolerOFF())
+        self._chk(self.clib.CoolerOFF())
 
     def get_cooler_temperature(self):
         """Check the TEC temperature."""
@@ -422,8 +413,7 @@ class AndorCamera(camera.Camera):
             raise ValueError(
                 "Invalid set point. Valid range is " + \
                 repr(self.props['temp_range']))
-        if self.real_camera:
-            self._chk(self.clib.SetTemperature(temp))
+        self._chk(self.clib.SetTemperature(temp))
 
     # Cropping and binning
     # -------------------------------------------------------------------------
@@ -451,17 +441,16 @@ class AndorCamera(camera.Camera):
         """Set binning to bins x bins."""
         self.bins = bins
         self.logger.info('Updating binning to ' + str(bins))
-        if self.real_camera:
-            self._chk(self.clib.SetImage(
-                self.bins, self.bins,
-                self.crop[0], self.crop[1], self.crop[2], self.crop[3]))
+        self._chk(self.clib.SetImage(
+            self.bins, self.bins,
+            self.crop[0], self.crop[1], self.crop[2], self.crop[3]))
             
 if __name__ == "__main__":
     import logging
 
     logging.basicConfig(level=logging.DEBUG)
     
-    with AndorCamera(temperature=10) as cam:
+    with AndorCamera(temperature=10, success_value=ANDOR_STATUS['DRV_SUCCESS'], real=False) as cam:
         cam.set_exposure_time(10)
         cam.set_trigger_mode('external')
         cam.open_shutter()
