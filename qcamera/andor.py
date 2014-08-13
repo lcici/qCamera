@@ -156,11 +156,15 @@ class AndorCamera(camera.Camera):
         # Get generic camera-specific properties.
         caps = AndorCapabilities()
         caps.ulSize = 12*32
-        self._chk(self.clib.GetCapabilities(ctypes.pointer(caps)))
+        if self.real_camera:
+            self._chk(self.clib.GetCapabilities(ctypes.pointer(caps)))
 
         # Get cooler temperature range and initial set point.
-        min_, max_ = ctypes.c_int(), ctypes.c_int()
-        self._chk(self.clib.GetTemperatureRange(ctypes.pointer(min_), ctypes.pointer(max_)))
+        if self.real_camera:
+            min_, max_ = ctypes.c_int(), ctypes.c_int()
+            self._chk(self.clib.GetTemperatureRange(ctypes.pointer(min_), ctypes.pointer(max_)))
+        else:
+            min_, max_ = ctypes.c_int(-80), ctypes.c_int(30)
         self.temperature_set_point = self.props['init_set_point']
         self.set_cooler_temperature(self.temperature_set_point)
         self.temp_stabilized = False

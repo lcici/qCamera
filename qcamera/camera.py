@@ -27,6 +27,7 @@ class DummyDLL(object):
 
     def __getattr__(self, name):
         setattr(self, name, lambda *args: self.success)
+        return self.name
 
 class Camera:
     """Abstract base class for all cameras.
@@ -146,9 +147,9 @@ class Camera:
         self.sim_img_center = (x0, y0)
         if self.real_camera:
             self._initialize(**kwargs)
-            self.get_camera_properties()
         else:
             self.clib = DummyDLL(success_value)
+        self.get_camera_properties()
         self.logger.debug(self.props)
 
     def _initialize(self, **kwargs):
