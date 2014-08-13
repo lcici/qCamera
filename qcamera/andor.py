@@ -92,9 +92,6 @@ class AndorCamera(camera.Camera):
         elif status != ANDOR_STATUS['DRV_SUCCESS']:
             raise AndorError("Andor returned the status message " + \
                              ANDOR_CODES[status])
-        else:
-            self.logger.debug("Andor returned the status message " + \
-                             ANDOR_CODES[status])
 
     # Setup and shutdown
     # -------------------------------------------------------------------------
@@ -296,12 +293,14 @@ class AndorCamera(camera.Camera):
             raise AndorError("Invalid trigger mode: " + mode)
         self.trigger_mode = self._trigger_modes[mode]
         self.logger.info("Setting trigger mode to " + mode)
+        self._chk(self.clib.SetTriggerMode(self.trigger_mode))
         #if mode == 'external':
         #    self.set_acquisition_mode('continuous')
 
     def start(self):
         """Start accepting triggers."""
         self.logger.info('Calling StartAcquisition()')
+        self._chk(self.clib.StartAcquisition())
 
     def stop(self):
         """Stop acquisition."""

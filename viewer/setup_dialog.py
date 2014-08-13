@@ -2,6 +2,7 @@
 
 import sys
 sys.path.insert(0, '..')
+import math
 from qcamera import Camera
 
 from PyQt4 import QtGui, QtCore
@@ -12,6 +13,7 @@ class SetupDialog(QtGui.QDialog, Ui_SetupDialog):
     def __init__(self, cam):
         QtGui.QWidget.__init__(self)
         assert isinstance(cam, Camera)
+        self.cam = cam
 
         # Setup UI
         self.setupUi(self)
@@ -19,45 +21,48 @@ class SetupDialog(QtGui.QDialog, Ui_SetupDialog):
         self.closeButton.clicked.connect(self.done)
 
         # Binning
-        bin_options = [str(x) for x in cam.props['bins']]
+        bin_options = [str(x) for x in self.cam.props['bins']]
+        print self.cam.get_bins()
+        bin_idx = int(math.log(self.cam.get_bins(), 2))
         self.binsBox.addItems(bin_options)
+        self.binsBox.setCurrentIndex(bin_idx)
         self.binsBox.currentIndexChanged.connect(self.set_bins)
 
         # Shutter
-        if not cam.props['shutter']:
+        if not self.cam.props['shutter']:
             self.shutterGroupBox.setEnabled(False)
-        elif not cam.shutter_open:
+        elif not self.cam.shutter_open:
             self.closeShutterButton.setChecked(True)
-        self.openShutterButton.clicked.connect(cam.open_shutter)
-        self.closeShutterButton.clicked.connect(cam.close_shutter)
+        self.openShutterButton.clicked.connect(self.cam.open_shutter)
+        self.closeShutterButton.clicked.connect(self.cam.close_shutter)
 
         # Cropping
         #self.adjustCropButton.clicked.connect(self.crop_setup_dialog)
 
         # Gain
-        if not cam.props['gain_adjust']:
+        if not self.cam.props['gain_adjust']:
             self.gainGroupBox.setEnabled(False)
         else:
-            grange = cam.props['gain_range']
+            grange = self.cam.props['gain_range']
             self.gainSlider.setRange(grange[0], grange[1])
-            self.gainSlider.setValue(cam.gain)
-            self.gainLbl.setNum(cam.gain)
+            self.gainSlider.setValue(self.cam.gain)
+            self.gainLbl.setNum(self.cam.gain)
         self.gainSlider.sliderReleased.connect(self.set_gain)
 
         # Temperature
-        if not cam.props['temp_control']:
+        if not self.cam.props['temp_control']:
             self.tempGroupBox.setEnabled(False)
         else:
-            trange = cam.props['temp_range']
+            trange = self.cam.props['temp_range']
             self.tempSetPointBox.setRange(trange[0], trange[1])
-            self.tempSetPointBox.setValue(cam.temperature_set_point)
+            self.tempSetPointBox.setValue(self.cam.temperature_set_point)
             self.tempSetPointBox.editingFinished.connect(self.set_temperature)
-            if cam.cooler_active:
+            if self.cam.cooler_active:
                 self.coolerOnButton.setChecked(True)
             else:
                 self.coolerOffButton.setChecked(True)
-            self.coolerOnButton.clicked.connect(self.cooler_on)
-            self.coolerOffButton.clicked.connect(self.cooler_off)
+            self.coolerOnButton.clicked.connect(self.cam.cooler_on)
+            self.coolerOffButton.clicked.connect(self.cam.cooler_off)
 
             # Setup a timer to poll the temperature
             self.temp_checker = QtCore.QTimer()

@@ -9,3 +9,6 @@
   - [ ] GigE Vision
     - https://gitorious.org/opengigevision
     - https://wiki.gnome.org/Projects/Aravis
+
+* TODO Bugs [0/1]
+** [ ] ROI viewing on rotation results in a slight shift.	      :minor:

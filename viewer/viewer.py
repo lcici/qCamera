@@ -117,7 +117,7 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
             self.temp_timer = QtCore.QTimer()
             self.temp_timer.setInterval(100)
             self.temp_timer.timeout.connect(
-                lambda: self.tempLbl.setText(u'T = {0}\u00b0C'.format(cam.get_cooler_temperature())))
+                lambda: self.tempLbl.setText(u'T = {0}\u00b0C'.format(self.cam.get_cooler_temperature())))
             self.temp_timer.start()
 
         # Ring buffer index monitoring
