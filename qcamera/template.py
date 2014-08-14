@@ -66,7 +66,7 @@ class Template(camera.Camera):
     # Shutter control
     # -------------------------------------------------------------------------
 
-    def _set_shutter(state):
+    def _set_shutter(self, state):
         """This will set the shutter to the given state ('open' or
         'closed'). Since not all cameras have a built in shutter, this
         will simply do nothing if not overridden.
