@@ -1,0 +1,11 @@
+usage: viewer.py [-h] [-c <camera type> | -s]
+
+qCamera Viewer
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c <camera type>, --camera-type <camera type>
+                        Specify the camera type to use. If not given, default
+                        to the last camera type used. Options include: opencv
+                        sensicam andor thorlabs_dcx
+  -s, --camera-select   Run the camera select dialog.
