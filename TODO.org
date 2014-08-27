@@ -1,14 +1,16 @@
 #+TITLE: qCamera TODO list
+#+STARTUP: showall
 
-* Camera interfaces to add [2/4]
-  - [X] Thorlabs DCx
-  - [X] OpenCV
-  - [ ] libdc1394
-    - Standard for firewire cameras
-    - http://damien.douxchamps.net/ieee1394/libdc1394/
-  - [ ] GigE Vision
-    - https://gitorious.org/opengigevision
-    - https://wiki.gnome.org/Projects/Aravis
+* TODO Camera interfaces to add [2/4]
+** [X] Thorlabs DCx				    :enhancement:implemented:
+** [X] OpenCV					    :enhancement:implemented:
+** [ ] libdc1394						:enhancement:
+- Standard for firewire cameras
+- http://damien.douxchamps.net/ieee1394/libdc1394/
+** [ ] GigE Vision						:enhancement:
+- https://gitorious.org/opengigevision
+- https://wiki.gnome.org/Projects/Aravis
 
 * TODO Bugs [0/1]
 ** [ ] ROI viewing on rotation results in a slight shift.	      :minor:
+** [ ] ROI should probably not round but use ceil?		      :minor:
