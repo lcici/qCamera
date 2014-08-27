@@ -3,8 +3,8 @@
 from __future__ import division
 import numpy as np
 import cv2
-import camera
-from camera_errors import CameraError
+from . import camera
+from .exceptions import CameraError
 
 # Constants from OpenCV
 # =============================================================================
@@ -136,6 +136,7 @@ class OpenCVCamera(camera.Camera):
         """Set binning to bins x bins."""
 
 if __name__ == "__main__":
+    import mpatlotlib.pyplot as plt
     with OpenCVCamera(recording=False) as cam:
         cam.set_exposure_time(10)
         #cam.test_real_time_acquisition()

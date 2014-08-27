@@ -4,7 +4,7 @@ import os.path
 import json
 # TODO: don't allow updating of properties that don't exist in the
 # default self.props set in __init__
-from camera_errors import CameraPropertiesError
+from . exceptions import CameraPropertiesError
 
 PATH = os.path.split(os.path.abspath(__file__))[0]
 

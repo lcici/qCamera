@@ -3,8 +3,8 @@
 from __future__ import print_function
 import ctypes
 import numpy as np
-import camera
-from camera_errors import *
+from . import camera
+from .exceptions import *
 
 class Template(camera.Camera):
     """Docstring me!"""

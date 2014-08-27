@@ -7,15 +7,17 @@ optimization.
 """
 
 from __future__ import print_function
+
 import logging
 import traceback as tb
 import math
 import sys
 import ctypes
 import numpy as np
-import camera
-from camera_errors import SensicamError
-from sensicam_status_codes import *
+
+from . import camera
+from .exceptions import SensicamError
+from .sensicam_status_codes import *
 
 class MODE(ctypes.Structure):
     _pack_ = 0

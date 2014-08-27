@@ -13,8 +13,8 @@ import sys
 import ctypes
 from ctypes import byref, c_double, c_int
 import numpy as np
-from camera import Camera
-from camera_errors import ThorlabsDCxError
+from .camera import Camera
+from .exceptions import ThorlabsDCxError
 
 class CamInfo(ctypes.Structure):
     _fields_ = [

@@ -12,10 +12,10 @@ import time
 import traceback as tb
 import ctypes
 import numpy as np
-import camera
-from camera_errors import AndorError, AndorWarning
-from andor_status_codes import *
-from andor_capabilities import *
+from . import camera
+from .exceptions import AndorError
+from .andor_status_codes import *
+from .andor_capabilities import *
 
 def _int_ptr(val=0):
     """Utility function to create integer pointers."""

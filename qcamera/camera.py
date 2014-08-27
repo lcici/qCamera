@@ -1,20 +1,22 @@
-"""qCamera base camera class
+"""Base camera module
 
 This file contains the class definition for the Camera class on which
 all subsequent cameras should be based on.
 
 """
 
-from __future__ import division
-from __future__ import print_function
+from __future__ import print_function, division
+
 from abc import ABCMeta, abstractmethod
 import logging
 import time
+
 import numpy as np
 import numpy.random as npr
-from ring_buffer import RingBuffer
-from camera_properties import CameraProperties
-from camera_errors import CameraError
+
+from .ring_buffer import RingBuffer
+from .camera_properties import CameraProperties
+from .exceptions import CameraError
 
 class DummyDLL(object):
     """Fake library reference. This will return a default value for
