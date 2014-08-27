@@ -4,6 +4,7 @@ it in a Qt GUI.
 """
 
 from __future__ import print_function
+import time
 import sys
 
 # Ensure we're loading the newest version of qcamera rather than
@@ -29,11 +30,14 @@ from ui_viewer import Ui_MainWindow
 from ring_buffer_viewer import RingBufferViewer
 from camera_thread import CameraThread
 
-# Viewer
+# Viewer UI
 # =============================================================================
 
 class Viewer(QtGui.QMainWindow, Ui_MainWindow):
     """Simple GUI testbed for qCamera."""
+
+    # For debugging
+    time = time.time()
 
     # Setup and shutdown
     # -------------------------------------------------------------------------
@@ -208,6 +212,8 @@ class Viewer(QtGui.QMainWindow, Ui_MainWindow):
         plot.set_plot_limits(0, img_data.shape[1], 0, img_data.shape[0])
         plot.set_aspect_ratio(img_data.shape[0]/img_data.shape[1], lock=True)
         plot.replot()
+        #logging.debug('{:.1f} ms'.format((time.time() - self.time)*1e3))
+        self.time = time.time()
                     
     def update_colormap(self):
         image = get_image_item(self.imageWidget)

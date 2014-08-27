@@ -110,6 +110,19 @@ class CameraProperties(object):
             
             # Initial exposure
             'init_exposure': 100,
+
+            # Filtering settings
+            # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+            # Filtering enabled by default?
+            'filter.enabled': False,
+
+            # Filter type
+            'filter.type': 'median',
+
+            # Generic strength parameter for filtering. This may do
+            # nothing depending on the filter being used.
+            'filter.strength': 3,
         }
 
         # Update parameters from a file if given.

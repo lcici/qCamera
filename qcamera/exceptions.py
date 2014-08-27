@@ -9,7 +9,7 @@ from __future__ import print_function
 import traceback
 
 # Errors
-# ======
+# =============================================================================
 
 class CameraError(Exception):
     """Generic camera errors."""
@@ -38,8 +38,12 @@ class CameraPropertiesError(Exception):
     """
     pass
 
+class FilterError(Exception):
+    """Raised when a problem occurs with filters."""
+    pass
+
 # Warnings
-# ========
+# =============================================================================
 
 class CameraWarning(Warning):
     """Generic camera warnings."""

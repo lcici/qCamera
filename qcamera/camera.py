@@ -13,10 +13,11 @@ import time
 
 import numpy as np
 import numpy.random as npr
+from scipy import ndimage
 
 from .ring_buffer import RingBuffer
 from .camera_properties import CameraProperties
-from .exceptions import CameraError
+from .exceptions import CameraError, FilterError
 
 class DummyDLL(object):
     """Fake library reference. This will return a default value for
@@ -30,6 +31,46 @@ class DummyDLL(object):
     def __getattr__(self, name):
         setattr(self, name, lambda *args: self.success)
         return self.name
+
+class Filter(object):
+    """Filters to apply to acquired image data."""
+    def __init__(self, filter_type=None, *args):
+        """Create a new filter using the given type.
+
+        Filters use the :mod:`scipy.ndimage` module. Currently the
+        only supported filter type is ``median`` which implements a
+        median filter through :func:`scipy.ndimage.median_filter`.
+
+        Parameters
+        ----------
+        filter_type : str or None
+            A string specifying what filter type to use.
+        args : list
+            Arguments to pass to the filter function.
+
+        Raises
+        ------
+        FilterError
+            When the requested filter is not recognized.
+
+        """
+        filter_options = ['median', None]
+        if filter_type not in filter_options:
+            raise FilterError(
+                "Not a recognized filter type. Valid options are: " + \
+                ', '.join(filter_options)
+            )
+        self.filter_type = filter_type
+        self.args = args
+
+    def apply(self, img):
+        """Apply the filter to the image data img."""
+        if self.filter_type == None:
+            return img
+        elif self.filter_type == 'median':
+            return ndimage.median_filter(img, *self.args)
+        else:
+            raise FilterError("Unknown filter type.")
 
 class Camera:
     """Abstract base class for all cameras.
@@ -154,6 +195,10 @@ class Camera:
         self.get_camera_properties()
         self.logger.debug(self.props)
 
+        # Configure filtering
+        self.img_filter = Filter(self.props['filter.type'],
+                                 self.props['filter.strength'])
+
     def _initialize(self, **kwargs):
         """Any extra initialization required should be placed in this
         function for child camera classes.
@@ -203,6 +248,8 @@ class Camera:
             img = self._get_simulated_image(x0, y0)
         else:
             img = self._acquire_image_data()
+        if self.props['filter.enabled']:
+            img = self.img_filter.apply(img)
         self.rbuffer.write(img)
         return img
 
