@@ -71,6 +71,15 @@ All of these are contained in the default installation of
 note that all of the above are required to run the qCamera Viewer
 application.
 
+Bugs
+----
+
+There is an issue with compression introduced in commit `c1a5edf`. It
+is not yet confirmed, but this may be due to using version 3.0.0 of
+PyTables, which ships with Python(x,y), versus the more recent 3.1.x
+branch. The change will be reverted for the time being until a
+solution can be worked out.
+
 Installation
 ------------
 

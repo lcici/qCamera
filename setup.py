@@ -22,6 +22,6 @@ setup(
     package_data={'qcamera': ['props/*.json']},
     requires=[
         'numpy (>=1.6.0)',
-        'h5py (>=2.0.0)'
+        'tables (>=3.0.0)'
     ]
 )
