@@ -17,7 +17,7 @@ setup(
     description='Unified camera interface for qControl and other experimental control systems.',
     long_description=long_description,
     platforms="Windows",
-    license="GNU LGPLv3",
+    license="BSD",
     packages=['qcamera'],
     package_data={'qcamera': ['props/*.json']},
     requires=[
