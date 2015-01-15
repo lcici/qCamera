@@ -99,11 +99,9 @@ class RingBuffer(object):
         except tables.NoSuchNodeError:
             pass
         finally:
-            atom = tables.Int16Atom()
-            shape = data.shape
-            filters = tables.Filters(complevel=5, complib='zlib')
-            arr = self._db.create_carray('/images', name, atom, shape, filters)
-            arr[:] = data[:]
+            # TODO: Adapt to CArray for compression
+            #filters = tables.Filters(complevel=5, complib='zlib')
+            arr = self._db.create_array('/images', name, data)
             arr.attrs.timestamp = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S.%f')
             arr.attrs.roi = self.roi
             arr.flush()
