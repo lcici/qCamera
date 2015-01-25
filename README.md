@@ -2,10 +2,11 @@ qCamera
 =======
 
 qCamera is a unified camera interface meant to be used in experimental
-control systems such as qControl. It is designed to have commands for
-cameras be as generic as possible to the user, that way swapping out
-physical cameras should require little more than changing a line of
-code to reflect the new hardware.
+control systems such as qControl, a system developed at Aarhus
+University for running experiments with trapped ions. It is designed
+to have commands for cameras be as generic as possible to the user,
+that way swapping out physical cameras should require little more than
+changing a line of code or two to reflect the new hardware.
 
 Supported cameras
 -----------------
@@ -55,6 +56,7 @@ being used installed in the proper location for ctypes to find it, the
 following Python packages are required:
 
 * [NumPy](http://www.numpy.org/)
+* [SciPy](http://www.scipy.org/)
 * [PyTables](http://www.pytables.org)
 
 Optional requirements which if not met will result in some slightly
@@ -84,8 +86,6 @@ Installation
 ------------
 
 `python setup.py install`
-
-Don't forget to rerun this whenever you want to import new changes!
 
 Credits
 -------

@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import setup
 import qcamera
 
 long_description = \
@@ -20,8 +20,9 @@ setup(
     license="BSD",
     packages=['qcamera'],
     package_data={'qcamera': ['props/*.json']},
-    requires=[
-        'numpy (>=1.6.0)',
-        'tables (>=3.0.0)'
+    install_requires=[
+        'numpy>=1.6.0',
+        'tables>=3.0.0',
+        'scipy>=0.14.0'
     ]
 )

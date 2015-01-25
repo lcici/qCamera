@@ -19,3 +19,4 @@ util/outfile.py
 docs/_build
 *.orig
 viewer.json
+*.egg-info
