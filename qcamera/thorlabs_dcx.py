@@ -90,6 +90,11 @@ class ThorlabsDCx(Camera):
         # Enable autoclosing. This allows for safely closing the
         # camera if it is disconnected.
         self._chk(self.clib.is_EnableAutoExit(self.filehandle, 1))
+        
+    def get_camera_properties(self):
+        filename = 'thorlabs_dcx.json'
+        self.logger.warning("Warning: Warnings do not work!")
+        self.props.load(filename)
 
     def close(self):
         """Close the camera safely."""
