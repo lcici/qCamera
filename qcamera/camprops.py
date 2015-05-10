@@ -115,6 +115,8 @@ class CameraProperties(object):
         # Update parameters from a file if given.
         if filename is not None:
             self.load(filename)
+        else:
+            print("No camera properties loaded!")
 
     def __getitem__(self, key):
         return self.props[key]

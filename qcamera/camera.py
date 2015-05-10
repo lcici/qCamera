@@ -15,7 +15,7 @@ import numpy as np
 import numpy.random as npr
 
 from .ring_buffer import RingBuffer
-from .camera_properties import CameraProperties
+from .camprops import CameraProperties
 from .exceptions import CameraError
 
 class DummyDLL(object):
@@ -32,7 +32,7 @@ class DummyDLL(object):
         return self.name
 
 class Camera:
-    """Abstract base class for all cameras.
+    """Base class for all cameras.
 
     TODO: Verify that this documentation is up to date!
 
