@@ -14,6 +14,7 @@ import time
 import numpy as np
 import numpy.random as npr
 
+import log
 from .ring_buffer import RingBuffer
 from .camprops import CameraProperties
 from .exceptions import CameraError
@@ -118,8 +119,8 @@ class Camera:
         buffer_dir : str
             Directory to store the ring buffer file to. Default:
             '.'.
-        logger : str
-            Name of the logger to use. Defaults to 'Camera'.
+        log_level : int
+            Logging level to use. Default: ``logging.INFO``.
         success_value : int
             Success value to give to the DummyDLL class.
 
@@ -129,19 +130,24 @@ class Camera:
         real = kwargs.get('real', True)
         buffer_dir = kwargs.get('buffer_dir', '.')
         recording = kwargs.get('recording', True)
-        logger = kwargs.get('logger', 'Camera')
         success_value = kwargs.get('success_value', 0)
         
         # Check kwarg types are correct
         assert isinstance(bins, int)
         assert isinstance(real, (bool, int))
         assert isinstance(buffer_dir, str)
-        assert isinstance(logger, str)
 
-        # Initialize
-        self.logger = logging.getLogger(logger)
+        # Configure logging
+        log_level = kwargs.get('log_level', logging.INFO)
+        self.logger = log.logger
+        if len(self.logger.handlers) == 0:
+            log.stream_handler.setLevel(log_level)
+            self.logger.addHandler(log.stream_handler)
+            self.logger.setLevel(log_level)
         self.logger.info(
             "Connecting to %s camera" % ("real" if real else "simulated"))
+
+        # Initialize
         self.real_camera = real
         self.rbuffer = RingBuffer(directory=buffer_dir, recording=recording, roi=self.roi)
         x0 = npr.randint(self.shape[0]/4, self.shape[0]/2)
