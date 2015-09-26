@@ -1,3 +1,8 @@
+WARNING
+=======
+
+This repository was converted to Mercurial and moved to [Bitbucket](https://bitbucket.org/iontrapgroup/qcamera).
+
 qCamera
 =======
 
